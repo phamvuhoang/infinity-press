@@ -452,11 +452,6 @@ Not testing instructions — things a tester will notice and should not file twi
   other project. S9 added `e2e/bundle-purchase.spec.ts` beside `e2e/manual-payment.spec.ts`, because
   the bundle golden path ends at an admin confirming a bank transfer. A new spec whose journey needs
   that provider must be added to that list; a spec left off it runs against the simulator server.
-- **The SePay project is a third web server.** `chromium-sepay` is the only project pointed at the
-  `PAYMENT_PROVIDER=sepay` server on port 3200 (override with `E2E_SEPAY_SERVER_URL` when another
-  dev server holds it), and `playwright.config.ts`'s `sepaySpecs` list admits a file to it. It starts
-  with sandbox credentials from `e2e/support/server-env.ts` and never contacts SePay: the spec
-  intercepts the browser's POST and posts the notification itself.
 - **CI has two risks on its first run**, which will be the pull request that ships this work.
   `webServer.timeout` is 180s and must cover a cold `npm run build && npm run start` on a two-core
   runner (~35–40s here, so the margin is plausible but untested), and the `e2e-browser-matrix` job

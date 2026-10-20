@@ -20,7 +20,7 @@ const order: CustomerOrderDTO = {
   id: ORDER_ID,
   bundleId: null,
   title: "A Book",
-  items: [{ bookId: "30000000-0000-4000-8000-000000000001", title: "A Book", hasActiveEntitlement: false }],
+  items: [{ bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "A Book", hasActiveEntitlement: false }],
   status: "pending",
   paymentStatus: "pending",
   totalMinor: 129000,
@@ -87,17 +87,5 @@ describe("payOrderAction", () => {
   it("never starts a payment for a book the reader already owns", async () => {
     vi.mocked(getCustomerOrder).mockResolvedValue({ ...order, hasAllActiveEntitlements: true });
     await expect(payOrderAction("en", ORDER_ID)).rejects.toThrow(new RegExp(`NEXT_REDIRECT /en/checkout/${ORDER_ID}$`));
-  });
-
-  it("hands a SePay order to the SePay hand-off page", async () => {
-    vi.mocked(getServerEnv).mockReturnValue({
-      appEnv: "test",
-      paymentProvider: "sepay",
-      simulatorSecret: null,
-      sepay: { merchantId: "M", secretKey: "s", env: "sandbox" },
-    } as unknown as ReturnType<typeof getServerEnv>);
-    vi.mocked(getCustomerOrder).mockResolvedValue({ ...order, provider: "sepay" });
-
-    await expect(payOrderAction("en", ORDER_ID)).rejects.toThrow(`NEXT_REDIRECT /en/checkout/${ORDER_ID}/sepay`);
   });
 });

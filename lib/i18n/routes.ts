@@ -52,7 +52,6 @@ export function getCommerceRoutes(locale: Locale) {
     checkout: (orderId: string) => withLocale(locale, `/checkout/${orderId}`),
     checkoutSimulate: (orderId: string) => withLocale(locale, `/checkout/${orderId}/simulate`),
     checkoutTransfer: (orderId: string) => withLocale(locale, `/checkout/${orderId}/transfer`),
-    checkoutSepay: (orderId: string) => withLocale(locale, `/checkout/${orderId}/sepay`),
     checkoutStatus: (orderId: string) => withLocale(locale, `/checkout/${orderId}/status`),
     order: (orderId: string) => withLocale(locale, `/account/orders/${orderId}`),
     bookActionError: (slug: string, code: string) =>

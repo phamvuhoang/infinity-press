@@ -454,6 +454,32 @@ export type Database = {
         }
         Relationships: []
       }
+      book_language_editions: {
+        Row: {
+          book_id: string
+          edition_id: string
+          language_code: string
+        }
+        Insert: {
+          book_id: string
+          edition_id: string
+          language_code: string
+        }
+        Update: {
+          book_id?: string
+          edition_id?: string
+          language_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_language_editions_edition_id_book_id_language_code_fkey"
+            columns: ["edition_id", "book_id", "language_code"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id", "book_id", "language_code"]
+          },
+        ]
+      }
       book_localizations: {
         Row: {
           audience: string | null
@@ -578,6 +604,7 @@ export type Database = {
           body: string
           book_id: string
           created_at: string
+          edition_id: string | null
           id: string
           locale: string
           profile_id: string
@@ -596,6 +623,7 @@ export type Database = {
           body: string
           book_id: string
           created_at?: string
+          edition_id?: string | null
           id?: string
           locale: string
           profile_id: string
@@ -613,6 +641,7 @@ export type Database = {
           body?: string
           book_id?: string
           created_at?: string
+          edition_id?: string | null
           id?: string
           locale?: string
           profile_id?: string
@@ -630,6 +659,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_reviews_edition_book_fkey"
+            columns: ["edition_id", "book_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id", "book_id"]
           },
           {
             foreignKeyName: "book_reviews_locale_fkey"
@@ -741,6 +777,7 @@ export type Database = {
           active_publication_id: string | null
           canonical_key: string
           created_at: string
+          default_content_language: string | null
           id: string
           original_language: string
           primary_author_id: string
@@ -751,6 +788,7 @@ export type Database = {
           active_publication_id?: string | null
           canonical_key: string
           created_at?: string
+          default_content_language?: string | null
           id?: string
           original_language: string
           primary_author_id: string
@@ -761,6 +799,7 @@ export type Database = {
           active_publication_id?: string | null
           canonical_key?: string
           created_at?: string
+          default_content_language?: string | null
           id?: string
           original_language?: string
           primary_author_id?: string
@@ -774,6 +813,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ebook_publications"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "books_default_content_language_fkey"
+            columns: ["default_content_language"]
+            isOneToOne: false
+            referencedRelation: "content_languages"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "books_original_language_fkey"
@@ -820,6 +866,39 @@ export type Database = {
             columns: ["bundle_id"]
             isOneToOne: false
             referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundle_editions: {
+        Row: {
+          bundle_id: string
+          edition_id: string
+          position: number
+        }
+        Insert: {
+          bundle_id: string
+          edition_id: string
+          position: number
+        }
+        Update: {
+          bundle_id?: string
+          edition_id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_editions_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_editions_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
             referencedColumns: ["id"]
           },
         ]
@@ -896,18 +975,21 @@ export type Database = {
       commerce_settings: {
         Row: {
           id: boolean
+          payable_currencies: string[]
           payment_provider: string
           payments_enabled: boolean
           updated_at: string
         }
         Insert: {
           id?: boolean
+          payable_currencies?: string[]
           payment_provider?: string
           payments_enabled?: boolean
           updated_at?: string
         }
         Update: {
           id?: boolean
+          payable_currencies?: string[]
           payment_provider?: string
           payments_enabled?: boolean
           updated_at?: string
@@ -1202,6 +1284,7 @@ export type Database = {
       ebook_publications: {
         Row: {
           ebook_asset_id: string
+          epub_language: string | null
           id: string
           manifest_key: string
           positions_json: Json | null
@@ -1212,6 +1295,7 @@ export type Database = {
         }
         Insert: {
           ebook_asset_id: string
+          epub_language?: string | null
           id?: string
           manifest_key: string
           positions_json?: Json | null
@@ -1222,6 +1306,7 @@ export type Database = {
         }
         Update: {
           ebook_asset_id?: string
+          epub_language?: string | null
           id?: string
           manifest_key?: string
           positions_json?: Json | null
@@ -1328,6 +1413,46 @@ export type Database = {
           },
         ]
       }
+      edition_default_offers: {
+        Row: {
+          edition_id: string
+          offer_id: string
+          sku_id: string
+        }
+        Insert: {
+          edition_id: string
+          offer_id: string
+          sku_id: string
+        }
+        Update: {
+          edition_id?: string
+          offer_id?: string
+          sku_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edition_default_offers_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: true
+            referencedRelation: "editions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edition_default_offers_offer_id_sku_id_fkey"
+            columns: ["offer_id", "sku_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id", "sku_id"]
+          },
+          {
+            foreignKeyName: "edition_default_offers_sku_id_edition_id_fkey"
+            columns: ["sku_id", "edition_id"]
+            isOneToOne: false
+            referencedRelation: "skus"
+            referencedColumns: ["id", "edition_id"]
+          },
+        ]
+      }
       edition_pricing_defaults: {
         Row: {
           currency: string
@@ -1359,30 +1484,49 @@ export type Database = {
       }
       editions: {
         Row: {
+          active_publication_id: string | null
           book_id: string
+          contributors: NonNullable<Json>
           edition_number: number
           id: string
+          introduction: string | null
           isbn: string | null
           language_code: string
           publication_date: string | null
+          status: Database["public"]["Enums"]["content_status"]
         }
         Insert: {
+          active_publication_id?: string | null
           book_id: string
+          contributors?: NonNullable<Json>
           edition_number?: number
           id?: string
+          introduction?: string | null
           isbn?: string | null
           language_code: string
           publication_date?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
         }
         Update: {
+          active_publication_id?: string | null
           book_id?: string
+          contributors?: NonNullable<Json>
           edition_number?: number
           id?: string
+          introduction?: string | null
           isbn?: string | null
           language_code?: string
           publication_date?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
         }
         Relationships: [
+          {
+            foreignKeyName: "editions_active_publication_id_fkey"
+            columns: ["active_publication_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_publications"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "editions_book_id_fkey"
             columns: ["book_id"]
@@ -1403,6 +1547,7 @@ export type Database = {
         Row: {
           actor_profile_id: string | null
           book_id: string
+          edition_id: string | null
           granted_at: string
           id: string
           profile_id: string
@@ -1415,6 +1560,7 @@ export type Database = {
         Insert: {
           actor_profile_id?: string | null
           book_id: string
+          edition_id?: string | null
           granted_at?: string
           id?: string
           profile_id: string
@@ -1427,6 +1573,7 @@ export type Database = {
         Update: {
           actor_profile_id?: string | null
           book_id?: string
+          edition_id?: string | null
           granted_at?: string
           id?: string
           profile_id?: string
@@ -1450,6 +1597,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entitlements_edition_book_fkey"
+            columns: ["edition_id", "book_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id", "book_id"]
           },
           {
             foreignKeyName: "entitlements_profile_id_fkey"
@@ -1733,6 +1887,7 @@ export type Database = {
         Row: {
           added_at: string
           book_id: string
+          edition_id: string | null
           entitlement_id: string
           id: string
           profile_id: string
@@ -1741,6 +1896,7 @@ export type Database = {
         Insert: {
           added_at?: string
           book_id: string
+          edition_id?: string | null
           entitlement_id: string
           id?: string
           profile_id: string
@@ -1749,6 +1905,7 @@ export type Database = {
         Update: {
           added_at?: string
           book_id?: string
+          edition_id?: string | null
           entitlement_id?: string
           id?: string
           profile_id?: string
@@ -1761,6 +1918,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_items_edition_book_fkey"
+            columns: ["edition_id", "book_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id", "book_id"]
           },
           {
             foreignKeyName: "library_items_entitlement_id_fkey"
@@ -2178,7 +2342,10 @@ export type Database = {
       order_items: {
         Row: {
           book_id: string
+          edition_id: string | null
           id: string
+          language_code: string | null
+          offer_id: string | null
           order_id: string
           position: number
           quantity: number
@@ -2188,7 +2355,10 @@ export type Database = {
         }
         Insert: {
           book_id: string
+          edition_id?: string | null
           id?: string
+          language_code?: string | null
+          offer_id?: string | null
           order_id: string
           position?: number
           quantity?: number
@@ -2198,7 +2368,10 @@ export type Database = {
         }
         Update: {
           book_id?: string
+          edition_id?: string | null
           id?: string
+          language_code?: string | null
+          offer_id?: string | null
           order_id?: string
           position?: number
           quantity?: number
@@ -2212,6 +2385,27 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_edition_book_fkey"
+            columns: ["edition_id", "book_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id", "book_id"]
+          },
+          {
+            foreignKeyName: "order_items_language_code_fkey"
+            columns: ["language_code"]
+            isOneToOne: false
+            referencedRelation: "content_languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "order_items_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
             referencedColumns: ["id"]
           },
           {
@@ -3165,6 +3359,7 @@ export type Database = {
     }
     Functions: {
       acquire_free_ebook: { Args: { p_book_id: string }; Returns: string }
+      acquire_free_edition: { Args: { p_edition_id: string }; Returns: string }
       activate_order_gift: { Args: { p_order_id: string }; Returns: boolean }
       admin_answer_question: {
         Args: { p_idea_id: string; p_question_id: string }
@@ -3248,12 +3443,31 @@ export type Database = {
         }
         Returns: string
       }
+      admin_create_edition: {
+        Args: {
+          p_book_id: string
+          p_edition_number: number
+          p_isbn: string
+          p_language_code: string
+          p_publication_date: string
+        }
+        Returns: string
+      }
       admin_create_idea: {
         Args: {
           p_locale: string
           p_question: string
           p_short_answer: string
           p_slug: string
+        }
+        Returns: string
+      }
+      admin_create_offer: {
+        Args: {
+          p_currency: string
+          p_edition_id: string
+          p_market_code: string
+          p_price_minor: number
         }
         Returns: string
       }
@@ -3409,6 +3623,18 @@ export type Database = {
         }
         Returns: string
       }
+      admin_save_edition: {
+        Args: {
+          p_contributors: Json
+          p_edition_id: string
+          p_edition_number: number
+          p_introduction: string
+          p_isbn: string
+          p_language_code: string
+          p_publication_date: string
+        }
+        Returns: undefined
+      }
       admin_save_entity_localization: {
         Args: {
           p_description: string
@@ -3534,6 +3760,18 @@ export type Database = {
           p_price_minor: number
         }
         Returns: string
+      }
+      admin_set_default_edition: {
+        Args: {
+          p_book_id: string
+          p_edition_id: string
+          p_language_code: string
+        }
+        Returns: undefined
+      }
+      admin_set_default_offer: {
+        Args: { p_edition_id: string; p_offer_id: string }
+        Returns: undefined
       }
       admin_set_home_hero: {
         Args: {
@@ -3810,6 +4048,7 @@ export type Database = {
       }
       complete_processing_job: {
         Args: {
+          p_epub_language?: string
           p_job_id: string
           p_manifest_key: string
           p_positions: Json
@@ -3859,6 +4098,14 @@ export type Database = {
       }
       create_bundle_order: { Args: { p_bundle_id: string }; Returns: string }
       create_ebook_order: { Args: { p_book_id: string }; Returns: string }
+      create_edition_order: {
+        Args: {
+          p_edition_id: string
+          p_expected_minor?: number
+          p_offer_id: string
+        }
+        Returns: string
+      }
       create_reader_session: {
         Args: { p_publication_id: string; p_ttl_seconds: number }
         Returns: {
@@ -3871,6 +4118,7 @@ export type Database = {
         Args: { p_locale: string; p_publication_id: string; p_quote: string }
         Returns: Json
       }
+      currency_is_payable: { Args: { p_currency: string }; Returns: boolean }
       delete_book_review: { Args: { p_book_id: string }; Returns: undefined }
       fail_notification_outbox: {
         Args: { p_error_code: string; p_id: string; p_lease_token: string }
@@ -3913,7 +4161,7 @@ export type Database = {
         }[]
       }
       grant_complimentary_entitlement: {
-        Args: { p_book_id: string; p_profile_id: string; p_reason: string }
+        Args: { p_edition_id: string; p_profile_id: string; p_reason: string }
         Returns: string
       }
       idea_readiness_issues: { Args: { p_idea_id: string }; Returns: string[] }
@@ -4015,6 +4263,26 @@ export type Database = {
         Args: { p_order_id: string; p_profile_id: string }
         Returns: string[]
       }
+      press_edition_backfill: { Args: { p_apply?: boolean }; Returns: Json }
+      press_grant_edition_access: {
+        Args: {
+          p_actor_profile_id: string
+          p_edition_id: string
+          p_profile_id: string
+          p_reason: string
+          p_source_order_id: string
+          p_source_type: Database["public"]["Enums"]["entitlement_source"]
+        }
+        Returns: string
+      }
+      press_move_edition_pointer: {
+        Args: { p_edition_id: string; p_publication_id: string }
+        Returns: string
+      }
+      publication_readiness_issues: {
+        Args: { p_publication_id: string }
+        Returns: string[]
+      }
       publish_article: { Args: { p_article_id: string }; Returns: undefined }
       publish_book: { Args: { p_book_id: string }; Returns: undefined }
       publish_bundle: { Args: { p_bundle_id: string }; Returns: undefined }
@@ -4050,6 +4318,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      reader_edition_for_publication: {
+        Args: { p_profile_id: string; p_publication_id: string }
+        Returns: string
       }
       reader_locator_is_valid: { Args: { p_locator: Json }; Returns: boolean }
       reader_percent_decode: { Args: { p_value: string }; Returns: string }

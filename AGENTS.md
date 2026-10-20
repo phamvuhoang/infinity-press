@@ -17,7 +17,7 @@ Infinity Books Press implements one complete ebook path on Next.js 16 and Supaba
 - An admin creates a book and uploads a private EPUB file.
 - The local EPUB worker validates, sanitizes, and processes the file.
 - An admin reviews a publication and publishes, rejects, or rolls it back.
-- A customer gets access through a free offer, a grant, a manual bank transfer, SePay, or the payment simulator.
+- A customer gets access through a free offer, a grant, a manual bank transfer (VND), or the payment simulator. Press has no SePay integration.
 - The customer library shows reading progress and opens the protected Readium reader.
 - The reader uses short sessions and saves progress through database functions.
 - Public and customer pages support Vietnamese, English, and Japanese. English is the default interface locale. `lib/i18n/config.ts` is the locale registry; `supported_locales` mirrors it in the database.

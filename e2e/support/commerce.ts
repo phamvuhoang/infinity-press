@@ -32,7 +32,7 @@ export async function enablePayments(): Promise<void> {
   await setCommerceSettings("simulator");
 }
 
-async function setCommerceSettings(provider: "simulator" | "manual" | "sepay"): Promise<void> {
+async function setCommerceSettings(provider: "simulator" | "manual"): Promise<void> {
   check(
     await createServiceRoleClient()
       .from("commerce_settings")
@@ -49,18 +49,6 @@ async function setCommerceSettings(provider: "simulator" | "manual" | "sepay"): 
 // without the other and orders are created under a provider nothing on the site can act on.
 export async function enableManualPayments(): Promise<void> {
   await setCommerceSettings("manual");
-}
-
-// The database half of the gate for SePay (S18). The app half is the third web server in
-// playwright.config.ts.
-export async function enableSepayPayments(): Promise<void> {
-  await setCommerceSettings("sepay");
-}
-
-// Switches only the database half, for a provider-switch regression. Restores through
-// enableSepayPayments in a finally.
-export async function setProviderForRegression(provider: "manual" | "sepay"): Promise<void> {
-  await setCommerceSettings(provider);
 }
 
 // The real authenticated create_ebook_order - the RPC the Buy button calls - as this reader, with

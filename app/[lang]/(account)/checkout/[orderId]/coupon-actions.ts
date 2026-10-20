@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/auth/session";
-import { singleBookOf } from "@/lib/commerce/checkout-view";
+import { readHrefOf, singleBookOf } from "@/lib/commerce/checkout-view";
 import {
   CouponRateLimitedError,
   CouponRejectedError,
@@ -15,7 +15,7 @@ import {
 } from "@/lib/commerce/coupon-order";
 import { getCustomerOrder } from "@/lib/data/orders";
 import { defaultLocale, isLocale, withLocale } from "@/lib/i18n/config";
-import { getCatalogRoutes, getCommerceRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
+import { getCommerceRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { getRequestId } from "@/lib/observability/request-id";
 
 // Every runtime export below is an async function: a non-function export from a "use server" module
@@ -69,7 +69,7 @@ export async function applyCouponAction(
   if (result.completed) {
     const order = await getCustomerOrder(orderId);
     const singleBook = order ? singleBookOf(order) : null;
-    if (singleBook) redirect(getCatalogRoutes(locale).read(singleBook.bookId));
+    if (singleBook) redirect(readHrefOf(locale, singleBook));
     if (order) redirect(getLocaleRoutes(locale).library);
     redirect(commerce.checkoutStatus(orderId));
   }

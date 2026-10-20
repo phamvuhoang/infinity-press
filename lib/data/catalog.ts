@@ -335,6 +335,19 @@ export async function getActiveEntitlementBookIds(
   return new Set((data ?? []).map((row) => row.book_id));
 }
 
+// Access is per edition. An order line that names an edition is owned only when THAT edition is held:
+// owning the English edition says nothing about the Japanese one.
+export async function getActiveEntitlementEditionIds(profileId: string): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("entitlements")
+    .select("edition_id")
+    .eq("profile_id", profileId)
+    .eq("status", "active");
+  if (error) throw await failure("getActiveEntitlementEditionIds", error);
+  return new Set((data ?? []).flatMap((row) => (row.edition_id ? [row.edition_id] : [])));
+}
+
 export async function getBookActionState(
   card: Pick<CatalogBookCard, "bookId" | "offer" | "hasActivePublication">,
 ): Promise<{ action: BookAction; signedIn: boolean }> {

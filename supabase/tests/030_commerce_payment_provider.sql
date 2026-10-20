@@ -47,9 +47,10 @@ where id = 'b2000000-0000-0000-0000-000000000001';
 -- The column (1-4)
 select col_not_null('public'::name, 'commerce_settings'::name, 'payment_provider'::name, 'payment_provider is not null');
 select is(
-  (select payment_provider from public.commerce_settings where id),
-  'simulator',
-  'the seeded settings row defaults to the simulator, so S3 behaviour is unchanged'
+  (select column_default from information_schema.columns
+    where table_schema = 'public' and table_name = 'commerce_settings' and column_name = 'payment_provider'),
+  '''manual''::text',
+  'Press books orders under the manual provider unless an environment says otherwise'
 );
 select throws_ok(
   $$ update public.commerce_settings set payment_provider = 'stripe' $$,

@@ -9,6 +9,7 @@ import {
   claimManualTransfer,
   confirmManualPayment,
   type ConfirmManualPaymentInput,
+  DuplicateBankReferenceError,
   MissingBankReferenceError,
   MissingDeclineReasonError,
   NotAClaimableOrderError,
@@ -144,6 +145,13 @@ describe("confirmManualPayment", () => {
         acceptMismatch: false,
       }),
     ).rejects.toMatchObject({ name: "AmountMismatchError", receivedMinor: 100000, expectedMinor: 129000 });
+  });
+
+  it("maps EB043 to DuplicateBankReferenceError", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      rpcClient({ data: null, error: { code: "EB043", message: "bank reference already used on another order" } }),
+    );
+    await expect(confirmManualPayment(orderId, input)).rejects.toBeInstanceOf(DuplicateBankReferenceError);
   });
 
   it("maps EB022 to NotAPendingManualOrderError", async () => {

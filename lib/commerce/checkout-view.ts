@@ -1,5 +1,7 @@
 import type { OrderState } from "@/lib/commerce/order-state";
 import { resolveManualTransferState } from "@/lib/commerce/manual-transfer-view";
+import { isLocale, localeRegistry, type Locale } from "@/lib/i18n/config";
+import { getCatalogRoutes } from "@/lib/i18n/routes";
 
 export type CheckoutStatusView = "success" | "failed" | "processing" | "cancelled";
 
@@ -93,4 +95,17 @@ export function checkoutAmounts(order: {
 // subject to open, name a cover after, or link back to.
 export function singleBookOf<Item>(order: { bundleId: string | null; items: Item[] }): Item | null {
   return order.bundleId === null && order.items.length === 1 ? order.items[0] : null;
+}
+
+// Where "Read now" goes for an order line: the edition that was bought, never the work. The work-level
+// link remains only for an order that predates editions.
+export function readHrefOf(locale: Locale, item: { bookId: string; editionId: string | null }): string {
+  const routes = getCatalogRoutes(locale);
+  return item.editionId ? routes.readEdition(item.editionId) : routes.read(item.bookId);
+}
+
+// "English", "日本語", or the bare code for a language the interface does not itself offer.
+export function editionLanguageLabel(code: string | null): string | null {
+  if (!code) return null;
+  return isLocale(code) ? localeRegistry[code].nativeName : code.toUpperCase();
 }

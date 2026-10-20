@@ -208,6 +208,9 @@
       "no-free-offer": "Sách này hiện không còn miễn phí.",
       "payments-unavailable": "Chức năng mua ebook chưa sẵn sàng.",
       "not-purchasable": "Hiện chưa thể mua sách này.",
+      "currency-unavailable": "Bản này chưa thể thanh toán bằng chuyển khoản ngân hàng.",
+      "choose-edition": "Hãy chọn một ấn bản để mua.",
+      "price-changed": "Giá đã thay đổi. Hãy xem giá mới và thử lại.",
       "unexpected": "Đã có lỗi xảy ra. Vui lòng thử lại."
     },
     "entity": {
@@ -308,12 +311,6 @@
       "invalid": "Không thể dùng mã này.",
       "rateLimited": "Bạn đã thử quá nhiều mã. Vui lòng đợi vài phút rồi thử lại.",
       "unavailable": "Đơn hàng này hiện không nhận mã khuyến mãi."
-    },
-    "sepay": {
-      "eyebrow": "Thanh toán",
-      "title": "Đang chuyển bạn đến SePay",
-      "description": "Bạn sẽ thanh toán bằng cách quét mã VietQR trong ứng dụng ngân hàng. Nếu trang không tự chuyển, hãy bấm nút bên dưới.",
-      "continue": "Tiếp tục đến SePay"
     },
     "simulate": {
       "eyebrow": "Trình giả lập thanh toán",

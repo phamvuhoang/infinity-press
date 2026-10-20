@@ -18,28 +18,18 @@ describe("payment provider selection", () => {
   });
 
   it("fails closed when payments are disabled", () => {
-    expect(() => getPaymentProvider({ appEnv: "production", paymentProvider: "disabled", simulatorSecret: null, sepay: null })).toThrow(
+    expect(() => getPaymentProvider({ appEnv: "production", paymentProvider: "disabled", simulatorSecret: null })).toThrow(
       PaymentProviderDisabledError,
     );
   });
 
   it("returns the simulator with its secret", () => {
-    const provider = getPaymentProvider({ appEnv: "test", paymentProvider: "simulator", simulatorSecret: "test-simulator-secret-0123456789abcdef", sepay: null });
+    const provider = getPaymentProvider({ appEnv: "test", paymentProvider: "simulator", simulatorSecret: "test-simulator-secret-0123456789abcdef" });
     expect(provider).toBeInstanceOf(SimulatorProvider);
   });
 
   it("builds a manual provider when PAYMENT_PROVIDER=manual, including in production", () => {
-    const provider = getPaymentProvider({ appEnv: "production", paymentProvider: "manual", simulatorSecret: null, sepay: null });
+    const provider = getPaymentProvider({ appEnv: "production", paymentProvider: "manual", simulatorSecret: null });
     expect(provider).toBeInstanceOf(ManualProvider);
-  });
-
-  it("returns the SePay provider, which sends Pay to the hand-off page", async () => {
-    const provider = getPaymentProvider({
-      appEnv: "test",
-      paymentProvider: "sepay",
-      simulatorSecret: null,
-      sepay: { merchantId: "M", secretKey: "s", env: "sandbox" },
-    });
-    expect(await provider.createSession({ orderId: "o1", locale: "vi" })).toEqual({ redirectUrl: "/vi/checkout/o1/sepay" });
   });
 });

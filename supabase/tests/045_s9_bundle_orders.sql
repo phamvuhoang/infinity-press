@@ -110,7 +110,7 @@ from t_ids, (values ('c2000000-0000-0000-0000-000000000001'::uuid), ('c2000000-0
 insert into public.entitlements (profile_id, book_id, source_type, actor_profile_id, reason, status)
 select d_id, 'c2000000-0000-0000-0000-000000000001', 'admin_grant', d_id, 's9 bundle order fixture', 'active' from t_ids;
 
-update public.commerce_settings set payments_enabled = true;
+update public.commerce_settings set payments_enabled = true, payment_provider = 'simulator';
 
 -- Privileges (1-2)
 select is(has_function_privilege('anon', 'public.create_bundle_order(uuid)', 'execute'), false, 'anon cannot create a bundle order');

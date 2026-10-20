@@ -8,7 +8,14 @@ import { acquireFreeOffer, EmailNotVerifiedError, NoFreeOfferError } from "@/lib
 import { trackEventBestEffort } from "@/lib/analytics/events";
 import { requireUser } from "@/lib/auth/session";
 import type { BookActionErrorCode } from "@/lib/catalog/action-error";
-import { AlreadyOwnedError, NotPurchasableError, PaymentsDisabledError } from "@/lib/commerce/errors";
+import {
+  AlreadyOwnedError,
+  CurrencyNotPayableError,
+  EditionRequiredError,
+  NotPurchasableError,
+  OfferChangedError,
+  PaymentsDisabledError,
+} from "@/lib/commerce/errors";
 import { createEbookOrder } from "@/lib/commerce/orders";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { defaultLocale, isLocale, type Locale, withLocale } from "@/lib/i18n/config";
@@ -89,6 +96,9 @@ function buyErrorCode(error: unknown): BookActionErrorCode {
   if (error instanceof EmailNotVerifiedError) return "email-not-verified";
   if (error instanceof PaymentsDisabledError) return "payments-unavailable";
   if (error instanceof NotPurchasableError) return "not-purchasable";
+  if (error instanceof CurrencyNotPayableError) return "currency-unavailable";
+  if (error instanceof EditionRequiredError) return "choose-edition";
+  if (error instanceof OfferChangedError) return "price-changed";
   return "unexpected";
 }
 

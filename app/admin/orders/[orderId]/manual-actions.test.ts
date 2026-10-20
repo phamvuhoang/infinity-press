@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { confirmManualPaymentAction, declineManualPaymentAction } from "@/app/admin/orders/[orderId]/manual-actions";
 import { requireAdmin } from "@/lib/auth/admin";
-import { AmountMismatchError, NotAPendingManualOrderError, confirmManualPayment, rejectManualPayment } from "@/lib/commerce/manual-payment";
+import { AmountMismatchError, DuplicateBankReferenceError, NotAPendingManualOrderError, confirmManualPayment, rejectManualPayment } from "@/lib/commerce/manual-payment";
 import { type AdminOrderDTO, getAdminOrder } from "@/lib/data/admin-orders";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -20,14 +20,21 @@ vi.mock("@/lib/commerce/manual-payment", () => {
     }
   }
   class NotAPendingManualOrderError extends Error {}
-  return { confirmManualPayment: vi.fn(), rejectManualPayment: vi.fn(), AmountMismatchError, NotAPendingManualOrderError };
+  class DuplicateBankReferenceError extends Error {}
+  return {
+    confirmManualPayment: vi.fn(),
+    rejectManualPayment: vi.fn(),
+    AmountMismatchError,
+    NotAPendingManualOrderError,
+    DuplicateBankReferenceError,
+  };
 });
 
 const { revalidatePath } = await import("next/cache");
 
 const ORDER_ID = "order-1";
 
-const order = { totalMinor: 129000 } as AdminOrderDTO;
+const order = { totalMinor: 129000, currency: "VND" } as AdminOrderDTO;
 
 function formDataOf(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -62,13 +69,13 @@ describe("confirmManualPaymentAction", () => {
       { status: "idle" },
       formDataOf({ amount: "129000.50", reference: "VCB-1" }),
     );
-    expect(state).toEqual({ status: "error", message: "Enter the received amount as a whole number." });
+    expect(state).toEqual({ status: "error", message: "Enter the received amount in the order's currency, without rounding." });
     expect(confirmManualPayment).not.toHaveBeenCalled();
   });
 
   it("rejects a negative amount", async () => {
     const state = await confirmManualPaymentAction(ORDER_ID, { status: "idle" }, formDataOf({ amount: "-1", reference: "VCB-1" }));
-    expect(state).toEqual({ status: "error", message: "Enter the received amount as a whole number." });
+    expect(state).toEqual({ status: "error", message: "Enter the received amount in the order's currency, without rounding." });
     expect(confirmManualPayment).not.toHaveBeenCalled();
   });
 
@@ -206,5 +213,28 @@ describe("declineManualPaymentAction", () => {
     await declineManualPaymentAction(ORDER_ID, { status: "idle" }, formDataOf({ reason: "No transfer found", outcome: "not_received" }));
     expect(revalidatePath).toHaveBeenCalledWith(`/admin/orders/${ORDER_ID}`);
     expect(revalidatePath).toHaveBeenCalledWith("/admin/payments");
+  });
+});
+
+describe("confirmManualPaymentAction in a currency with a minor unit", () => {
+  it("reads the typed amount in major units, exactly", async () => {
+    vi.mocked(getAdminOrder).mockResolvedValue({ totalMinor: 1999, currency: "USD" } as AdminOrderDTO);
+    await confirmManualPaymentAction(ORDER_ID, { status: "idle" }, formDataOf({ amount: "19.99", reference: "REF-1" }));
+    expect(confirmManualPayment).toHaveBeenCalledWith(ORDER_ID, expect.objectContaining({ receivedAmountMinor: 1999, expectedAmountMinor: 1999 }));
+  });
+
+  it("refuses a fraction the currency cannot hold", async () => {
+    vi.mocked(getAdminOrder).mockResolvedValue({ totalMinor: 500, currency: "JPY" } as AdminOrderDTO);
+    const state = await confirmManualPaymentAction(ORDER_ID, { status: "idle" }, formDataOf({ amount: "500.5", reference: "REF-1" }));
+    expect(state.status).toBe("error");
+    expect(confirmManualPayment).not.toHaveBeenCalled();
+  });
+});
+
+describe("confirmManualPaymentAction with a reference already used", () => {
+  it("says so instead of a generic failure", async () => {
+    vi.mocked(confirmManualPayment).mockRejectedValue(new DuplicateBankReferenceError());
+    const state = await confirmManualPaymentAction(ORDER_ID, { status: "idle" }, formDataOf({ amount: "129000", reference: "VCB-1" }));
+    expect(state).toEqual({ status: "error", message: "That bank reference is already recorded on another order." });
   });
 });

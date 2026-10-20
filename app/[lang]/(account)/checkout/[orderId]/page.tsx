@@ -10,7 +10,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
 import { formatPrice } from "@/lib/catalog/price";
-import { checkoutAmounts, singleBookOf } from "@/lib/commerce/checkout-view";
+import { checkoutAmounts, editionLanguageLabel, readHrefOf, singleBookOf } from "@/lib/commerce/checkout-view";
 import { getMyOrderGift } from "@/lib/commerce/gifts";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
@@ -19,7 +19,7 @@ import { getCustomerOrder } from "@/lib/data/orders";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { fillCountTemplate, fillTemplate } from "@/lib/i18n/format";
-import { getCatalogRoutes, getCommerceRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
+import { getCommerceRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 
 import { payOrderAction } from "./actions";
 import { applyCouponAction, removeCouponAction } from "./coupon-actions";
@@ -114,7 +114,10 @@ export default async function CheckoutPage({ params }: Props) {
             <div className="min-w-0 space-y-2">
               <p className="font-serif text-2xl leading-tight">{order.title}</p>
               {card ? <p className="text-sm text-ink-soft">{card.author.name}</p> : null}
-              <p className="text-sm text-sage-text">{dictionary.catalog.book.format}</p>
+              <p className="text-sm text-sage-text">
+                {dictionary.catalog.book.format}
+                {editionLanguageLabel(order.items[0].languageCode) ? ` · ${editionLanguageLabel(order.items[0].languageCode)}` : ""}
+              </p>
             </div>
           </section>
         )}
@@ -174,7 +177,7 @@ export default async function CheckoutPage({ params }: Props) {
               <p role="status">{order.bundleId ? bundleCopy.ownedAll : copy.alreadyOwned}</p>
               <Button
                 render={
-                  <Link href={singleBook ? getCatalogRoutes(locale).read(singleBook.bookId) : getLocaleRoutes(locale).library} />
+                  <Link href={singleBook ? readHrefOf(locale, singleBook) : getLocaleRoutes(locale).library} />
                 }
                 size="lg"
               >

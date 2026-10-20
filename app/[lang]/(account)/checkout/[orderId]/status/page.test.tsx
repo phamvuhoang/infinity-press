@@ -26,7 +26,7 @@ const order: CustomerOrderDTO = {
   id: ORDER_ID,
   bundleId: null,
   title: "A Book",
-  items: [{ bookId: "30000000-0000-4000-8000-000000000001", title: "A Book", hasActiveEntitlement: false }],
+  items: [{ bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "A Book", hasActiveEntitlement: false }],
   status: "pending",
   paymentStatus: "pending",
   totalMinor: 129000,
@@ -52,9 +52,9 @@ const bundleOrder: CustomerOrderDTO = {
   totalMinor: 300000,
   subtotalMinor: 300000,
   items: [
-    { bookId: "30000000-0000-4000-8000-000000000001", title: "First", hasActiveEntitlement: false },
-    { bookId: "30000000-0000-4000-8000-000000000002", title: "Second", hasActiveEntitlement: false },
-    { bookId: "30000000-0000-4000-8000-000000000003", title: "Third", hasActiveEntitlement: false },
+    { bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "First", hasActiveEntitlement: false },
+    { bookId: "30000000-0000-4000-8000-000000000002", editionId: null, languageCode: null, title: "Second", hasActiveEntitlement: false },
+    { bookId: "30000000-0000-4000-8000-000000000003", editionId: null, languageCode: null, title: "Third", hasActiveEntitlement: false },
   ],
 };
 
@@ -174,46 +174,5 @@ describe("CheckoutStatusPage", () => {
     expect(screen.queryByRole("link", { name: "Go to your library" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Read now" })).not.toBeInTheDocument();
     expect(screen.getByText("Your gift is on its way")).toBeInTheDocument();
-  });
-
-  describe("returning from SePay", () => {
-    const sepayOrder = { ...order, provider: "sepay", status: "pending", paymentStatus: "pending" } as CustomerOrderDTO;
-
-    beforeEach(() => {
-      vi.mocked(getServerEnv).mockReturnValue(env("sepay"));
-      vi.mocked(getCustomerOrder).mockResolvedValue(sepayOrder);
-    });
-
-    // The reader is usually back before SePay's notification arrives.
-    it("shows processing after a successful payment that has not been notified yet", async () => {
-      render(await CheckoutStatusPage({ params, searchParams: Promise.resolve({ sepay: "success" }) }));
-      expect(screen.getByRole("heading", { level: 1, name: "Processing your payment" })).toBeInTheDocument();
-    });
-
-    it.each(["cancel", "error"])("offers Try again after ?sepay=%s", async (value) => {
-      render(await CheckoutStatusPage({ params, searchParams: Promise.resolve({ sepay: value }) }));
-      expect(screen.getByRole("heading", { level: 1, name: "Payment did not go through" })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute("href", `/en/checkout/${ORDER_ID}`);
-    });
-
-    // The parameter picks a view for a pending order only. It is in the address bar, so a reload
-    // after the order completed must not hide the book.
-    it("ignores ?sepay=cancel once the order is completed", async () => {
-      vi.mocked(getCustomerOrder).mockResolvedValue({
-        ...sepayOrder,
-        status: "completed",
-        paymentStatus: "succeeded",
-        hasAllActiveEntitlements: true,
-      } as CustomerOrderDTO);
-      render(await CheckoutStatusPage({ params, searchParams: Promise.resolve({ sepay: "cancel" }) }));
-      expect(screen.getByRole("heading", { level: 1, name: "Payment complete" })).toBeInTheDocument();
-    });
-
-    it("ignores the parameter on an order from another provider", async () => {
-      vi.mocked(getServerEnv).mockReturnValue(env("simulator"));
-      vi.mocked(getCustomerOrder).mockResolvedValue({ ...sepayOrder, provider: "simulator" } as CustomerOrderDTO);
-      render(await CheckoutStatusPage({ params, searchParams: Promise.resolve({ sepay: "cancel" }) }));
-      expect(screen.getByRole("heading", { level: 1, name: "Processing your payment" })).toBeInTheDocument();
-    });
   });
 });

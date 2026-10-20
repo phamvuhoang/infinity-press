@@ -5,7 +5,14 @@ import { buyEbookAction, getFreeEbookAction } from "@/app/[lang]/(public)/books/
 import { acquireFreeOffer, EmailNotVerifiedError, NoFreeOfferError } from "@/lib/access/grant";
 import { trackEventBestEffort } from "@/lib/analytics/events";
 import { requireUser } from "@/lib/auth/session";
-import { AlreadyOwnedError, NotPurchasableError, PaymentsDisabledError } from "@/lib/commerce/errors";
+import {
+  AlreadyOwnedError,
+  CurrencyNotPayableError,
+  EditionRequiredError,
+  NotPurchasableError,
+  OfferChangedError,
+  PaymentsDisabledError,
+} from "@/lib/commerce/errors";
 import { createEbookOrder } from "@/lib/commerce/orders";
 import { getCurrentProfile } from "@/lib/data/profiles";
 
@@ -91,6 +98,9 @@ describe("buyEbookAction", () => {
     [new EmailNotVerifiedError(), "email-not-verified"],
     [new PaymentsDisabledError(), "payments-unavailable"],
     [new NotPurchasableError(), "not-purchasable"],
+    [new CurrencyNotPayableError(), "currency-unavailable"],
+    [new EditionRequiredError(), "choose-edition"],
+    [new OfferChangedError(), "price-changed"],
     [new Error("boom"), "unexpected"],
   ])("returns to the book with an error code (%s)", async (error, code) => {
     vi.mocked(createEbookOrder).mockRejectedValue(error);

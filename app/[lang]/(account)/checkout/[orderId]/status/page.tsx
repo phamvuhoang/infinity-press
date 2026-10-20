@@ -6,7 +6,7 @@ import { StatusAutoRefresh } from "@/components/commerce/status-auto-refresh";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
-import { checkoutStatusView, singleBookOf } from "@/lib/commerce/checkout-view";
+import { checkoutStatusView, editionLanguageLabel, readHrefOf, singleBookOf } from "@/lib/commerce/checkout-view";
 import { resolveManualTransferState } from "@/lib/commerce/manual-transfer-view";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
@@ -21,11 +21,10 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 type Props = {
   params: Promise<{ lang: string; orderId: string }>;
-  searchParams?: Promise<{ sepay?: string | string[] }>;
 };
 
 // Order status after a payment attempt (S3 spec 5.2 step 5). Everything shown comes from the database.
-export default async function CheckoutStatusPage({ params, searchParams }: Props) {
+export default async function CheckoutStatusPage({ params }: Props) {
   const { lang: locale, orderId } = await params;
   if (!isLocale(locale)) notFound();
   const commerce = getCommerceRoutes(locale);
@@ -81,15 +80,7 @@ export default async function CheckoutStatusPage({ params, searchParams }: Props
           })
         ]
       : checkoutStatusView(order);
-  // S18. SePay sends a reader who cancelled or hit an error back here with a marker. The order is
-  // still pending and nothing has failed in the database, so without this the page would say
-  // "processing" and offer no way back to checkout. The marker picks a VIEW for a pending SePay
-  // order and does nothing else: it is in the address bar, so it must never outrank the order.
-  const sepayReturn = (await searchParams)?.sepay;
-  const view =
-    baseView === "processing" && order.provider === "sepay" && (sepayReturn === "cancel" || sepayReturn === "error")
-      ? "failed"
-      : baseView;
+  const view = baseView;
   // S9. A gift purchaser deliberately receives no access: apply_payment_event routes a gift order
   // through activate_order_gift and grants the buyer nothing. So on a completed gift order the
   // reader owns none of its books, which is exactly what hasAllActiveEntitlements reports - no
@@ -134,6 +125,9 @@ export default async function CheckoutStatusPage({ params, searchParams }: Props
             for the whole purchase. */}
         <div className="mt-6 border-y border-hairline py-4">
           <p className="font-serif text-xl">{order.title}</p>
+          {!order.bundleId && editionLanguageLabel(order.items[0].languageCode) ? (
+            <p className="mt-1 text-sm text-sage-text">{editionLanguageLabel(order.items[0].languageCode)}</p>
+          ) : null}
           {order.bundleId ? (
             <p className="mt-1 text-sm text-sage-text">
               {fillCountTemplate(locale, order.items.length, {
@@ -149,7 +143,7 @@ export default async function CheckoutStatusPage({ params, searchParams }: Props
               completed bundle order keeps the library button below, which is where all of its books
               now are. */}
           {view === "success" && singleBook && order.hasAllActiveEntitlements ? (
-            <Button render={<Link href={catalog.read(singleBook.bookId)} />} size="lg">
+            <Button render={<Link href={readHrefOf(locale, singleBook)} />} size="lg">
               {dictionary.checkout.readNow}
             </Button>
           ) : null}

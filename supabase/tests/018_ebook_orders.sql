@@ -68,7 +68,7 @@ where b.id in (
   '5c000000-0000-0000-0000-000000000003', '5c000000-0000-0000-0000-000000000004'
 );
 
-update public.commerce_settings set payments_enabled = true;
+update public.commerce_settings set payments_enabled = true, payment_provider = 'simulator';
 
 -- Privileges (1-5)
 select is(has_function_privilege('anon', 'public.create_ebook_order(uuid)', 'execute'), false, 'anon cannot create an order');

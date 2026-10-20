@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPrice } from "@/lib/catalog/price";
+import { currencyExponent, minorFromMajorText } from "@/lib/commerce/money";
 
 const initialState: ManualDecisionState = { status: "idle" };
 
@@ -74,7 +75,7 @@ export function ManualPaymentDecision({
   // padded with whitespace, or non-numeric - never accidentally matches the banner by loose
   // coercion. Submitting a genuinely different amount simply asks the server again and gets a fresh
   // verdict; that path needs no special handling here.
-  const parsedAmount = /^\d+$/.test(amount.trim()) ? Number.parseInt(amount.trim(), 10) : null;
+  const parsedAmount = minorFromMajorText(amount, currency);
   const mismatch = confirmState.status === "mismatch" && parsedAmount === confirmState.receivedMinor ? confirmState : null;
   const confirmDisabled = confirmPending || (mismatch !== null && !mismatchAccepted);
 
@@ -96,7 +97,7 @@ export function ManualPaymentDecision({
               setMismatchAccepted(false);
             }}
             required
-            step={1}
+            step={10 ** -currencyExponent(currency)}
             type="number"
             value={amount}
           />

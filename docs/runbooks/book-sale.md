@@ -45,7 +45,7 @@ refused. Lower the sale first, or switch it to a percentage.
 
 - **Storefront** (book page, home page, cards): the sale price, then the list price smaller and
   struck through.
-- **Checkout, the simulator, the SePay hand-off, the manual transfer page**: the sale price only.
+- **Checkout, the simulator, the manual transfer page**: the sale price only.
   Checkout shows the order's snapshot, and that snapshot is the sale price.
 - **JSON-LD**: `price` is the sale price. A `priceSpecification` carries the list price as a
   `StrikethroughPrice`. If the sale has an end, `priceValidUntil` is set to the last UTC day the
@@ -83,10 +83,6 @@ There are two cases where this needs care:
 - **Manual transfer that the reader has already reported (pressed "I have transferred").** The order
   is kept, at the price the reader transferred. **Buy** takes them back to it, and you confirm it in
   `/admin/payments` as usual. This rule also applies when an admin edits the price.
-- **SePay.** An order that is still pending can still be paid through its old QR code, and it settles
-  at its own price. If the reader pressed **Buy** again first, the old order is already cancelled, so
-  a payment against it arrives as `paid a cancelled order` and needs manual reconciliation (see
-  [SePay payment](sepay-payment.md)).
 
 ## 7. Testing this locally
 

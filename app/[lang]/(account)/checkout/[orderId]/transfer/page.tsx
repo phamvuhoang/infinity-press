@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { requireUser } from "@/lib/auth/session";
 import { formatPrice } from "@/lib/catalog/price";
-import { buildVietQrImageUrl } from "@/lib/commerce/manual";
+import { buildVietQrImageUrl, MANUAL_TRANSFER_CURRENCIES } from "@/lib/commerce/manual";
 import { resolveManualTransferState } from "@/lib/commerce/manual-transfer-view";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getCustomerOrder } from "@/lib/data/orders";
@@ -54,6 +54,9 @@ export default async function CheckoutTransferPage({ params }: Props) {
   // that has left the manual provider has none to show. The status page explains the order.
   const env = getServerEnv();
   if (order.provider !== "manual" || env.paymentProvider !== "manual") redirect(commerce.checkoutStatus(order.id));
+  // Nor does a bank transfer settle any currency but dong. No order in another currency is created
+  // (create_edition_order refuses it), so reaching here means data we did not write; show no account.
+  if (!MANUAL_TRANSFER_CURRENCIES.includes(order.currency)) redirect(commerce.checkoutStatus(order.id));
 
   const dictionary = await getDictionary(locale);
   const copy = dictionary.checkout.transfer;

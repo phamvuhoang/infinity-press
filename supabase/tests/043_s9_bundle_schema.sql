@@ -157,7 +157,7 @@ select throws_ok(
 select lives_ok(
   $$insert into public.order_items (order_id, sku_id, book_id, title_snapshot, unit_price_minor, position)
     values ('b8000000-0000-0000-0000-000000000001', 'b5000000-0000-0000-0000-000000000001',
-            'b2000000-0000-0000-0000-000000000002', 'S9 Bundle Book 2', 0, 2)$$,
+            'b2000000-0000-0000-0000-000000000001', 'S9 Bundle Book 1', 0, 2)$$,
   'a second item of the same order takes the next position');
 
 -- An order is the record of what was sold, so the bundle behind it cannot be deleted out from

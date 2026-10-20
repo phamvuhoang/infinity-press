@@ -60,10 +60,6 @@ describe("localized route graph", () => {
     expect(getCommerceRoutes("vi").checkoutTransfer("abc")).toBe("/vi/checkout/abc/transfer");
   });
 
-  it("builds the SePay hand-off path", () => {
-    expect(getCommerceRoutes("vi").checkoutSepay("o1")).toBe("/vi/checkout/o1/sepay");
-  });
-
   it("builds knowledge hub routes under the locale", () => {
     expect(getKnowledgeRoutes("vi")).toEqual({
       ideas: "/vi/ideas",

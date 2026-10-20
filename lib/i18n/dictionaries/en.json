@@ -208,6 +208,9 @@
       "no-free-offer": "This book is no longer free.",
       "payments-unavailable": "Buying ebooks is not available yet.",
       "not-purchasable": "This book cannot be bought right now.",
+      "currency-unavailable": "This edition cannot be paid for by bank transfer yet.",
+      "choose-edition": "Choose an edition to buy.",
+      "price-changed": "The price changed. Check the new price and try again.",
       "unexpected": "Something went wrong. Please try again."
     },
     "entity": {
@@ -308,12 +311,6 @@
       "invalid": "This code cannot be used.",
       "rateLimited": "Too many codes have been tried. Wait a few minutes and try again.",
       "unavailable": "This order cannot take a code right now."
-    },
-    "sepay": {
-      "eyebrow": "Payment",
-      "title": "Taking you to SePay",
-      "description": "You will pay by scanning a VietQR code with your banking app. If nothing happens, use the button below.",
-      "continue": "Continue to SePay"
     },
     "simulate": {
       "eyebrow": "Payment simulator",

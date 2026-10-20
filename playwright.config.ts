@@ -8,11 +8,6 @@ import {
   bankTransferValue,
   manualServerPort,
   manualServerUrl,
-  type SepayName,
-  sepayDefaults,
-  sepayServerPort,
-  sepayServerUrl,
-  sepayValue,
   serverEnvironmentDefaults,
   serverEnvironmentValue,
   simulatorServerUrl,
@@ -77,17 +72,6 @@ const manualServerEnvironment = webServerEnvironment({
   ),
 });
 
-// S18. The same arrangement for SePay: PAYMENT_PROVIDER=sepay with sandbox credentials. SePay
-// itself is never contacted - the spec intercepts the browser's POST and plays SePay's part.
-const sepayServerEnvironment = webServerEnvironment({
-  PAYMENT_PROVIDER: "sepay",
-  SITE_URL: sepayServerUrl,
-  ...Object.fromEntries((Object.keys(sepayDefaults) as SepayName[]).map((name) => [name, sepayValue(name)])),
-});
-
-const sepaySpecs = ["**/sepay-payment.spec.ts"];
-const sepayProject = "chromium-sepay";
-
 // Every spec whose journey ends at the MANUAL provider. S9 adds the bundle purchase journey, whose
 // exit criterion is an admin confirming a bank transfer for a multi-item order, so it belongs to
 // the same project and the same server as the S7 spec rather than to a second arrangement.
@@ -122,7 +106,6 @@ function selectedProjects(argv: string[]): string[] {
 
 const selection = selectedProjects(process.argv.slice(2));
 const manualServerNeeded = selection.length === 0 || selection.includes(manualProject);
-const sepayServerNeeded = selection.length === 0 || selection.includes(sepayProject);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -132,7 +115,7 @@ export default defineConfig({
   // The manual specs are excluded here, and re-admitted only by the chromium-manual project
   // below: a project inherits this list unless it declares its own. Discovering a manual spec in
   // a simulator project would run that journey against the simulator server.
-  testIgnore: [...(process.env.E2E_VISUAL_PLATFORM ? [] : [visualSpec]), ...manualSpecs, ...sepaySpecs],
+  testIgnore: [...(process.env.E2E_VISUAL_PLATFORM ? [] : [visualSpec]), ...manualSpecs],
   fullyParallel: false,
   // Ruling BN. The fixtures create users, grant admin roles, publish books, and move one book's
   // active publication pointer - all against a single shared local stack with no teardown. Two
@@ -168,13 +151,6 @@ export default defineConfig({
       testMatch: manualSpecs,
       use: { ...devices["Desktop Chrome"], baseURL: manualServerUrl },
     },
-    // S18. The same arrangement as chromium-manual, for the SePay server.
-    {
-      name: sepayProject,
-      testIgnore: [],
-      testMatch: sepaySpecs,
-      use: { ...devices["Desktop Chrome"], baseURL: sepayServerUrl },
-    },
   ],
   // Playwright starts these in array order, each awaited before the next. That ordering is load
   // bearing: the first entry produces `.next`, and the second only starts a server from it. Two
@@ -206,18 +182,6 @@ export default defineConfig({
             reuseExistingServer: false,
             timeout: 60_000,
             env: manualServerEnvironment,
-          },
-        ]
-      : []),
-    ...(sepayServerNeeded
-      ? [
-          {
-            // Starts only - never builds. The first entry builds.
-            command: `npm run start -- --port ${sepayServerPort}`,
-            url: sepayServerUrl,
-            reuseExistingServer: false,
-            timeout: 60_000,
-            env: sepayServerEnvironment,
           },
         ]
       : []),

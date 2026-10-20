@@ -208,6 +208,9 @@
       "no-free-offer": "この作品はもう無料ではありません。",
       "payments-unavailable": "電子書籍の購入はまだご利用いただけません。",
       "not-purchasable": "この作品は現在購入できません。",
+      "currency-unavailable": "この版は現在、銀行振込でお支払いいただけません。",
+      "choose-edition": "購入する版を選んでください。",
+      "price-changed": "価格が変更されました。新しい価格をご確認のうえ、もう一度お試しください。",
       "unexpected": "問題が発生しました。もう一度お試しください。"
     },
     "entity": {
@@ -308,12 +311,6 @@
       "invalid": "このコードは使用できません。",
       "rateLimited": "コードの試行回数が多すぎます。しばらく待ってからもう一度お試しください。",
       "unavailable": "この注文には現在コードを適用できません。"
-    },
-    "sepay": {
-      "eyebrow": "お支払い",
-      "title": "SePay に移動しています",
-      "description": "銀行アプリで VietQR コードを読み取ってお支払いいただきます。何も起こらない場合は、下のボタンをご利用ください。",
-      "continue": "SePay に進む"
     },
     "simulate": {
       "eyebrow": "決済シミュレーター",
