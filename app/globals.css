@@ -1,0 +1,174 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Infinity Books design tokens (Claude Design project "Infinity Books", boards 1a/1b).
+ * Ivory ground, Ink text, Deep Forest for primary actions and links, Warm Sand hairlines
+ * instead of boxes, Quiet Gold at most once per screen. Muted text never goes lighter than
+ * Sage-text (#5F6E64), which is the AA-passing variant on Ivory.
+ */
+:root {
+  color-scheme: light;
+
+  --ivory: #f7f4ed;
+  --ink: #202421;
+  --ink-soft: #3a413d;
+  --forest: #34473e;
+  --forest-hover: #2a3a32;
+  --sage-text: #5f6e64;
+  --sage: #77877b;
+  --sand: #d8cbb9;
+  --hairline: #e4ded2;
+  --surface: #efeae0;
+  --gold: #b59a64;
+  --clay: #c58b77;
+  --parchment: #efe3c4;
+  --success: #4e6b58;
+  --error: #a2553f;
+
+  --background: var(--ivory);
+  --foreground: var(--ink);
+  --card: #fbf9f4;
+  --card-foreground: var(--ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--ink);
+  --primary: var(--forest);
+  --primary-foreground: var(--ivory);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface);
+  --muted-foreground: var(--sage-text);
+  --accent: var(--surface);
+  --accent-foreground: var(--ink);
+  --destructive: var(--error);
+  --border: var(--sand);
+  --input: var(--sand);
+  --ring: var(--forest);
+  --chart-1: var(--forest);
+  --chart-2: var(--sage);
+  --chart-3: var(--gold);
+  --chart-4: var(--clay);
+  --chart-5: var(--sand);
+  --radius: 0.25rem;
+  --sidebar: var(--ivory);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--forest);
+  --sidebar-primary-foreground: var(--ivory);
+  --sidebar-accent: var(--surface);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--hairline);
+  --sidebar-ring: var(--forest);
+
+  --shadow-cover: 0 12px 30px -18px rgb(32 36 33 / 0.5);
+  --shadow-cover-lg: 0 30px 60px -30px rgb(32 36 33 / 0.6);
+  --shadow-drawer: 0 20px 60px -30px rgb(32 36 33 / 0.45);
+  --ease-quiet: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@theme inline {
+  --font-sans: var(--font-be-vietnam-pro), "Noto Sans JP", system-ui, sans-serif;
+  --font-serif: var(--font-lora), "Noto Serif JP", Georgia, serif;
+  --font-heading: var(--font-serif);
+
+  --color-ivory: var(--ivory);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-forest: var(--forest);
+  --color-forest-hover: var(--forest-hover);
+  --color-sage-text: var(--sage-text);
+  --color-sage: var(--sage);
+  --color-sand: var(--sand);
+  --color-hairline: var(--hairline);
+  --color-surface: var(--surface);
+  --color-gold: var(--gold);
+  --color-clay: var(--clay);
+  --color-parchment: var(--parchment);
+  --color-success: var(--success);
+  --color-error: var(--error);
+
+  --shadow-cover: var(--shadow-cover);
+  --shadow-cover-lg: var(--shadow-cover-lg);
+  --shadow-drawer: var(--shadow-drawer);
+  --ease-quiet: var(--ease-quiet);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1rem;
+  --radius-4xl: 1.25rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    /* Tailwind's `outline-none` stores `none` in --tw-outline-style. Its later
+       `focus-visible:outline-2` utility reuses that variable, so controls carrying both classes
+       otherwise stay invisible to keyboard users. The global accessibility ring wins that
+       utility cascade for every interactive control. */
+    outline: 2px solid var(--ring) !important;
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--parchment);
+    color: var(--ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+}

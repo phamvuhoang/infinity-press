@@ -1,0 +1,56 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.worktrees/
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+/playwright-report/
+/test-results/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# private EPUB fixture corpus - never commit copyrighted source or derived
+# paid content; see fixtures/epub/README.md
+fixtures/epub/private/
+fixtures/epub/manifest.local.json
+
+# Belt-and-braces: the risk is extension-shaped, not just path-shaped - a
+# stray .epub anywhere else in the tree (e.g. `git add fixtures/epub` from a
+# misplaced file) must not become committable by accident. Re-admit a
+# deliberate public-domain fixture with a `!path/to/file.epub` negation.
+*.epub
+
+# superpowers SDD workspace (ledgers, briefs, review packages, scratch configs)
+.superpowers/
+
+ibcmd.txt
+

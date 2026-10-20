@@ -1,0 +1,654 @@
+{
+  "llms": {
+    "heading": "Tiếng Việt",
+    "intro": "Infinity Books xuất bản sách của Phương Bùi về tỉnh biết, tình yêu, gia đình, tiền bạc và hành động. Ebook đọc ngay trên trình duyệt tại đây; sách giấy bán tại Shopee, Fahasa và Tiki.",
+    "authors": "Tác giả",
+    "series": "Bộ sách",
+    "topics": "Chủ đề",
+    "listPrice": "giá gốc {price}",
+    "saleUntil": "đến {date}"
+  },
+  "navigation": {
+    "primary": "Điều hướng chính",
+    "account": "Tài khoản",
+    "signIn": "Đăng nhập",
+    "signOut": "Đăng xuất",
+    "skipToContent": "Chuyển đến nội dung chính",
+    "library": "Thư viện",
+    "switchLocale": "Read in English",
+    "switchLocaleShort": "EN",
+    "books": "Sách",
+    "search": "Tìm kiếm",
+    "ideas": "Ý tưởng",
+    "articles": "Bài viết"
+  },
+  "authentication": {
+    "email": "Email",
+    "password": "Mật khẩu",
+    "magicLink": {
+      "title": "Đăng nhập bằng email",
+      "description": "Chúng tôi sẽ gửi một liên kết bảo mật để bạn tiếp tục vào thư viện của mình.",
+      "submit": "Gửi liên kết đăng nhập bảo mật",
+      "pending": "Đang gửi liên kết bảo mật…"
+    },
+    "passwordSignIn": {
+      "title": "Đăng nhập dự phòng bằng mật khẩu",
+      "description": "Chỉ dùng đường dẫn nội bộ này khi bắt buộc phải đăng nhập bằng mật khẩu.",
+      "submit": "Đăng nhập bằng mật khẩu",
+      "pending": "Đang đăng nhập…",
+      "forgotPrompt": "Quên mật khẩu?",
+      "forgotLink": "Đặt lại mật khẩu"
+    },
+    "forgotPassword": {
+      "title": "Đặt lại mật khẩu",
+      "description": "Đăng nhập bằng mật khẩu là phương án dự phòng nội bộ, chỉ dành cho quản trị viên. Nếu tiếp tục, chúng tôi sẽ gửi liên kết khôi phục bảo mật đến email của bạn.",
+      "submit": "Gửi liên kết khôi phục",
+      "pending": "Đang gửi liên kết…",
+      "rememberPrompt": "Bạn đã nhớ mật khẩu?",
+      "backToSignIn": "Quay lại đăng nhập"
+    },
+    "updatePassword": {
+      "title": "Chọn mật khẩu mới",
+      "description": "Nhập mật khẩu mới hai lần để bảo vệ tài khoản của bạn.",
+      "newPassword": "Mật khẩu mới",
+      "confirmPassword": "Xác nhận mật khẩu mới",
+      "submit": "Cập nhật mật khẩu",
+      "pending": "Đang cập nhật mật khẩu…",
+      "restartPrompt": "Cần liên kết khác?",
+      "restartLink": "Khôi phục lại"
+    },
+    "alerts": {
+      "errorTitle": "Không thể tiếp tục",
+      "messageTitle": "Bước tiếp theo",
+      "errors": {
+        "callback": "Liên kết xác thực không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu liên kết mới.",
+        "credentials": "Email hoặc mật khẩu không đúng.",
+        "email": "Vui lòng nhập địa chỉ email hợp lệ.",
+        "magic-link": "Chúng tôi không thể gửi liên kết đăng nhập. Vui lòng thử lại.",
+        "password-length": "Mật khẩu phải có ít nhất 8 ký tự.",
+        "password-match": "Mật khẩu không khớp.",
+        "recovery": "Chúng tôi không thể gửi email khôi phục. Vui lòng thử lại.",
+        "staff-only": "Đăng nhập bằng mật khẩu chỉ dành cho tài khoản nhân viên. Vui lòng dùng liên kết đăng nhập qua email.",
+        "update": "Chúng tôi không thể cập nhật mật khẩu. Vui lòng yêu cầu liên kết khôi phục mới."
+      },
+      "messages": {
+        "check-email": "Hãy kiểm tra email và mở liên kết bảo mật để tiếp tục.",
+        "password-updated": "Mật khẩu của bạn đã được cập nhật."
+      }
+    }
+  },
+  "home": {
+    "eyebrow": "Ngôi nhà bền lâu cho người đọc",
+    "title": "Giữ gần bên những cuốn sách định hình thế giới của bạn.",
+    "description": "Infinity Books khởi đầu với một tài khoản cá nhân bảo mật, sẵn sàng trở thành ngôi nhà chu đáo cho hành trình đọc của bạn.",
+    "getStarted": "Bắt đầu",
+    "coverQuote": "Những câu chuyện không có hồi kết.",
+    "journeyTitle": "Tiếp tục\nhành trình",
+    "journeySteps": ["Nếu bạn đã đọc", "Hãy thử", "Rồi tới"],
+    "values": {
+      "calm": {
+        "title": "Bình an và vững chãi",
+        "copy": "Không phải sự vắng mặt của sóng gió, mà là khả năng đứng vững khi sóng tới."
+      },
+      "love": {
+        "title": "Tình yêu luôn ngập tràn",
+        "copy": "Tình yêu không phải thứ để tìm. Nó là điều còn lại khi ta ngừng che nó đi."
+      },
+      "abundance": {
+        "title": "Thịnh vượng trên mọi cấp độ",
+        "copy": "Tiền, thời gian, mối quan hệ, sức khoẻ. Đủ ở nơi này thì cũng đủ ở nơi khác."
+      }
+    },
+    "footerTagline": "Ngôi nhà mới cho những câu chuyện trường tồn.",
+    "featured": {
+      "eyebrow": "Sách nổi bật",
+      "sample": "Đọc thử",
+      "view": "Xem sách"
+    },
+    "topicsTitle": "Khám phá theo điều bạn đang quan tâm",
+    "topicsLink": "Tất cả chủ đề",
+    "shelfTitle": "Kệ sách\nInfinity",
+    "shelfDescription": "Sắp theo hành trình đọc, không theo doanh số. Bắt đầu từ cuốn đầu tiên, rồi đi tiếp tới tình yêu, gia đình, công việc.",
+    "authorEyebrow": "Tác giả",
+    "authorLink": "Khám phá tác phẩm của {name} →"
+  },
+  "catalog": {
+    "quoteCard": {
+      "eyebrow": "Trích dẫn từ",
+      "sharedFrom": "Chia sẻ từ Infinity Books",
+      "readSample": "Đọc thử",
+      "openBook": "Về cuốn sách"
+    },
+    "retail": {
+      "title": "Sách giấy",
+      "intro": "Mua bản in tại:",
+      "listPrice": "Giá niêm yết {price}",
+      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+    },
+    "browseAll": "Xem tất cả sách",
+    "featuredEyebrow": "Nổi bật",
+    "shelfTitle": "Trên kệ sách",
+    "books": {
+      "eyebrow": "Danh mục",
+      "title": "Tất cả sách",
+      "description": "Mọi cuốn sách bạn có thể đọc trên Infinity Books.",
+      "filtersTitle": "Lọc sách",
+      "topic": "Chủ đề",
+      "author": "Tác giả",
+      "series": "Bộ sách",
+      "price": "Giá",
+      "any": "Tất cả",
+      "free": "Miễn phí",
+      "paid": "Trả phí",
+      "sort": "Sắp xếp theo",
+      "sortFeatured": "Nổi bật",
+      "sortNewest": "Mới nhất",
+      "sortTitle": "Tên sách",
+      "apply": "Áp dụng",
+      "clear": "Xóa bộ lọc",
+      "countOne": "{count} cuốn sách",
+      "countOther": "{count} cuốn sách",
+      "emptyTitle": "Không có sách nào phù hợp với bộ lọc này."
+    },
+    "book": {
+      "by": "Tác giả",
+      "free": "Miễn phí",
+      "salePrice": "Giá khuyến mãi",
+      "listPrice": "Giá gốc",
+      "sample": "Đọc thử",
+      "audience": "Dành cho ai",
+      "keyIdeas": "Ý chính",
+      "faq": "Hỏi và đáp",
+      "topics": "Chủ đề",
+      "seriesPosition": "Cuốn {position} trong {series}",
+      "format": "Sách điện tử (EPUB, đọc trên web)",
+      "knowledgeTitle": "Ý tưởng và bài viết về cuốn sách này"
+    },
+    "reviews": {
+      "title": "Đánh giá từ độc giả",
+      "countOne": "{count} đánh giá",
+      "countOther": "{count} đánh giá",
+      "average": "Điểm trung bình",
+      "write": "Viết đánh giá",
+      "ask": "Hỏi tác giả",
+      "authorReply": "Phản hồi từ tác giả:",
+      "anonymousReader": "Độc giả",
+      "empty": "Chưa có đánh giá."
+    },
+    "bundle": {
+      "eyebrow": "Gói sách",
+      "itemCountOne": "{count} cuốn sách",
+      "itemCountOther": "{count} cuốn sách",
+      "includes": "Trong gói này",
+      "priceNote": "Một mức giá cho cả gói. Giá không đổi nếu bạn đã có sẵn một vài cuốn.",
+      "ownedSome": "Bạn đã có {owned} trong {total} cuốn của gói này.",
+      "ownedAll": "Bạn đã có tất cả sách trong gói này.",
+      "buy": "Mua gói sách",
+      "library": "Tới thư viện của bạn",
+      "empty": "Gói này hiện chưa có sách nào để hiển thị."
+    },
+    "actions": {
+      "read": "Đọc ngay",
+      "getFree": "Nhận miễn phí",
+      "buy": "Mua sách điện tử",
+      "comingSoon": "Sắp ra mắt",
+      "unavailable": "Chưa có sẵn",
+      "signInHint": "Bạn sẽ đăng nhập bằng email trước.",
+      "pending": "Đang xử lý…"
+    },
+    "actionErrors": {
+      "email-not-verified": "Hãy xác nhận email trước khi nhận sách này.",
+      "no-free-offer": "Sách này hiện không còn miễn phí.",
+      "payments-unavailable": "Chức năng mua ebook chưa sẵn sàng.",
+      "not-purchasable": "Hiện chưa thể mua sách này.",
+      "unexpected": "Đã có lỗi xảy ra. Vui lòng thử lại."
+    },
+    "entity": {
+      "author": "Tác giả",
+      "series": "Bộ sách",
+      "topic": "Chủ đề",
+      "booksTitle": "Sách",
+      "recommendationsTitle": "Sách liên quan",
+      "knowledgeTitle": "Ý tưởng và bài viết"
+    },
+    "search": {
+      "title": "Tìm kiếm",
+      "description": "Tìm sách, tác giả, ý tưởng, bài viết, bộ sách và chủ đề trên Infinity Books.",
+      "label": "Tìm sách, tác giả, ý tưởng, bài viết, bộ sách và chủ đề",
+      "placeholder": "Tên sách, tác giả hoặc chủ đề",
+      "submit": "Tìm",
+      "resultsFor": "Kết quả cho “{query}”",
+      "books": "Sách",
+      "authors": "Tác giả",
+      "ideas": "Ý tưởng",
+      "articles": "Bài viết",
+      "series": "Bộ sách",
+      "topics": "Chủ đề",
+      "emptyTitle": "Không tìm thấy kết quả cho “{query}”.",
+      "emptyHint": "Hãy kiểm tra chính tả, hoặc thử ít từ hơn.",
+      "promptTitle": "Bạn đang tìm gì?",
+      "promptHint": "Nhập ít nhất 2 ký tự."
+    }
+  },
+  "knowledge": {
+    "ideas": {
+      "eyebrow": "Kiến thức",
+      "title": "Ý tưởng",
+      "description": "Những câu trả lời ngắn cho các câu hỏi mà sách của chúng tôi đặt ra, cùng những cuốn sách giúp bạn đi xa hơn.",
+      "empty": "Chưa có ý tưởng nào được xuất bản.",
+      "otherTopic": "Khác"
+    },
+    "articles": {
+      "eyebrow": "Kiến thức",
+      "title": "Bài viết",
+      "description": "Những bài đọc dài hơn về sách, tác giả và các ý tưởng chung giữa chúng.",
+      "empty": "Chưa có bài viết nào được xuất bản."
+    },
+    "idea": {
+      "eyebrow": "Ý tưởng",
+      "shortAnswer": "Trả lời ngắn",
+      "relatedBooks": "Sách liên quan",
+      "relatedIdeas": "Ý tưởng liên quan",
+      "topics": "Chủ đề",
+      "ask": "Hỏi tác giả về điều này"
+    },
+    "article": {
+      "eyebrow": "Bài viết",
+      "by": "Tác giả",
+      "published": "Ngày xuất bản",
+      "updated": "Cập nhật",
+      "relatedBooks": "Sách liên quan",
+      "relatedIdeas": "Ý tưởng liên quan",
+      "topics": "Chủ đề"
+    }
+  },
+  "checkout": {
+    "eyebrow": "Thanh toán",
+    "title": "Xem lại đơn hàng",
+    "description": "Bạn đang mua một ebook cho tài khoản Infinity Books của mình.",
+    "total": "Tổng cộng",
+    "account": "Tài khoản",
+    "pay": "Thanh toán",
+    "paying": "Đang bắt đầu thanh toán…",
+    "previousFailed": "Lần thanh toán trước chưa thành công. Bạn có thể thử lại.",
+    "alreadyOwned": "Bạn đã sở hữu sách này.",
+    "readNow": "Đọc ngay",
+    "gift": {
+      "legend": "Gửi đơn hàng này làm quà tặng",
+      "description": "Chúng tôi sẽ gửi liên kết nhận quà qua email cho người bạn chỉ định. Bạn sẽ không nhận được quyền đọc của đơn hàng này - chỉ người đó mới nhận được.",
+      "emailLabel": "Email người nhận",
+      "messageLabel": "Lời nhắn (không bắt buộc)",
+      "save": "Lưu quà tặng",
+      "saving": "Đang lưu…",
+      "remove": "Bỏ quà tặng",
+      "removing": "Đang bỏ…",
+      "configured": "Đơn hàng này là quà tặng cho {email}. Chúng tôi sẽ gửi liên kết nhận quà cho họ ngay khi bạn thanh toán xong.",
+      "lockedTransfer": "Bạn đã báo chuyển khoản nên không thể thay đổi thông tin quà tặng nữa. Hãy liên hệ hỗ trợ nếu thông tin chưa đúng.",
+      "invalidEmail": "Vui lòng nhập địa chỉ email người nhận hợp lệ.",
+      "messageTooLong": "Vui lòng viết lời nhắn tối đa 500 ký tự.",
+      "unavailable": "Hiện không thể thiết lập quà tặng cho đơn hàng này."
+    },
+    "coupon": {
+      "legend": "Mã khuyến mãi",
+      "label": "Nhập mã",
+      "apply": "Áp dụng",
+      "applying": "Đang áp dụng…",
+      "remove": "Gỡ mã",
+      "removing": "Đang gỡ…",
+      "subtotal": "Tạm tính",
+      "discount": "Giảm giá",
+      "applied": "Đã áp dụng mã {code}.",
+      "invalid": "Không thể dùng mã này.",
+      "rateLimited": "Bạn đã thử quá nhiều mã. Vui lòng đợi vài phút rồi thử lại.",
+      "unavailable": "Đơn hàng này hiện không nhận mã khuyến mãi."
+    },
+    "sepay": {
+      "eyebrow": "Thanh toán",
+      "title": "Đang chuyển bạn đến SePay",
+      "description": "Bạn sẽ thanh toán bằng cách quét mã VietQR trong ứng dụng ngân hàng. Nếu trang không tự chuyển, hãy bấm nút bên dưới.",
+      "continue": "Tiếp tục đến SePay"
+    },
+    "simulate": {
+      "eyebrow": "Trình giả lập thanh toán",
+      "title": "Giả lập kết quả thanh toán",
+      "description": "Trang này chỉ có trong môi trường thử nghiệm. Chọn kết quả mà nhà cung cấp thanh toán gửi về.",
+      "succeed": "Thành công",
+      "fail": "Thất bại",
+      "cancel": "Hủy",
+      "duplicate": "Gửi trùng lặp",
+      "sending": "Đang gửi…"
+    },
+    "status": {
+      "eyebrow": "Trạng thái đơn hàng",
+      "processingTitle": "Đang xử lý thanh toán",
+      "processingBody": "Trang này sẽ tự cập nhật trong giây lát.",
+      "checkAgain": "Kiểm tra lại",
+      "awaitingTransferTitle": "Chờ bạn chuyển khoản",
+      "awaitingTransferBody": "Đơn hàng đã được tạo. Hãy chuyển khoản theo hướng dẫn để hoàn tất.",
+      "awaitingConfirmationTitle": "Đang chờ xác nhận",
+      "awaitingConfirmationBody": "Chúng tôi đã nhận báo chuyển khoản và sẽ mở quyền đọc ngay khi đối soát xong.",
+      "transferInstructions": "Xem hướng dẫn chuyển khoản",
+      "successTitle": "Thanh toán thành công",
+      "successBody": "Ebook của bạn đã có trong thư viện.",
+      "successGiftTitle": "Món quà đang trên đường",
+      "successGiftBody": "Thanh toán đã hoàn tất. Chúng tôi đã gửi liên kết nhận quà đến người bạn chọn, nên cuốn ebook này không nằm trong thư viện của bạn.",
+      "failedTitle": "Thanh toán chưa thành công",
+      "failedBody": "Giao dịch chưa hoàn tất. Bạn có thể thử lại.",
+      "tryAgain": "Thử lại",
+      "declinedTitle": "Chưa nhận được chuyển khoản",
+      "declinedBody": "Lý do: {reason}. Bạn có thể chuyển lại và báo cho chúng tôi.",
+      "unavailableTitle": "Đơn hàng này không thể thanh toán nữa",
+      "unavailableBody": "Phương thức thanh toán dùng để tạo đơn hàng này không còn khả dụng. Vui lòng đặt đơn mới từ trang sách.",
+      "paymentsOffTitle": "Thanh toán đang tạm dừng",
+      "paymentsOffBody": "Hiện chúng tôi tạm ngưng nhận thanh toán. Đơn hàng của bạn vẫn còn, bạn có thể quay lại khi thanh toán mở lại.",
+      "cancelledTitle": "Đơn hàng đã hủy",
+      "cancelledBody": "Đơn hàng này đã bị hủy.",
+      "backToBook": "Quay lại trang sách",
+      "library": "Đến thư viện"
+    },
+    "transfer": {
+      "eyebrow": "Chuyển khoản",
+      "title": "Chuyển khoản để hoàn tất",
+      "description": "Chuyển đúng số tiền và ghi đúng nội dung bên dưới. Chúng tôi xác nhận trong giờ làm việc.",
+      "bankName": "Ngân hàng",
+      "accountNumber": "Số tài khoản",
+      "accountHolder": "Chủ tài khoản",
+      "amount": "Số tiền",
+      "reference": "Nội dung chuyển khoản",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép",
+      "copyAriaLabel": "Sao chép nội dung chuyển khoản {reference}",
+      "qrAlt": "Mã QR chuyển khoản cho đơn hàng {reference}",
+      "noteLabel": "Ghi chú cho chúng tôi (không bắt buộc)",
+      "claim": "Tôi đã chuyển khoản",
+      "claiming": "Đang gửi…",
+      "claimedTitle": "Đã nhận báo chuyển khoản",
+      "claimedBody": "Chúng tôi sẽ đối soát và mở quyền đọc cho bạn ngay khi xác nhận được.",
+      "declinedTitle": "Chưa nhận được chuyển khoản",
+      "declinedBody": "Lý do: {reason}. Bạn có thể chuyển lại và báo cho chúng tôi.",
+      "unavailable": "Không lấy được thông tin chuyển khoản. Vui lòng liên hệ hỗ trợ."
+    }
+  },
+  "orders": {
+    "navLabel": "Đơn hàng",
+    "eyebrow": "Tài khoản của bạn",
+    "title": "Đơn hàng",
+    "description": "Các ebook bạn đã nhận hoặc đã mua.",
+    "emptyTitle": "Chưa có đơn hàng",
+    "emptyBody": "Sách bạn nhận hoặc mua sẽ xuất hiện ở đây.",
+    "browse": "Xem sách",
+    "listLabel": "Đơn hàng của bạn",
+    "free": "Miễn phí",
+    "placedOn": "Đặt ngày {date}",
+    "total": "Tổng cộng",
+    "status": "Trạng thái",
+    "detailEyebrow": "Đơn hàng",
+    "continueCheckout": "Tiếp tục thanh toán",
+    "transferInstructions": "Xem hướng dẫn chuyển khoản",
+    "viewStatus": "Xem trạng thái đơn hàng",
+    "declinedTitle": "Chưa nhận được chuyển khoản",
+    "declinedBody": "Lý do: {reason}. Bạn có thể chuyển lại và báo cho chúng tôi.",
+    "read": "Đọc ngay",
+    "statuses": {
+      "completed": "Hoàn tất",
+      "awaitingPayment": "Chờ thanh toán",
+      "awaitingTransfer": "Chờ chuyển khoản",
+      "awaitingConfirmation": "Đang chờ xác nhận",
+      "paymentFailed": "Thanh toán thất bại",
+      "cancelled": "Đã hủy"
+    }
+  },
+  "account": {
+    "eyebrow": "Tài khoản của bạn",
+    "title": "Chào mừng đến với Infinity Books",
+    "description": "Tài khoản bảo mật của bạn đã sẵn sàng. Thư viện và các tính năng đọc sẽ xuất hiện tại đây khi Infinity Books phát triển.",
+    "detailsTitle": "Thông tin tài khoản",
+    "detailsDescription": "Email được liên kết với tài khoản của bạn."
+  },
+  "library": {
+    "eyebrow": "Thư viện của bạn",
+    "title": "Tiếp tục đọc từ nơi bạn dừng lại",
+    "description": "Những cuốn sách bạn mở khóa sẽ xuất hiện tại đây.",
+    "emptyStateTitle": "Chưa có sách nào",
+    "emptyStateDescription": "Khi bạn mở khóa một cuốn sách, nó sẽ xuất hiện trong thư viện của bạn. Danh mục sách sẽ ra mắt trong giai đoạn tiếp theo của Infinity Books.",
+    "continueReading": "Tiếp tục đọc",
+    "progressLabel": "đã đọc",
+    "states": {
+      "unread": "Chưa bắt đầu",
+      "reading": "Đang đọc",
+      "completed": "Đã đọc xong"
+    },
+    "shelfTitle": "Sách của tôi",
+    "lastRead": "Đọc gần nhất",
+    "recommendationsTitle": "Có thể bạn thích",
+    "review": "Đánh giá",
+    "quotes": {
+      "eyebrow": "Thư viện của bạn",
+      "title": "Trích dẫn đã chia sẻ",
+      "description": "Những trích dẫn bạn đã chia sẻ từ sách của mình. Mỗi trích dẫn là một trang công khai cho đến khi bạn xoá.",
+      "empty": "Bạn chưa chia sẻ trích dẫn nào. Chọn đoạn văn trong trình đọc và bấm Chia sẻ.",
+      "copyLink": "Sao chép liên kết",
+      "copied": "Đã sao chép",
+      "remove": "Xoá",
+      "views": "Lượt xem: {count}",
+      "link": "Trích dẫn đã chia sẻ"
+    },
+    "reviews": {
+      "eyebrow": "Đánh giá của bạn",
+      "ratingLabel": "Số sao",
+      "bodyLabel": "Nhận xét",
+      "counter": "{count}/1000",
+      "save": "Lưu đánh giá",
+      "delete": "Xoá đánh giá",
+      "notOwned": "Bạn cần sở hữu cuốn sách này để đánh giá.",
+      "backToBook": "Về trang sách",
+      "states": {
+        "pending": "Đang chờ duyệt",
+        "published": "Đã đăng",
+        "rejected": "Không được đăng"
+      },
+      "authorReply": "Phản hồi từ tác giả",
+      "errors": {
+        "notEntitled": "Bạn cần sở hữu cuốn sách này để đánh giá.",
+        "failed": "Không lưu được. Thử lại.",
+        "rating": "Chọn số sao từ 1 đến 5.",
+        "body": "Viết nhận xét của bạn (tối đa 1000 ký tự, không dùng HTML)."
+      },
+      "saved": "Đã lưu. Đánh giá sẽ hiện sau khi được duyệt."
+    },
+    "questions": {
+      "title": "Hỏi tác giả",
+      "about": "Về: {title}",
+      "bodyLabel": "Câu hỏi của bạn",
+      "counter": "{count}/500",
+      "send": "Gửi câu hỏi",
+      "sent": "Đã gửi. Nếu tác giả trả lời, bạn sẽ nhận được email.",
+      "mineTitle": "Câu hỏi của bạn",
+      "readAnswer": "Đọc câu trả lời",
+      "states": {
+        "new": "Đang chờ",
+        "answered": "Đã trả lời",
+        "archived": "Đã lưu trữ"
+      },
+      "errors": {
+        "tooMany": "Bạn đang có 5 câu hỏi chờ trả lời. Hãy đợi tác giả trả lời trước.",
+        "targetMissing": "Nội dung này không còn tồn tại.",
+        "failed": "Không gửi được. Thử lại.",
+        "body": "Hãy viết câu hỏi (tối đa 500 ký tự, không dùng HTML).",
+        "target": "Hãy chọn một cuốn sách hoặc một ý tưởng để hỏi."
+      }
+    }
+  },
+  "gifts": {
+    "claim": {
+      "eyebrow": "Quà tặng",
+      "title": "Quà tặng của bạn",
+      "addedTitle": "Đã thêm vào thư viện của bạn",
+      "ownedTitle": "Đã có sẵn trong thư viện của bạn",
+      "currentNote": "Đây là những gì quà tặng này đang có trong thư viện của bạn ngay lúc này, không phải bản ghi của thời điểm bạn nhận quà.",
+      "empty": "Hiện chưa có sách nào từ quà tặng này trong thư viện của bạn. Nếu điều này bất thường, vui lòng liên hệ hỗ trợ.",
+      "library": "Đến thư viện của bạn",
+      "refusedTitle": "Không thể dùng liên kết quà tặng này",
+      "refusedBody": "Không thể dùng liên kết này để nhận quà. Hãy hỏi người đã gửi cho bạn một liên kết mới."
+    }
+  },
+  "reader": {
+    "title": "Trình đọc",
+    "backToLibrary": "Quay lại thư viện",
+    "loading": "Đang mở cuốn sách này…",
+    "failed": "Không thể mở cuốn sách này.",
+    "retry": "Thử lại",
+    "nextPage": "Trang sau",
+    "previousPage": "Trang trước",
+    "saveFailed": "Chúng tôi chưa lưu được vị trí đọc của bạn. Vị trí vẫn còn ở đây — bạn có thể thử lại.",
+    "saveRetry": "Lưu vị trí đọc",
+    "progressLabel": "đã đọc",
+    "settings": "Cài đặt đọc",
+    "settingsTitle": "Cài đặt đọc",
+    "fontSize": "Cỡ chữ",
+    "decreaseFontSize": "Chữ nhỏ hơn",
+    "increaseFontSize": "Chữ lớn hơn",
+    "font": "Phông chữ",
+    "fonts": {
+      "publisher": "Mặc định của sách",
+      "serif": "Lora",
+      "sans": "Không chân"
+    },
+    "lineHeight": "Giãn dòng",
+    "lineHeights": {
+      "tight": "Hẹp",
+      "normal": "Vừa",
+      "loose": "Rộng"
+    },
+    "width": "Độ rộng cột chữ",
+    "widths": {
+      "narrow": "Hẹp",
+      "medium": "Vừa",
+      "wide": "Rộng"
+    },
+    "theme": "Giao diện",
+    "themes": {
+      "light": "Sáng",
+      "sepia": "Giấy",
+      "dark": "Tối"
+    },
+    "contents": "Mục lục",
+    "contentsTitle": "Mục lục",
+    "contentsEmpty": "Sách này không có mục lục.",
+    "close": "Đóng",
+    "lostAccessSignedOut": "Bạn đã đăng xuất. Hãy đăng nhập lại để tiếp tục đọc.",
+    "lostAccessRevoked": "Bạn không còn quyền đọc sách này.",
+    "signIn": "Đăng nhập",
+    "goToLibrary": "Tới thư viện của tôi",
+    "finishedTitle": "Bạn đã đọc xong cuốn sách này.",
+    "finishedBody": "Sách đã được đánh dấu là đã đọc xong trong thư viện của bạn.",
+    "dismiss": "Đọc tiếp",
+    "sampleEndTitle": "Phần đọc thử đã kết thúc.",
+    "sampleEndBody": "Hãy nhận sách đầy đủ để đọc tiếp.",
+    "backToBook": "Quay lại trang sách",
+    "sampleUnavailable": "Hiện chưa thể mở phần đọc thử này.",
+    "bookmarks": "Dấu trang",
+    "notes": "Ghi chú",
+    "highlights": "Đoạn đánh dấu",
+    "unavailable": "Không khả dụng",
+    "delete": "Xóa",
+    "addBookmark": "Thêm dấu trang",
+    "editBookmark": "Sửa dấu trang",
+    "bookmarkLabel": "Nhãn dấu trang",
+    "bookmarkFallback": "Dấu trang",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "note": "Ghi chú",
+    "editNote": "Sửa ghi chú",
+    "yellow": "Vàng",
+    "green": "Xanh lá",
+    "rose": "Hồng",
+    "highlightYellow": "Vàng",
+    "highlightGreen": "Xanh lá",
+    "highlightRose": "Hồng",
+    "addNote": "Thêm ghi chú",
+    "copy": "Sao chép",
+    "share": "Chia sẻ",
+    "askInfinity": "Hỏi Infinity",
+    "comingSoon": "Sắp ra mắt",
+    "copied": "Đã sao chép",
+    "copyFailed": "Không thể sao chép trích dẫn",
+    "shareCancelled": "Đã hủy chia sẻ",
+    "quoteTruncated": "Trích dẫn được rút gọn còn 300 ký tự",
+    "annotationTooLong": "Chọn tối đa 1.000 ký tự để tô sáng hoặc thêm ghi chú. Bạn vẫn có thể sao chép hoặc chia sẻ phần đã chọn.",
+    "shareUnavailable": "Không thể chia sẻ; đã sao chép thay thế.",
+    "shareCreated": "Đã tạo trang trích dẫn công khai. Bạn có thể xoá trong Thư viện.",
+    "sharePublic": "Chia sẻ sẽ tạo một trang trích dẫn công khai, bạn có thể xoá trong Thư viện.",
+    "emptyBookmarks": "Chưa có dấu trang.",
+    "emptyNotes": "Chưa có ghi chú.",
+    "loadingSavedItems": "Đang tải các mục đã lưu…",
+    "search": "Tìm trong sách",
+    "searchPlaceholder": "Tìm từ hoặc cụm từ",
+    "searchPrompt": "Nhập ít nhất 2 ký tự.",
+    "searching": "Đang tìm…",
+    "searchEmpty": "Không tìm thấy kết quả.",
+    "searchFailed": "Hiện không thể tìm kiếm trong sách.",
+    "untitledChapter": "Chương không có tiêu đề",
+    "annotationsFailed": "Hiện chưa thể tải các mục đã lưu.",
+    "locationUnavailable": "Không tìm thấy vị trí.",
+    "page": "Trang",
+    "pages": "trang",
+    "searchOpen": "Tìm trong sách",
+    "menu": "Trình đơn đọc",
+    "onePage": "Một trang",
+    "twoPages": "Hai trang",
+    "relatedBooks": "Đọc tiếp",
+    "noRelatedBooks": "Chưa có gợi ý sách.",
+    "rateBook": "Đánh giá sách",
+    "askAuthor": "Hỏi tác giả"
+  },
+  "forbidden": {
+    "title": "Không có quyền truy cập",
+    "description": "Bạn không có quyền xem trang này.",
+    "backHome": "Về trang chủ"
+  },
+  "email": {
+    "bookReady": {
+      "subjectWithTitle": "Sách của bạn đã sẵn sàng: {title}",
+      "subjectGeneric": "Cuốn sách mới của bạn đã sẵn sàng",
+      "greetingNamed": "Chào {name},",
+      "greetingGeneric": "Xin chào,",
+      "readyWithTitle": "“{title}” đã có trong thư viện Infinity Books của bạn và sẵn sàng để đọc.",
+      "readyGeneric": "Cuốn sách mới đã có trong thư viện Infinity Books của bạn và sẵn sàng để đọc.",
+      "openLibrary": "Mở thư viện của bạn",
+      "signOff": "Chúc bạn đọc sách vui vẻ,\nInfinity Books"
+    },
+    "giftClaim": {
+      "subjectFromName": "{name} đã gửi tặng bạn một món quà trên Infinity Books",
+      "subjectGeneric": "Bạn được tặng một món quà trên Infinity Books",
+      "greeting": "Xin chào,",
+      "introNamed": "{name} đã gửi tặng bạn một món quà trên Infinity Books.",
+      "introGeneric": "Một người đã gửi tặng bạn một món quà trên Infinity Books.",
+      "messageLabel": "Lời nhắn:",
+      "includesLabel": "Món quà của bạn gồm:",
+      "claim": "Mở món quà của bạn",
+      "claimHint": "Mở liên kết và đăng nhập - hoặc tạo tài khoản - để thêm sách vào thư viện của bạn. Liên kết chỉ dùng được một lần.",
+      "signOff": "Chúc bạn đọc sách vui vẻ,\nInfinity Books"
+    },
+    "questionAnswered": {
+      "subject": "Tác giả đã trả lời câu hỏi của bạn",
+      "greetingNamed": "Chào {name},",
+      "greetingGeneric": "Chào bạn,",
+      "body": "Câu hỏi bạn gửi trên Infinity Books đã được trả lời trong bài: “{title}”.",
+      "read": "Đọc câu trả lời",
+      "signOff": "Chúc bạn đọc vui,\nInfinity Books"
+    },
+    "reviewReplied": {
+      "subjectWithTitle": "Tác giả đã phản hồi đánh giá của bạn về “{title}”",
+      "subjectGeneric": "Tác giả đã phản hồi đánh giá của bạn",
+      "greetingNamed": "Chào {name},",
+      "greetingGeneric": "Chào bạn,",
+      "introWithTitle": "Tác giả đã phản hồi đánh giá bạn viết về “{title}” trên Infinity Books.",
+      "introGeneric": "Tác giả đã phản hồi đánh giá bạn viết trên Infinity Books.",
+      "yourReview": "Đánh giá của bạn ({rating}/5):",
+      "authorReply": "Phản hồi từ tác giả:",
+      "open": "Mở đánh giá của bạn",
+      "signOff": "Chúc bạn đọc vui,\nInfinity Books"
+    }
+  }
+}

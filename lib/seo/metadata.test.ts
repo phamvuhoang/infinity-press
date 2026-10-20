@@ -1,0 +1,112 @@
+import { describe, expect, it } from "vitest";
+
+import { absoluteUrl, buildPageMetadata, DEFAULT_OG_IMAGE, localePaths } from "@/lib/seo/metadata";
+
+const siteUrl = "https://books.example";
+
+describe("absoluteUrl", () => {
+  it("joins the site origin and a path", () => {
+    expect(absoluteUrl(siteUrl, "/vi/books")).toBe("https://books.example/vi/books");
+  });
+
+  it("drops query strings and fragments so filters, searches, and errors never reach a canonical", () => {
+    expect(absoluteUrl(siteUrl, "/en/books?topic=poetry&sort=title")).toBe("https://books.example/en/books");
+    expect(absoluteUrl(siteUrl, "/en/search?q=harbour")).toBe("https://books.example/en/search");
+    expect(absoluteUrl(siteUrl, "/vi/books/a?action-error=x#top")).toBe("https://books.example/vi/books/a");
+  });
+
+  it("ignores any path already on the site URL", () => {
+    expect(absoluteUrl("https://books.example/", "/vi")).toBe("https://books.example/vi");
+  });
+});
+
+describe("localePaths", () => {
+  it("keeps only the current locale when the entity has no localization in the other one", () => {
+    expect(localePaths("vi", "/vi/books/a", null)).toEqual({ vi: "/vi/books/a" });
+  });
+
+  it("adds the other locale when a localization exists", () => {
+    expect(localePaths("en", "/en/books/a", "/vi/books/b")).toEqual({ en: "/en/books/a", vi: "/vi/books/b" });
+  });
+});
+
+describe("buildPageMetadata", () => {
+  it("sets an absolute canonical and both locale alternates for a fixed page", () => {
+    const metadata = buildPageMetadata({
+      siteUrl,
+      locale: "vi",
+      paths: { vi: "/vi/books", en: "/en/books" },
+      title: "Sách",
+    });
+    expect(metadata.alternates).toEqual({
+      canonical: "https://books.example/vi/books",
+      languages: {
+        vi: "https://books.example/vi/books",
+        en: "https://books.example/en/books",
+        "x-default": "https://books.example/vi/books",
+      },
+    });
+    expect(metadata.title).toBe("Sách");
+    expect(metadata.robots).toBeUndefined();
+  });
+
+  it("links only the existing localization of an entity page", () => {
+    const metadata = buildPageMetadata({ siteUrl, locale: "en", paths: { en: "/en/authors/mai-tran" } });
+    expect(metadata.alternates?.languages).toEqual({
+      en: "https://books.example/en/authors/mai-tran",
+      "x-default": "https://books.example/en/authors/mai-tran",
+    });
+  });
+
+  it("points x-default at the default locale, falling back to the only page that exists", () => {
+    const both = buildPageMetadata({ siteUrl, locale: "en", paths: { en: "/en/books", vi: "/vi/books" } });
+    const enOnly = buildPageMetadata({ siteUrl, locale: "en", paths: { en: "/en/books/a" } });
+    expect(both.alternates?.languages?.["x-default"]).toBe("https://books.example/vi/books");
+    expect(enOnly.alternates?.languages?.["x-default"]).toBe("https://books.example/en/books/a");
+  });
+
+  it("uses the branded default Open Graph image when there is no cover", () => {
+    const metadata = buildPageMetadata({ siteUrl, locale: "en", paths: { en: "/en" }, description: "Hello" });
+    expect(metadata.openGraph).toMatchObject({
+      type: "website",
+      siteName: "Infinity Books",
+      locale: "en_US",
+      url: "https://books.example/en",
+      images: [{ ...DEFAULT_OG_IMAGE, url: "https://books.example/opengraph-image" }],
+    });
+    expect(metadata.description).toBe("Hello");
+  });
+
+  it("uses a book cover when one is given", () => {
+    const metadata = buildPageMetadata({
+      siteUrl,
+      locale: "vi",
+      paths: { vi: "/vi/books/a" },
+      image: { url: "https://cdn.example/covers/a.png", alt: "Bìa sách" },
+    });
+    expect(metadata.openGraph?.images).toEqual([{ url: "https://cdn.example/covers/a.png", alt: "Bìa sách" }]);
+    expect(metadata.openGraph).toMatchObject({ locale: "vi_VN" });
+  });
+
+  it("announces the other locale to Open Graph only when it exists", () => {
+    const both = buildPageMetadata({ siteUrl, locale: "vi", paths: { vi: "/vi", en: "/en" } });
+    const one = buildPageMetadata({ siteUrl, locale: "vi", paths: { vi: "/vi/books/a" } });
+    expect(both.openGraph).toMatchObject({ alternateLocale: ["en_US"] });
+    expect(one.openGraph).not.toHaveProperty("alternateLocale");
+  });
+
+  it("maps the index rules", () => {
+    const base = { siteUrl, locale: "en" as const, paths: { en: "/en/search" } };
+    expect(buildPageMetadata({ ...base, index: "noindex-follow" }).robots).toEqual({ index: false, follow: true });
+    expect(buildPageMetadata({ ...base, index: "noindex-nofollow" }).robots).toEqual({ index: false, follow: false });
+  });
+
+  it("never lets a query string into the canonical, the alternates, or the Open Graph URL", () => {
+    const metadata = buildPageMetadata({
+      siteUrl,
+      locale: "en",
+      paths: { en: "/en/books?topic=x", vi: "/vi/books?sort=title" },
+    });
+    expect(JSON.stringify(metadata)).not.toContain("?");
+  });
+});

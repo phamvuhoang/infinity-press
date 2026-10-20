@@ -1,0 +1,15 @@
+"use client";
+
+import { useState } from "react";
+import type { ReaderAnnotationItem } from "@/components/reader/use-reader-annotations";
+import type { HighlightColor } from "@/lib/reader/annotations";
+import type { ReaderLocator } from "@/lib/reader/types";
+
+export type ReaderSavedItemsCopy = { contents: string; bookmarks: string; notes: string; highlights: string; unavailable: string; retry: string; delete: string; editBookmark: string; editNote: string; yellow: string; green: string; rose: string; emptyBookmarks: string; emptyNotes: string };
+export function ReaderSavedItems({ copy, items, onNavigate, onDelete, onRetry, onEditBookmark, onEditNote, onRecolor }: { copy: ReaderSavedItemsCopy; items: ReaderAnnotationItem[]; onNavigate: (locator: ReaderLocator) => void; onDelete: (key: string) => void; onRetry: (key: string) => void; onEditBookmark?: (key: string) => void; onEditNote?: (key: string) => void; onRecolor?: (key: string, color: HighlightColor) => void }) {
+  const [tab, setTab] = useState<"bookmarks" | "notes">("bookmarks");
+  const bookmarks = items.filter((item) => item.annotation.kind === "bookmark" || item.annotation.kind === "highlight");
+  const notes = items.filter((item) => item.annotation.kind === "highlight" && item.annotation.noteText !== null);
+  const shown = tab === "bookmarks" ? bookmarks : notes;
+  return <section aria-label={copy.bookmarks}><div role="tablist" aria-label={copy.bookmarks}><button role="tab" aria-selected={tab === "bookmarks"} onClick={() => setTab("bookmarks")} className="min-h-11 px-3">{copy.bookmarks} ({bookmarks.length})</button><button role="tab" aria-selected={tab === "notes"} onClick={() => setTab("notes")} className="min-h-11 px-3">{copy.notes} ({notes.length})</button></div><p className="text-sm font-medium">{copy.highlights} ({items.filter((item) => item.annotation.kind === "highlight").length})</p>{shown.length === 0 ? <p>{tab === "bookmarks" ? copy.emptyBookmarks : copy.emptyNotes}</p> : <ul>{shown.map((item) => <li key={item.key} className="flex items-center gap-2"><button type="button" className="min-h-11 text-left underline outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest" onClick={() => onNavigate(item.annotation.locator)}>{item.annotation.kind === "bookmark" ? item.annotation.label : item.annotation.selectedText}</button>{item.unresolved ? <span>{copy.unavailable}</span> : null}{item.status === "unsynced" ? <button type="button" className="min-h-11" onClick={() => onRetry(item.key)}>{copy.retry}</button> : null}{item.annotation.kind === "bookmark" ? <button type="button" className="min-h-11" onClick={() => onEditBookmark?.(item.key)}>{copy.editBookmark}</button> : <><button type="button" className="min-h-11" onClick={() => onEditNote?.(item.key)}>{copy.editNote}</button>{(["yellow", "green", "rose"] as HighlightColor[]).map((color) => <button key={color} type="button" className="min-h-11" onClick={() => onRecolor?.(item.key, color)}>{copy[color]}</button>)}</>}<button type="button" className="min-h-11" onClick={() => onDelete(item.key)}>{copy.delete}</button></li>)}</ul>}</section>;
+}

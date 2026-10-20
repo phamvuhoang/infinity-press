@@ -1,0 +1,24 @@
+.shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  flex: 1;
+}
+
+.persistentSidebar { display: none; }
+.readerMain { min-width: 0; min-height: 0; }
+.sampleShell, .sampleMain { grid-column: 1 / -1; }
+.divider { display: none; }
+
+@media (min-width: 1280px) {
+  .entitledShell { grid-template-columns: clamp(360px, 27vw, 420px) minmax(0, 1fr); }
+  .sampleShell { grid-template-columns: minmax(0, 1fr); }
+  .persistentSidebar { display: flex; position: relative; min-height: 0; border-right: 1px solid var(--color-hairline); }
+  /* Let the reading surface size the row; long contents scroll inside the rail. */
+  .persistentSidebar > section { position: absolute; inset: 0; }
+  .divider { display: block; pointer-events: none; position: absolute; inset-block: 1rem; left: 50%; width: 1px; background: color-mix(in srgb, var(--color-hairline) 60%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell *, .shell *::before, .shell *::after { transition: none; animation: none; }
+}

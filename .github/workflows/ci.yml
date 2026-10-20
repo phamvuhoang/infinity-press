@@ -1,0 +1,201 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Ruling CA: the Firefox/WebKit golden-path run is nightly as well as on main, so a browser
+  # regression surfaces within a day rather than whenever someone next merges.
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run build
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.106.0
+      - run: supabase start -x analytics,edge-runtime,imgproxy,inbucket,realtime,studio,vector
+      - run: supabase db reset
+      - run: supabase test db
+
+  # Route authorization is only observable end to end: the unit suites cover the
+  # pure decision helpers, not the wiring, so deleting a gate leaves them green.
+  # This job is what makes `npm run check:full` mean something on every push.
+  #
+  # Chromium only, on every pull request. The suite now refuses to start without a real Supabase
+  # stack (Ruling CI), so this job's credential step below is load-bearing rather than a
+  # convenience - without it Playwright fails at config load instead of quietly skipping 13 specs.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.106.0
+      # inbucket is Mailpit, which the magic-link and recovery specs read their
+      # emails out of, so unlike the database job it has to stay up.
+      - run: supabase start -x analytics,edge-runtime,imgproxy,realtime,studio,vector
+      - name: Point the app and the fixtures at the local stack
+        run: |
+          eval "$(supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "E2E_MAILPIT_URL=$INBUCKET_URL"
+            echo "E2E_DATABASE_URL=$DB_URL"
+            echo "APP_ENV=test"
+            echo "SITE_URL=http://127.0.0.1:3000"
+            echo "PAYMENT_PROVIDER=simulator"
+            echo "PAYMENT_SIMULATOR_SECRET=ci-simulator-secret-not-for-real-use-0000"
+            echo "READER_SESSION_TTL_SECONDS=900"
+            echo "EMAIL_PROVIDER=test"
+            echo "OPS_WORKER_SECRET=ci-worker-secret-not-for-real-use-0000000000"
+          } >> "$GITHUB_ENV"
+      # supabase/config.toml disables seeding on purpose (no seed.sql), so this stack starts with an
+      # empty catalog. Playwright's webServer builds the app the moment npm run test:e2e starts,
+      # before any spec creates anything - so without this, the manifest npm run check:prerender
+      # reads below was built against zero books, and the --require-content check would fail every
+      # clean run for a data reason, not a dynamism one (Ruling 15/16 of the storefront static
+      # caching plan). This runs before the build, using the credentials exported above.
+      - run: npx tsx scripts/seed-e2e-prerender-catalog.ts
+      - run: npm run test:e2e
+      # npm run check:prerender needs a real .next/prerender-manifest.json, which only exists after
+      # a real production build - and only tells the truth with real Supabase credentials present,
+      # since lib/catalog/static-params.ts returns no slugs without them (see
+      # lib/config/build-environment.ts's sibling treatment). The web job's npm run build has
+      # neither. Playwright's webServer (playwright.config.ts) runs npm run build && npm run start
+      # for this job, with the credentials exported above and the seeded book already in place, so
+      # the manifest this step reads is the one from that real, populated build. --require-content
+      # additionally demands a concrete /[lang] and /[lang]/books/[slug] page - the two routes safe
+      # to always require content for (Ruling 16) - not just registration, which is the only mode
+      # that means anything against an empty catalog. This is the one CI job that can catch a
+      # headers() read creeping back into app/[lang]/not-found.tsx or forbidden.tsx, or a build that
+      # silently stopped producing real pages - see docs/runbooks/storefront-caching.md.
+      - run: npm run check:prerender:content
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # Firefox and WebKit, on main and nightly only - never on a pull request (Ruling CA). Scoped to
+  # the golden path and reader-depth acceptance: this job answers whether protected reading and
+  # the richer reader interactions work in all three engines without re-running every unrelated
+  # authorization journey.
+  e2e-browser-matrix:
+    if: github.event_name == 'push' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.106.0
+      - run: supabase start -x analytics,edge-runtime,imgproxy,realtime,studio,vector
+      - name: Point the app and the fixtures at the local stack
+        run: |
+          eval "$(supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "E2E_MAILPIT_URL=$INBUCKET_URL"
+            echo "E2E_DATABASE_URL=$DB_URL"
+            echo "APP_ENV=test"
+            echo "SITE_URL=http://127.0.0.1:3000"
+            echo "PAYMENT_PROVIDER=simulator"
+            echo "PAYMENT_SIMULATOR_SECRET=ci-simulator-secret-not-for-real-use-0000"
+            echo "READER_SESSION_TTL_SECONDS=900"
+            echo "EMAIL_PROVIDER=test"
+            echo "OPS_WORKER_SECRET=ci-worker-secret-not-for-real-use-0000000000"
+          } >> "$GITHUB_ENV"
+      - name: Verify matrix environment before Playwright config loads
+        run: test -n "$E2E_MAILPIT_URL" && test -n "$E2E_DATABASE_URL"
+      - run: npm run test:e2e -- e2e/ebook-golden-path.spec.ts e2e/reader-depth.spec.ts
+        env:
+          E2E_BROWSER_MATRIX: all
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-browser-matrix
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # Pixel baselines have one rendering contract. The image digest fixes Ubuntu 24.04, system
+  # fonts, and Chromium 1243/153.0.8010.12; the script also pins Node 22.23.2 and rejects any
+  # platform/font drift before Playwright loads a snapshot.
+  reader-depth-visual:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.106.0
+      - run: supabase start -x analytics,edge-runtime,imgproxy,realtime,studio,vector
+      - name: Point the visual fixture at the local stack
+        run: |
+          eval "$(supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "E2E_MAILPIT_URL=$INBUCKET_URL"
+            echo "E2E_DATABASE_URL=$DB_URL"
+            echo "APP_ENV=test"
+            echo "SITE_URL=http://127.0.0.1:3000"
+            echo "PAYMENT_PROVIDER=simulator"
+            echo "PAYMENT_SIMULATOR_SECRET=ci-simulator-secret-not-for-real-use-0000"
+            echo "READER_SESSION_TTL_SECONDS=900"
+            echo "EMAIL_PROVIDER=test"
+            echo "OPS_WORKER_SECRET=ci-worker-secret-not-for-real-use-0000000000"
+          } >> "$GITHUB_ENV"
+      - name: Verify visual environment before Playwright config loads
+        run: test -n "$E2E_MAILPIT_URL" && test -n "$E2E_DATABASE_URL"
+      - name: Compare reader-depth snapshots in the canonical amd64 renderer
+        run: bash scripts/run-reader-visual-container.sh
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reader-depth-visual-diff
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

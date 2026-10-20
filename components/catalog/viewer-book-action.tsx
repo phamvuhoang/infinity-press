@@ -1,0 +1,50 @@
+"use client";
+
+import { BookActionControl } from "@/components/catalog/book-action-control";
+import { useViewerAction } from "@/components/catalog/use-viewer-action";
+import type { BookAction } from "@/lib/catalog/book-action";
+import type { ViewerBookActionState } from "@/lib/catalog/viewer-action";
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionary";
+
+// The book page prerenders `publicAction` - what an anonymous visitor could do - and this corrects
+// it for the reader who is signed in or already owns the book. The Server Actions arrive as props,
+// created on the server by the page; they re-check everything when invoked.
+export function ViewerBookAction({
+  bookId,
+  bookPath,
+  buyAction,
+  copy,
+  getFreeAction,
+  locale,
+  publicAction,
+}: {
+  bookId: string;
+  bookPath: string;
+  buyAction: () => Promise<void>;
+  copy: Dictionary["catalog"]["actions"];
+  getFreeAction: () => Promise<void>;
+  locale: Locale;
+  publicAction: BookAction;
+}) {
+  // Sends the locale it rendered in, so the handler resolves the book in that one locale rather than
+  // searching every locale for whichever answers first (Ruling 4) - the page only ever renders in a
+  // locale the book is localized in, so this can never 404 for that reason.
+  const state = useViewerAction<ViewerBookActionState>(
+    `/api/catalog/books/${bookId}/action-state?locale=${locale}`,
+    { action: publicAction, signedIn: false },
+  );
+
+  return (
+    <BookActionControl
+      action={state.action}
+      bookId={bookId}
+      bookPath={bookPath}
+      buyAction={buyAction}
+      copy={copy}
+      getFreeAction={getFreeAction}
+      locale={locale}
+      signedIn={state.signedIn}
+    />
+  );
+}

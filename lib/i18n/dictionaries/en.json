@@ -1,0 +1,654 @@
+{
+  "llms": {
+    "heading": "English",
+    "intro": "Infinity Books publishes Phuong Bui's books on awareness, love, family, money and action. Ebooks are read in the browser on this site; printed books are sold on Shopee, Fahasa and Tiki.",
+    "authors": "Authors",
+    "series": "Series",
+    "topics": "Topics",
+    "listPrice": "list price {price}",
+    "saleUntil": "until {date}"
+  },
+  "navigation": {
+    "primary": "Primary navigation",
+    "account": "Account",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "skipToContent": "Skip to main content",
+    "library": "Library",
+    "switchLocale": "Đọc bằng tiếng Việt",
+    "switchLocaleShort": "VI",
+    "books": "Books",
+    "search": "Search",
+    "ideas": "Ideas",
+    "articles": "Articles"
+  },
+  "authentication": {
+    "email": "Email",
+    "password": "Password",
+    "magicLink": {
+      "title": "Sign in with email",
+      "description": "We’ll send a secure link to continue to your library.",
+      "submit": "Send secure sign-in link",
+      "pending": "Sending secure link…"
+    },
+    "passwordSignIn": {
+      "title": "Password sign-in fallback",
+      "description": "Use this internal recovery path only when password access is required.",
+      "submit": "Sign in with password",
+      "pending": "Signing in…",
+      "forgotPrompt": "Forgot your password?",
+      "forgotLink": "Reset it"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "description": "Password sign-in is an internal, admin-only fallback. If you continue, we will send a secure recovery link to your email.",
+      "submit": "Send recovery link",
+      "pending": "Sending link…",
+      "rememberPrompt": "Remember your password?",
+      "backToSignIn": "Return to sign in"
+    },
+    "updatePassword": {
+      "title": "Choose a new password",
+      "description": "Enter your new password twice to keep your account secure.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "submit": "Update password",
+      "pending": "Updating password…",
+      "restartPrompt": "Need another link?",
+      "restartLink": "Restart recovery"
+    },
+    "alerts": {
+      "errorTitle": "Unable to continue",
+      "messageTitle": "Next step",
+      "errors": {
+        "callback": "The authentication link is invalid or expired. Request a new link.",
+        "credentials": "The email or password is incorrect.",
+        "email": "Enter a valid email address.",
+        "magic-link": "We could not send a sign-in link. Try again.",
+        "password-length": "Password must contain at least 8 characters.",
+        "password-match": "Passwords do not match.",
+        "recovery": "We could not send a recovery email. Try again.",
+        "staff-only": "Password sign-in is limited to staff accounts. Use the email sign-in link instead.",
+        "update": "We could not update your password. Request a new recovery link."
+      },
+      "messages": {
+        "check-email": "Check your email and follow the secure link to continue.",
+        "password-updated": "Your password was updated."
+      }
+    }
+  },
+  "home": {
+    "eyebrow": "A lasting home for readers",
+    "title": "Keep the books that shape your world close.",
+    "description": "Infinity Books is beginning with a secure personal account, ready to become a thoughtful home for your reading life.",
+    "getStarted": "Get started",
+    "coverQuote": "Stories without an ending.",
+    "journeyTitle": "Continue\nthe journey",
+    "journeySteps": ["If you have read", "Try", "Then"],
+    "values": {
+      "calm": {
+        "title": "Calm and steady",
+        "copy": "Not the absence of storms, but the ability to stand when they come."
+      },
+      "love": {
+        "title": "Love, always in abundance",
+        "copy": "Love is not something to find. It is what remains when we stop hiding it."
+      },
+      "abundance": {
+        "title": "Abundance on every level",
+        "copy": "Money, time, relationships, health. Enough in one place is enough in the others."
+      }
+    },
+    "footerTagline": "A new home for enduring stories.",
+    "featured": {
+      "eyebrow": "Featured book",
+      "sample": "Read a sample",
+      "view": "View the book"
+    },
+    "topicsTitle": "Explore what you are sitting with",
+    "topicsLink": "All topics",
+    "shelfTitle": "The Infinity\nshelf",
+    "shelfDescription": "Ordered by the reading journey, not by sales. Start at the beginning, then move on to love, family, and work.",
+    "authorEyebrow": "Author",
+    "authorLink": "Explore work by {name} →"
+  },
+  "catalog": {
+    "quoteCard": {
+      "eyebrow": "A quote from",
+      "sharedFrom": "Shared from Infinity Books",
+      "readSample": "Read a sample",
+      "openBook": "About the book"
+    },
+    "retail": {
+      "title": "Paperback",
+      "intro": "Buy the printed book at:",
+      "listPrice": "List price {price}",
+      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+    },
+    "browseAll": "Browse all books",
+    "featuredEyebrow": "Featured",
+    "shelfTitle": "On the shelf",
+    "books": {
+      "eyebrow": "Catalog",
+      "title": "All books",
+      "description": "Every book you can read on Infinity Books.",
+      "filtersTitle": "Filter books",
+      "topic": "Topic",
+      "author": "Author",
+      "series": "Series",
+      "price": "Price",
+      "any": "Any",
+      "free": "Free",
+      "paid": "Paid",
+      "sort": "Sort by",
+      "sortFeatured": "Featured",
+      "sortNewest": "Newest",
+      "sortTitle": "Title",
+      "apply": "Apply",
+      "clear": "Clear filters",
+      "countOne": "{count} book",
+      "countOther": "{count} books",
+      "emptyTitle": "No books match these filters."
+    },
+    "book": {
+      "by": "By",
+      "free": "Free",
+      "salePrice": "Sale price",
+      "listPrice": "List price",
+      "sample": "Read a sample",
+      "audience": "Who it is for",
+      "keyIdeas": "Key ideas",
+      "faq": "Questions and answers",
+      "topics": "Topics",
+      "seriesPosition": "Book {position} in {series}",
+      "format": "Ebook (EPUB, read on the web)",
+      "knowledgeTitle": "Ideas and articles about this book"
+    },
+    "reviews": {
+      "title": "Reader reviews",
+      "countOne": "{count} review",
+      "countOther": "{count} reviews",
+      "average": "Average rating",
+      "write": "Write a review",
+      "ask": "Ask the author",
+      "authorReply": "Reply from the author:",
+      "anonymousReader": "Reader",
+      "empty": "No reviews yet."
+    },
+    "bundle": {
+      "eyebrow": "Bundle",
+      "itemCountOne": "{count} book",
+      "itemCountOther": "{count} books",
+      "includes": "In this bundle",
+      "priceNote": "One price for the whole bundle. It does not change if you already own some of these books.",
+      "ownedSome": "You already own {owned} of {total} books in this bundle.",
+      "ownedAll": "You already own every book in this bundle.",
+      "buy": "Buy bundle",
+      "library": "Go to your library",
+      "empty": "This bundle has no books to show right now."
+    },
+    "actions": {
+      "read": "Read now",
+      "getFree": "Get free",
+      "buy": "Buy ebook",
+      "comingSoon": "Coming soon",
+      "unavailable": "Not available yet",
+      "signInHint": "You will sign in with your email first.",
+      "pending": "Working…"
+    },
+    "actionErrors": {
+      "email-not-verified": "Confirm your email before getting this book.",
+      "no-free-offer": "This book is no longer free.",
+      "payments-unavailable": "Buying ebooks is not available yet.",
+      "not-purchasable": "This book cannot be bought right now.",
+      "unexpected": "Something went wrong. Please try again."
+    },
+    "entity": {
+      "author": "Author",
+      "series": "Series",
+      "topic": "Topic",
+      "booksTitle": "Books",
+      "recommendationsTitle": "Related books",
+      "knowledgeTitle": "Ideas and articles"
+    },
+    "search": {
+      "title": "Search",
+      "description": "Search Infinity Books for titles, authors, ideas, articles, series, and topics.",
+      "label": "Search books, authors, ideas, articles, series, and topics",
+      "placeholder": "Title, author, or topic",
+      "submit": "Search",
+      "resultsFor": "Results for “{query}”",
+      "books": "Books",
+      "authors": "Authors",
+      "ideas": "Ideas",
+      "articles": "Articles",
+      "series": "Series",
+      "topics": "Topics",
+      "emptyTitle": "Nothing matched “{query}”.",
+      "emptyHint": "Check the spelling, or try fewer words.",
+      "promptTitle": "What are you looking for?",
+      "promptHint": "Type at least 2 characters."
+    }
+  },
+  "knowledge": {
+    "ideas": {
+      "eyebrow": "Knowledge",
+      "title": "Ideas",
+      "description": "Short answers to the questions our books take on, with the books that go further.",
+      "empty": "No ideas have been published yet.",
+      "otherTopic": "Other"
+    },
+    "articles": {
+      "eyebrow": "Knowledge",
+      "title": "Articles",
+      "description": "Longer reading about the books, their authors, and the ideas they share.",
+      "empty": "No articles have been published yet."
+    },
+    "idea": {
+      "eyebrow": "Idea",
+      "shortAnswer": "Short answer",
+      "relatedBooks": "Related books",
+      "relatedIdeas": "Related ideas",
+      "topics": "Topics",
+      "ask": "Ask the author about this"
+    },
+    "article": {
+      "eyebrow": "Article",
+      "by": "By",
+      "published": "Published",
+      "updated": "Updated",
+      "relatedBooks": "Related books",
+      "relatedIdeas": "Related ideas",
+      "topics": "Topics"
+    }
+  },
+  "checkout": {
+    "eyebrow": "Checkout",
+    "title": "Review your order",
+    "description": "You are buying an ebook for your Infinity Books account.",
+    "total": "Total",
+    "account": "Account",
+    "pay": "Pay",
+    "paying": "Starting payment…",
+    "previousFailed": "Your last payment did not go through. You can try again.",
+    "alreadyOwned": "You already own this book.",
+    "readNow": "Read now",
+    "gift": {
+      "legend": "Send this as a gift",
+      "description": "We will email a claim link to the person you name. You will not receive access to this order yourself - only they can claim it.",
+      "emailLabel": "Recipient email",
+      "messageLabel": "Message (optional)",
+      "save": "Save gift",
+      "saving": "Saving…",
+      "remove": "Remove gift",
+      "removing": "Removing…",
+      "configured": "This order is a gift for {email}. We will email them a claim link once your payment goes through.",
+      "lockedTransfer": "You have told us about your transfer, so the gift details can no longer be changed. Contact support if they are wrong.",
+      "invalidEmail": "Enter a valid recipient email address.",
+      "messageTooLong": "Keep the message to 500 characters or fewer.",
+      "unavailable": "This order cannot be set up as a gift right now."
+    },
+    "coupon": {
+      "legend": "Promotion code",
+      "label": "Enter a code",
+      "apply": "Apply",
+      "applying": "Applying…",
+      "remove": "Remove",
+      "removing": "Removing…",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "applied": "Code {code} applied.",
+      "invalid": "This code cannot be used.",
+      "rateLimited": "Too many codes have been tried. Wait a few minutes and try again.",
+      "unavailable": "This order cannot take a code right now."
+    },
+    "sepay": {
+      "eyebrow": "Payment",
+      "title": "Taking you to SePay",
+      "description": "You will pay by scanning a VietQR code with your banking app. If nothing happens, use the button below.",
+      "continue": "Continue to SePay"
+    },
+    "simulate": {
+      "eyebrow": "Payment simulator",
+      "title": "Simulate the payment",
+      "description": "This page exists only in test environments. Choose what the payment provider reports.",
+      "succeed": "Succeed",
+      "fail": "Fail",
+      "cancel": "Cancel",
+      "duplicate": "Send duplicate",
+      "sending": "Sending…"
+    },
+    "status": {
+      "eyebrow": "Order status",
+      "processingTitle": "Processing your payment",
+      "processingBody": "This page updates on its own for a short while.",
+      "checkAgain": "Check again",
+      "awaitingTransferTitle": "Waiting for your transfer",
+      "awaitingTransferBody": "Your order has been created. Follow the instructions to complete the bank transfer.",
+      "awaitingConfirmationTitle": "Awaiting confirmation",
+      "awaitingConfirmationBody": "We received your transfer report and will unlock reading as soon as it's confirmed.",
+      "transferInstructions": "View transfer instructions",
+      "successTitle": "Payment complete",
+      "successBody": "Your ebook is ready in your library.",
+      "successGiftTitle": "Your gift is on its way",
+      "successGiftBody": "Payment is complete. We have emailed the claim link to the person you chose, so this ebook does not appear in your own library.",
+      "failedTitle": "Payment did not go through",
+      "failedBody": "The payment was not completed. You can try again.",
+      "tryAgain": "Try again",
+      "declinedTitle": "Transfer not received yet",
+      "declinedBody": "Reason: {reason}. You can transfer again and let us know.",
+      "unavailableTitle": "This order can no longer be paid",
+      "unavailableBody": "The payment method this order was created with is not available any more. Start a new order from the book page.",
+      "paymentsOffTitle": "Payments are paused",
+      "paymentsOffBody": "We are not taking payments at the moment. Your order is still here, and you can come back to it once payments are on again.",
+      "cancelledTitle": "Order cancelled",
+      "cancelledBody": "This order was cancelled.",
+      "backToBook": "Back to the book",
+      "library": "Go to your library"
+    },
+    "transfer": {
+      "eyebrow": "Bank transfer",
+      "title": "Transfer to complete your order",
+      "description": "Transfer the exact amount and reference below. We confirm during business hours.",
+      "bankName": "Bank",
+      "accountNumber": "Account number",
+      "accountHolder": "Account holder",
+      "amount": "Amount",
+      "reference": "Transfer reference",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyAriaLabel": "Copy transfer reference {reference}",
+      "qrAlt": "Bank transfer QR code for order {reference}",
+      "noteLabel": "Note for us (optional)",
+      "claim": "I have transferred",
+      "claiming": "Sending…",
+      "claimedTitle": "Transfer report received",
+      "claimedBody": "We will check and open access for you as soon as we confirm it.",
+      "declinedTitle": "Transfer not received yet",
+      "declinedBody": "Reason: {reason}. You can transfer again and let us know.",
+      "unavailable": "We could not load the transfer details. Please contact support."
+    }
+  },
+  "orders": {
+    "navLabel": "Orders",
+    "eyebrow": "Your account",
+    "title": "Orders",
+    "description": "Ebooks you got or bought.",
+    "emptyTitle": "No orders yet",
+    "emptyBody": "Books you get or buy will appear here.",
+    "browse": "Browse books",
+    "listLabel": "Your orders",
+    "free": "Free",
+    "placedOn": "Placed on {date}",
+    "total": "Total",
+    "status": "Status",
+    "detailEyebrow": "Order",
+    "continueCheckout": "Continue to payment",
+    "transferInstructions": "View transfer instructions",
+    "viewStatus": "View order status",
+    "declinedTitle": "Transfer not received yet",
+    "declinedBody": "Reason: {reason}. You can transfer again and let us know.",
+    "read": "Read now",
+    "statuses": {
+      "completed": "Completed",
+      "awaitingPayment": "Awaiting payment",
+      "awaitingTransfer": "Awaiting transfer",
+      "awaitingConfirmation": "Awaiting confirmation",
+      "paymentFailed": "Payment failed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "account": {
+    "eyebrow": "Your account",
+    "title": "Welcome to Infinity Books",
+    "description": "Your secure account is ready. Your library and reading features will arrive here as Infinity Books grows.",
+    "detailsTitle": "Account details",
+    "detailsDescription": "The email connected to your account."
+  },
+  "library": {
+    "eyebrow": "Your library",
+    "title": "Keep reading where you left off",
+    "description": "Books you unlock will live here.",
+    "emptyStateTitle": "No books yet",
+    "emptyStateDescription": "Once you unlock a book, it will appear in your library. The catalog is arriving in the next phase of Infinity Books.",
+    "continueReading": "Continue reading",
+    "progressLabel": "read",
+    "states": {
+      "unread": "Not started",
+      "reading": "In progress",
+      "completed": "Finished"
+    },
+    "shelfTitle": "My books",
+    "lastRead": "Most recently read",
+    "recommendationsTitle": "You might like",
+    "review": "Review",
+    "quotes": {
+      "eyebrow": "Your library",
+      "title": "Shared quotes",
+      "description": "Quotes you shared from your books. Each one is a public page until you remove it.",
+      "empty": "You have not shared a quote yet. Select text in the reader and press Share.",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "remove": "Remove",
+      "views": "Views: {count}",
+      "link": "Shared quotes"
+    },
+    "reviews": {
+      "eyebrow": "Your review",
+      "ratingLabel": "Rating",
+      "bodyLabel": "Review",
+      "counter": "{count}/1000",
+      "save": "Save review",
+      "delete": "Delete review",
+      "notOwned": "You need to own this book to review it.",
+      "backToBook": "Back to the book",
+      "states": {
+        "pending": "Pending review",
+        "published": "Published",
+        "rejected": "Not published"
+      },
+      "authorReply": "Reply from the author",
+      "errors": {
+        "notEntitled": "You need to own this book to review it.",
+        "failed": "Could not save. Try again.",
+        "rating": "Choose a rating from 1 to 5.",
+        "body": "Write your review (up to 1000 characters, no HTML)."
+      },
+      "saved": "Saved. Your review will appear once it is approved."
+    },
+    "questions": {
+      "title": "Ask the author",
+      "about": "About: {title}",
+      "bodyLabel": "Your question",
+      "counter": "{count}/500",
+      "send": "Send question",
+      "sent": "Sent. If the author answers, you will get an email.",
+      "mineTitle": "Your questions",
+      "readAnswer": "Read the answer",
+      "states": {
+        "new": "Waiting",
+        "answered": "Answered",
+        "archived": "Archived"
+      },
+      "errors": {
+        "tooMany": "You already have 5 questions waiting for an answer. Wait for the author to answer first.",
+        "targetMissing": "This content no longer exists.",
+        "failed": "Could not send. Try again.",
+        "body": "Write your question (up to 500 characters, no HTML).",
+        "target": "Choose a book or an idea to ask about."
+      }
+    }
+  },
+  "gifts": {
+    "claim": {
+      "eyebrow": "Gift",
+      "title": "Your gift",
+      "addedTitle": "Added to your library",
+      "ownedTitle": "Already in your library",
+      "currentNote": "This is what this gift holds in your library right now, not a record of the moment you claimed it.",
+      "empty": "Nothing from this gift is in your library right now. If that is unexpected, please contact support.",
+      "library": "Go to your library",
+      "refusedTitle": "This gift link cannot be used",
+      "refusedBody": "This link cannot be used to claim a gift. Ask the person who sent it to you for a new link."
+    }
+  },
+  "reader": {
+    "title": "Reader",
+    "backToLibrary": "Back to library",
+    "loading": "Opening this book…",
+    "failed": "This book could not be opened.",
+    "retry": "Try again",
+    "nextPage": "Next page",
+    "previousPage": "Previous page",
+    "saveFailed": "We couldn't save your place. Your position is still here — you can try again.",
+    "saveRetry": "Save my place",
+    "progressLabel": "read",
+    "settings": "Reading settings",
+    "settingsTitle": "Reading settings",
+    "fontSize": "Font size",
+    "decreaseFontSize": "Smaller text",
+    "increaseFontSize": "Larger text",
+    "font": "Font",
+    "fonts": {
+      "publisher": "Publisher",
+      "serif": "Lora",
+      "sans": "Sans"
+    },
+    "lineHeight": "Line spacing",
+    "lineHeights": {
+      "tight": "Tight",
+      "normal": "Normal",
+      "loose": "Loose"
+    },
+    "width": "Text width",
+    "widths": {
+      "narrow": "Narrow",
+      "medium": "Medium",
+      "wide": "Wide"
+    },
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "sepia": "Paper",
+      "dark": "Dark"
+    },
+    "contents": "Contents",
+    "contentsTitle": "Contents",
+    "contentsEmpty": "This book has no table of contents.",
+    "close": "Close",
+    "lostAccessSignedOut": "You have been signed out. Sign in again to keep reading.",
+    "lostAccessRevoked": "You no longer have access to this book.",
+    "signIn": "Sign in",
+    "goToLibrary": "Go to my library",
+    "finishedTitle": "You finished this book.",
+    "finishedBody": "It is marked as finished in your library.",
+    "dismiss": "Keep reading",
+    "sampleEndTitle": "That is the end of the sample.",
+    "sampleEndBody": "Get the full book to keep reading.",
+    "backToBook": "Back to the book",
+    "sampleUnavailable": "This sample is not available right now.",
+    "bookmarks": "Bookmarks",
+    "notes": "Notes",
+    "highlights": "Highlights",
+    "unavailable": "Unavailable",
+    "delete": "Delete",
+    "addBookmark": "Add bookmark",
+    "editBookmark": "Edit bookmark",
+    "bookmarkLabel": "Bookmark label",
+    "bookmarkFallback": "Bookmark",
+    "save": "Save",
+    "cancel": "Cancel",
+    "note": "Note",
+    "editNote": "Edit note",
+    "yellow": "Yellow",
+    "green": "Green",
+    "rose": "Rose",
+    "highlightYellow": "Yellow",
+    "highlightGreen": "Green",
+    "highlightRose": "Rose",
+    "addNote": "Add note",
+    "copy": "Copy",
+    "share": "Share",
+    "askInfinity": "Ask Infinity",
+    "comingSoon": "Coming soon",
+    "copied": "Copied",
+    "copyFailed": "Could not copy quote",
+    "shareCancelled": "Sharing cancelled",
+    "quoteTruncated": "Quote shortened to 300 characters",
+    "annotationTooLong": "Select at most 1,000 characters to highlight or add a note. You can still copy or share this selection.",
+    "shareUnavailable": "Sharing is unavailable; copied instead.",
+    "shareCreated": "A public quote page was created. You can remove it from your library.",
+    "sharePublic": "Sharing creates a public quote page you can remove from your library.",
+    "emptyBookmarks": "No bookmarks yet.",
+    "emptyNotes": "No notes yet.",
+    "loadingSavedItems": "Loading saved items…",
+    "search": "Search this book",
+    "searchPlaceholder": "Search words or phrases",
+    "searchPrompt": "Type at least 2 characters.",
+    "searching": "Searching…",
+    "searchEmpty": "No matches found.",
+    "searchFailed": "Search is unavailable right now.",
+    "untitledChapter": "Untitled chapter",
+    "annotationsFailed": "Saved items are unavailable right now.",
+    "locationUnavailable": "Location unavailable.",
+    "page": "Page",
+    "pages": "pages",
+    "searchOpen": "Search this book",
+    "menu": "Reader menu",
+    "onePage": "One page",
+    "twoPages": "Two pages",
+    "relatedBooks": "Continue reading",
+    "noRelatedBooks": "No recommendations yet.",
+    "rateBook": "Rate this book",
+    "askAuthor": "Ask the author"
+  },
+  "forbidden": {
+    "title": "Access denied",
+    "description": "You don't have permission to view this page.",
+    "backHome": "Return home"
+  },
+  "email": {
+    "bookReady": {
+      "subjectWithTitle": "Your book is ready: {title}",
+      "subjectGeneric": "Your new book is ready",
+      "greetingNamed": "Hi {name},",
+      "greetingGeneric": "Hi,",
+      "readyWithTitle": "“{title}” is now in your Infinity Books library and ready to read.",
+      "readyGeneric": "Your new book is now in your Infinity Books library and ready to read.",
+      "openLibrary": "Open your library",
+      "signOff": "Happy reading,\nInfinity Books"
+    },
+    "giftClaim": {
+      "subjectFromName": "{name} sent you a gift on Infinity Books",
+      "subjectGeneric": "You have been sent a gift on Infinity Books",
+      "greeting": "Hi,",
+      "introNamed": "{name} has sent you a gift on Infinity Books.",
+      "introGeneric": "Someone has sent you a gift on Infinity Books.",
+      "messageLabel": "Their message:",
+      "includesLabel": "Your gift includes:",
+      "claim": "Open your gift",
+      "claimHint": "Open the link and sign in - or create an account - to add these books to your library. The link can only be used once.",
+      "signOff": "Happy reading,\nInfinity Books"
+    },
+    "questionAnswered": {
+      "subject": "The author answered your question",
+      "greetingNamed": "Hi {name},",
+      "greetingGeneric": "Hi,",
+      "body": "The question you sent on Infinity Books has been answered in: “{title}”.",
+      "read": "Read the answer",
+      "signOff": "Happy reading,\nInfinity Books"
+    },
+    "reviewReplied": {
+      "subjectWithTitle": "The author replied to your review of “{title}”",
+      "subjectGeneric": "The author replied to your review",
+      "greetingNamed": "Hi {name},",
+      "greetingGeneric": "Hi,",
+      "introWithTitle": "The author replied to the review you wrote of “{title}” on Infinity Books.",
+      "introGeneric": "The author replied to the review you wrote on Infinity Books.",
+      "yourReview": "Your review ({rating}/5):",
+      "authorReply": "The author's reply:",
+      "open": "Open your review",
+      "signOff": "Happy reading,\nInfinity Books"
+    }
+  }
+}

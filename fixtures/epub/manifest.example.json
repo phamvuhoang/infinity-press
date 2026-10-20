@@ -1,0 +1,10 @@
+{
+  "fixtures": [
+    {
+      "id": "book-01",
+      "path": "private/book-01.epub",
+      "language": "vi",
+      "features": ["embedded-fonts", "images", "long-chapters"]
+    }
+  ]
+}
