@@ -1,6 +1,6 @@
-# Infinity Books
+# Infinity Books Press
 
-Infinity Books is a Next.js application for a future online bookstore and reading library. The current release provides localized public pages and Supabase email magic-link sign-in.
+Infinity Books Press (infinitybooks.press) is a Next.js application for introducing, selling, and reading language editions of world classics. It is an independent fork with its own Supabase and Vercel projects; it shares no users, orders, or content with infinitybooks.vn.
 
 ## Technology
 
@@ -131,7 +131,7 @@ EPUB processing runs as a local CLI in a later phase of the MVP plan.
 
 ## Planned database scope
 
-An earlier README described a 106-table schema for the complete Infinity Books product. The migration and seed files from that description are not in this checkout.
+An earlier README described a 106-table schema for the complete product of the original fork. The migration and seed files from that description are not in this checkout.
 
 The planned domains include:
 

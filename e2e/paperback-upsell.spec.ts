@@ -33,7 +33,7 @@ test("an admin adds a Shopee link and the book page shows it with UTM and two Of
   const link = page.getByRole("link", { name: "Shopee" });
   await expect(link).toHaveAttribute(
     "href",
-    "https://shopee.vn/e2e-paperback?utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
+    "https://shopee.vn/e2e-paperback?utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
   );
   await expect(link).toHaveAttribute("rel", "nofollow noopener sponsored");
 

@@ -1,4 +1,5 @@
 import { Logo } from "@/components/brand/logo";
+import { BRAND_NAME } from "@/lib/config/brand";
 import { type Locale, withLocale } from "@/lib/i18n/config";
 
 // Board 1e's footer, reduced to what exists today: the wordmark, the tagline, and the imprint.
@@ -10,7 +11,7 @@ export function SiteFooter({ locale, tagline }: { locale: Locale; tagline: strin
           <Logo href={withLocale(locale, "/")} size="sm" />
           <p className="max-w-sm text-sm leading-relaxed text-ink-soft">{tagline}</p>
         </div>
-        <p className="text-[0.8125rem] text-sage-text">© {new Date().getFullYear()} Infinity Books</p>
+        <p className="text-[0.8125rem] text-sage-text">© {new Date().getFullYear()} {BRAND_NAME}</p>
       </div>
     </footer>
   );

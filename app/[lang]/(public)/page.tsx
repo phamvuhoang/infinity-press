@@ -13,17 +13,17 @@ import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { homeShelves } from "@/lib/catalog/browse";
 import { deferPrerenderWithoutServerEnv } from "@/lib/config/build-environment";
+import { BRAND_NAME } from "@/lib/config/brand";
 import { getServerEnv } from "@/lib/config/server-env";
 import { isLoopbackUrl } from "@/lib/config/url";
-import { getBookCards, getEntityPage, getHomeHero, getHomeTopics } from "@/lib/data/catalog";
+import { getBookCards, getHomeHero, getHomeTopics } from "@/lib/data/catalog";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
-import { fillTemplate } from "@/lib/i18n/format";
 import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { organizationSchema } from "@/lib/seo/json-ld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
-const values = ["calm", "love", "abundance"] as const;
+const steps = ["explore", "language", "read"] as const;
 
 // Board 1e runs seven topic columns. More published topics than that belong on the catalog page,
 // where they are filters rather than an invitation.
@@ -72,11 +72,6 @@ export default async function Home({ params }: Props) {
   const copy = dictionary.home;
   const routes = getLocaleRoutes(locale);
   const topics = allTopics.slice(0, MAX_HOME_TOPICS);
-
-  // The author band follows the featured book, so the page never introduces an author whose work
-  // is not already on screen. Authors without a public page in this locale are skipped.
-  const authorSlug = featured?.author.slug ?? null;
-  const author = authorSlug ? await getEntityPage("author", locale, authorSlug) : null;
 
   return (
     <div className="min-h-screen bg-ivory">
@@ -151,7 +146,7 @@ export default async function Home({ params }: Props) {
               </div>
             ) : (
               <div aria-hidden="true" className="absolute bottom-12 left-0 w-40 sm:w-52">
-                <BookCover byline="Infinity Books" size="lg" title={copy.coverQuote} tone="forest" />
+                <BookCover byline={BRAND_NAME} size="lg" title={copy.coverQuote} tone="forest" />
               </div>
             )}
           </div>
@@ -226,48 +221,18 @@ export default async function Home({ params }: Props) {
           </section>
         ) : null}
 
-        {/* Author band - board 1e: portrait left, copy right. The pull quote and the portrait are
-            set per author in /admin/authors; the description is clamped here because the author
-            page carries the full biography. */}
-        {author ? (
-          <section aria-labelledby="home-author-title" className="bg-surface">
-            <div className="mx-auto grid max-w-[90rem] gap-10 px-4 py-16 sm:px-8 lg:grid-cols-2 lg:items-center lg:gap-20 lg:px-16 lg:py-24">
-              {author.image ? (
-                <Image
-                  alt={author.image.alt}
-                  className="aspect-[4/5] w-full max-w-[32rem] object-cover"
-                  height={700}
-                  sizes="(min-width: 1024px) 40vw, 100vw"
-                  src={author.image.url}
-                  unoptimized={isLoopbackUrl(author.image.url)}
-                  width={560}
-                />
-              ) : (
-                <div aria-hidden="true" className="aspect-[4/5] w-full max-w-[32rem] bg-sand/40" />
-              )}
-              <div className="max-w-[35rem]">
-                <p className="mb-4 text-xs font-medium tracking-[0.1em] text-sage-text uppercase">{copy.authorEyebrow}</p>
-                <h2 className="mb-6 font-serif text-4xl leading-[1.08] font-normal tracking-[-0.015em] lg:text-5xl" id="home-author-title">
-                  {author.name}
-                </h2>
-                {author.quote ? (
-                  <blockquote className="mb-6 font-serif text-xl leading-relaxed text-ink lg:text-2xl">
-                    &ldquo;{author.quote}&rdquo;
-                  </blockquote>
-                ) : null}
-                {author.description ? (
-                  <p className="mb-7 line-clamp-4 text-[0.9375rem] leading-relaxed text-ink-soft">{author.description}</p>
-                ) : null}
-                <Link
-                  className="inline-flex min-h-11 items-center text-[0.9375rem] font-medium text-forest underline decoration-sand underline-offset-[5px] hover:text-ink hover:decoration-ink"
-                  href={catalogRoutes.entity("author", authorSlug!)}
-                >
-                  {fillTemplate(copy.authorLink, { name: author.name })}
-                </Link>
-              </div>
+        {/* Platform introduction: what the Press is, never a single author. */}
+        <section aria-labelledby="home-platform-title" className="border-t border-hairline bg-surface">
+          <div className="mx-auto grid max-w-[90rem] gap-6 px-4 py-16 sm:px-8 lg:grid-cols-[18.75rem_1fr] lg:gap-16 lg:px-16 lg:py-20">
+            <p className="text-xs font-medium tracking-[0.1em] text-sage-text uppercase">{copy.platform.eyebrow}</p>
+            <div className="max-w-[40rem]">
+              <h2 className="mb-5 font-serif text-3xl leading-[1.15] font-normal sm:text-4xl" id="home-platform-title">
+                {copy.platform.title}
+              </h2>
+              <p className="font-serif text-lg leading-relaxed text-ink-soft">{copy.platform.copy}</p>
             </div>
-          </section>
-        ) : null}
+          </div>
+        </section>
 
         {shelf.length > 0 ? (
           <section aria-labelledby="home-shelf-title" className="border-t border-hairline">
@@ -323,15 +288,15 @@ export default async function Home({ params }: Props) {
         {/* The Deep Forest band from board 1e: three numbered values set large in Lora. */}
         <section className="bg-forest text-ivory">
           <ol className="mx-auto grid max-w-[90rem] gap-12 px-4 py-16 sm:px-8 md:grid-cols-3 md:gap-16 lg:px-16 lg:py-24">
-            {values.map((key, index) => (
+            {steps.map((key, index) => (
               <li key={key}>
                 <p className="mb-3.5 text-xs font-medium tracking-[0.1em] uppercase opacity-70">
                   {String(index + 1).padStart(2, "0")}
                 </p>
                 <h3 className="mb-3.5 font-serif text-[1.75rem] leading-[1.15] font-normal lg:text-[2.125rem]">
-                  {copy.values[key].title}
+                  {copy.howItWorks[key].title}
                 </h3>
-                <p className="text-[0.9375rem] leading-relaxed opacity-85">{copy.values[key].copy}</p>
+                <p className="text-[0.9375rem] leading-relaxed opacity-85">{copy.howItWorks[key].copy}</p>
               </li>
             ))}
           </ol>

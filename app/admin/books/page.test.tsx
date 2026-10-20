@@ -17,7 +17,7 @@ beforeEach(() => {
       id: "4a1b2c3d-0000-4000-8000-000000000001",
       canonicalKey: "the-golden-book",
       title: "The Golden Book",
-      authorName: "Phương Bùi",
+      authorName: "Jane Austen",
       status: "draft",
       hasActivePublication: false,
       readinessIssues: ["missing_cover", "missing_publication"],

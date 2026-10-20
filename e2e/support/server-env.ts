@@ -31,7 +31,7 @@ export const serverEnvironmentDefaults = {
   // S5: the no-network mail adapter (never Resend in Playwright), a sender so the worker delivers
   // the outbox, and a fake worker secret the operations spec authenticates with.
   EMAIL_PROVIDER: "test",
-  EMAIL_FROM: "Infinity Books <books@example.test>",
+  EMAIL_FROM: "Infinity Books Press <books@example.test>",
   OPS_WORKER_SECRET: "e2e-worker-secret-not-for-real-use-00000000000",
 } as const;
 
@@ -53,7 +53,7 @@ export const bankTransferDefaults = {
   BANK_TRANSFER_BANK_CODE: "970436",
   BANK_TRANSFER_BANK_NAME: "E2E Test Bank",
   BANK_TRANSFER_ACCOUNT_NUMBER: "19020250000001",
-  BANK_TRANSFER_ACCOUNT_HOLDER: "INFINITY BOOKS E2E",
+  BANK_TRANSFER_ACCOUNT_HOLDER: "INFINITY BOOKS PRESS E2E",
 } as const;
 
 export type BankTransferName = keyof typeof bankTransferDefaults;

@@ -195,7 +195,7 @@ test("a published book page carries canonical, alternate, Open Graph, and safe s
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Infinity Books", item: `${origin}/en` },
+      { "@type": "ListItem", position: 1, name: "Infinity Books Press", item: `${origin}/en` },
       { "@type": "ListItem", position: 2, name: expect.any(String), item: `${origin}/en/books` },
       { "@type": "ListItem", position: 3, name: title, item: self },
     ],

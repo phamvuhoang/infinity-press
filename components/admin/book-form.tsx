@@ -65,7 +65,7 @@ export function BookForm({ authorOptions }: { authorOptions: { id: string; name:
 
       <div className="space-y-2">
         <Label htmlFor="authorName">Author name</Label>
-        <Input id="authorName" name="authorName" placeholder="Phuong Bui" />
+        <Input id="authorName" name="authorName" placeholder="Jane Austen" />
         <p className="text-[0.8125rem] text-sage-text">
           Choose an existing author above, or leave it blank and enter a new name.
         </p>

@@ -29,26 +29,26 @@ describe("buildLlmsText", () => {
     const text = buildLlmsText({
       siteUrl: "https://books.example",
       sections: [
-        { locale: "vi", heading: "Infinity Books", intro: "Sách của Phương Bùi.", groups: [
+        { locale: "vi", heading: "Infinity Books Press", intro: "Sách của Jane Austen.", groups: [
           { heading: "Books", entries: [{ title: "Sách một", path: "/vi/books/sach-mot", description: "Mô tả\nhai dòng" }] },
           { heading: "Ideas", entries: [] },
         ] },
-        { locale: "en", heading: "English", intro: "Books by Phuong Bui.", groups: [
+        { locale: "en", heading: "English", intro: "Books by Jane Austen.", groups: [
           { heading: "Books", entries: [{ title: "Book one", path: "/en/books/book-one", description: null }] },
         ] },
       ],
     });
     expect(text).toBe([
-      "# Infinity Books",
+      "# Infinity Books Press",
       "",
-      "> Sách của Phương Bùi.",
+      "> Sách của Jane Austen.",
       "",
       "## Books",
       "- [Sách một](https://books.example/vi/books/sach-mot): Mô tả hai dòng",
       "",
       "## English",
       "",
-      "> Books by Phuong Bui.",
+      "> Books by Jane Austen.",
       "",
       "### Books",
       "- [Book one](https://books.example/en/books/book-one)",

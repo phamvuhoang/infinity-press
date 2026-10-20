@@ -5,7 +5,7 @@ import { retailLinksSchema, retailerLabel, withRetailUtm } from "@/lib/catalog/r
 describe("withRetailUtm", () => {
   it("appends the four utm parameters", () => {
     expect(withRetailUtm("https://shopee.vn/x?y=1", "vi")).toBe(
-      "https://shopee.vn/x?y=1&utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
+      "https://shopee.vn/x?y=1&utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
     );
   });
   it("leaves a url that already carries any utm parameter untouched", () => {
@@ -14,7 +14,7 @@ describe("withRetailUtm", () => {
   });
   it("keeps a fragment after the query string", () => {
     expect(withRetailUtm("https://tiki.vn/x#reviews", "en")).toBe(
-      "https://tiki.vn/x?utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=en#reviews",
+      "https://tiki.vn/x?utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=en#reviews",
     );
   });
   it("passes a non-https url through unchanged (the read boundary rejects it) rather than throwing", () => {

@@ -11,7 +11,7 @@ type Query = { table: string; calls: Call[] };
 const LEASE = "11111111-1111-4111-8111-111111111111";
 const REQUEST_ID = "req_outbox_test_1234";
 const SITE = "https://books.example.com";
-const FROM = "Infinity Books <books@example.com>";
+const FROM = "Infinity Books Press <books@example.com>";
 
 type Fixture = {
   entitlements: Record<string, { id: string; book_id: string; profile_id: string; status: string } | null>;
@@ -551,7 +551,7 @@ describe("deliverNotificationBatch", () => {
       to: "friend@example.com",
       // The payload path is /vi/..., so the message is Vietnamese and the link it carries is the
       // same path made absolute against the site URL.
-      subject: "Ada đã gửi tặng bạn một món quà trên Infinity Books",
+      subject: "Ada đã gửi tặng bạn một món quà trên Infinity Books Press",
       idempotencyKey: "gift-claim/outbox-1",
     });
     expect(sent[0].html).toContain('href="https://books.example.com/vi/gifts/claim/secret-token-value"');
@@ -601,7 +601,7 @@ describe("deliverNotificationBatch", () => {
 
     await run(client, provider);
 
-    expect(sent[0].subject).toBe("Bạn được tặng một món quà trên Infinity Books");
+    expect(sent[0].subject).toBe("Bạn được tặng một món quà trên Infinity Books Press");
   });
 
   // The purchaser's profile is a courtesy, not a precondition: a missing one costs the name, not
@@ -613,7 +613,7 @@ describe("deliverNotificationBatch", () => {
     const { provider, sent } = recordingProvider(async () => ({ messageId: "m" }));
 
     await expect(run(client, provider)).resolves.toMatchObject({ sent: 1, failed: 0 });
-    expect(sent[0].subject).toBe("Bạn được tặng một món quà trên Infinity Books");
+    expect(sent[0].subject).toBe("Bạn được tặng một món quà trên Infinity Books Press");
   });
 
   it.each([

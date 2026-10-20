@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 
+import { BRAND_NAME } from "@/lib/config/brand";
 import { defaultLocale, type Locale, locales } from "@/lib/i18n/config";
 
 // Public page metadata (S5 spec 7.1 and 7.2). Builders take public DTO values and the validated
 // SITE_URL origin; they never query the database.
 
-export const SITE_NAME = "Infinity Books";
+export const SITE_NAME = BRAND_NAME;
 
 // app/opengraph-image.tsx serves this. A page that sets `openGraph` replaces the root segment's
 // Open Graph object, file-based image included, so every page names its image explicitly.

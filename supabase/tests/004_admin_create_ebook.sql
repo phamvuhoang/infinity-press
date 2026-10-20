@@ -40,7 +40,7 @@ select throws_ok(
 -- (c) an admin succeeds and gets back a book id.
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
 select isnt(
-  (select public.admin_create_ebook('the-golden-book', 'Phuong Bui', 'vi', 'en', 'The Golden Book', 'cuon-sach-vang', 'VN', 'VND', 0)),
+  (select public.admin_create_ebook('the-golden-book', 'Jane Austen', 'vi', 'en', 'The Golden Book', 'cuon-sach-vang', 'VN', 'VND', 0)),
   null,
   'admin: admin_create_ebook returns a book id'
 );
@@ -78,7 +78,7 @@ select results_eq(
 -- admin_create_ebook belongs to `authenticated` only (Ruling R), so re-enter that role with the
 -- admin's jwt claim before calling it again.
 --
--- Ruling AL: this call uses a different author name ('Someone Else', not 'Phuong Bui') on
+-- Ruling AL: this call uses a different author name ('Someone Else', not 'Jane Austen') on
 -- purpose. admin_create_ebook inserts authors before book_localizations, and authors.canonical_
 -- slug is itself unique - reusing the same author name would let this call be rejected on THAT
 -- constraint before book_localizations' unique(locale, slug) is ever evaluated, leaving the
@@ -98,7 +98,7 @@ select throws_ok(
 
 -- (f) ...and leaves no partial graph: all six table counts are exactly what the one successful
 -- call above produced, not doubled and not short a row from a half-applied insert. Unfiltered
--- table-wide counts, not scoped to 'the-golden-book'/'phuong-bui': the failed second call's
+-- table-wide counts, not scoped to 'the-golden-book'/'jane-austen': the failed second call's
 -- author insert ('Someone Else') and book insert ('the-golden-book-2') both succeed before the
 -- book_localizations insert fails and rolls the whole call back, so a scoped-by-key count would
 -- not even look at the rows that need to disappear. Back to the unrestricted role again, for the

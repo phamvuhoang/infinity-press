@@ -113,7 +113,7 @@ describe("entity actions", () => {
       "4a1b2c3d-0000-4000-8000-000000000001",
       "vi",
       initialAdminFormState,
-      form({ slug: "phuong-bui", name: "Phương Bùi", description: "" }),
+      form({ slug: "jane-austen", name: "Jane Austen", description: "" }),
     );
     expect(result.fieldErrors.slug).toBe("This slug is already used in this language.");
   });

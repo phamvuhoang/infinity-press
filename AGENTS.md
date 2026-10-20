@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Current scope
 
-Infinity Books implements one complete ebook path on Next.js 16 and Supabase.
+Infinity Books Press implements one complete ebook path on Next.js 16 and Supabase.
 
 - An admin creates a book and uploads a private EPUB file.
 - The local EPUB worker validates, sanitizes, and processes the file.

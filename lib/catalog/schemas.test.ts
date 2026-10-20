@@ -30,7 +30,7 @@ describe("createBookSchema", () => {
   it("keeps language, locale, market, and currency independent", () => {
     const result = createBookSchema.parse({
       canonicalKey: "the-golden-book",
-      authorName: "Phuong Bui",
+      authorName: "Jane Austen",
       locale: "vi",
       language: "en",
       title: "The Golden Book",
@@ -56,7 +56,7 @@ describe("createBookSchema", () => {
     };
 
     expect(createBookSchema.safeParse({ ...base, authorId: "4a1b2c3d-0000-4000-8000-000000000001", authorName: "" }).success).toBe(true);
-    expect(createBookSchema.safeParse({ ...base, authorId: null, authorName: "Phuong Bui" }).success).toBe(true);
+    expect(createBookSchema.safeParse({ ...base, authorId: null, authorName: "Jane Austen" }).success).toBe(true);
     expect(createBookSchema.safeParse({ ...base, authorId: null, authorName: "" }).success).toBe(false);
   });
 });
@@ -107,7 +107,7 @@ describe("admin catalog schemas", () => {
   });
 
   it("validates localized copy and offers", () => {
-    expect(entityLocalizationSchema.safeParse({ locale: "vi", slug: "phuong-bui", name: "Phương Bùi", description: null }).success).toBe(true);
+    expect(entityLocalizationSchema.safeParse({ locale: "vi", slug: "jane-austen", name: "Jane Austen", description: null }).success).toBe(true);
     expect(entityLocalizationSchema.safeParse({ locale: "ja", slug: "x", name: "X", description: null }).success).toBe(false);
     expect(
       bookLocalizationSchema.safeParse({

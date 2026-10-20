@@ -96,7 +96,7 @@ describe("catalog entities", () => {
     });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
 
-    await expect(createCatalogEntity("author", { canonicalSlug: "phuong-bui", name: "Phương Bùi" })).rejects.toBeInstanceOf(DuplicateCanonicalSlugError);
+    await expect(createCatalogEntity("author", { canonicalSlug: "jane-austen", name: "Jane Austen" })).rejects.toBeInstanceOf(DuplicateCanonicalSlugError);
   });
 
   it("refuses to publish an entity with no localized copy", async () => {
@@ -133,14 +133,14 @@ describe("catalog entities", () => {
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
 
     await expect(
-      saveCatalogEntityLocalization("author", id, { locale: "vi", slug: "phuong-bui", name: "Phương Bùi", description: null, quote: "Tôi viết để bạn nhìn lại." }),
+      saveCatalogEntityLocalization("author", id, { locale: "vi", slug: "jane-austen", name: "Jane Austen", description: null, quote: "Tôi viết để bạn nhìn lại." }),
     ).rejects.toBeInstanceOf(DuplicateEntitySlugError);
     expect(fake.rpc).toHaveBeenCalledWith("admin_save_entity_localization", {
       p_entity_type: "author",
       p_entity_id: id,
       p_locale: "vi",
-      p_slug: "phuong-bui",
-      p_name: "Phương Bùi",
+      p_slug: "jane-austen",
+      p_name: "Jane Austen",
       p_description: null,
       p_quote: "Tôi viết để bạn nhìn lại.",
     });

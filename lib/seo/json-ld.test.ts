@@ -60,7 +60,7 @@ describe("organizationSchema", () => {
     expect(organizationSchema(siteUrl)).toEqual({
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: "Infinity Books",
+      name: "Infinity Books Press",
       url: "https://books.example",
     });
   });
@@ -70,7 +70,7 @@ describe("breadcrumbSchema", () => {
   it("numbers absolute items from one", () => {
     expect(
       breadcrumbSchema(siteUrl, [
-        { name: "Infinity Books", path: "/en" },
+        { name: "Infinity Books Press", path: "/en" },
         { name: "Books", path: "/en/books?sort=title" },
       ]),
     ).toEqual({
@@ -80,7 +80,7 @@ describe("breadcrumbSchema", () => {
         {
           "@type": "ListItem",
           position: 1,
-          name: "Infinity Books",
+          name: "Infinity Books Press",
           item: "https://books.example/en",
         },
         {
@@ -97,7 +97,7 @@ describe("breadcrumbSchema", () => {
 describe("bookSchema", () => {
   const siteOrg = {
     "@type": "Organization",
-    name: "Infinity Books",
+    name: "Infinity Books Press",
     url: siteUrl,
   };
   const ebookOffer = (offers: unknown) => (offers as unknown[])[0];
@@ -218,7 +218,7 @@ describe("bookSchema", () => {
       expect.objectContaining({ "@type": "Offer", price: 0, priceCurrency: "VND", seller: siteOrg, itemOffered: ebookItem }),
       {
         "@type": "Offer",
-        url: "https://shopee.vn/x?utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
+        url: "https://shopee.vn/x?utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
         availability: "https://schema.org/InStock",
         price: 129000,
         priceCurrency: "VND",
@@ -227,7 +227,7 @@ describe("bookSchema", () => {
       },
       {
         "@type": "Offer",
-        url: "https://abc.example/x?utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
+        url: "https://abc.example/x?utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
         availability: "https://schema.org/InStock",
         seller: { "@type": "Organization", name: "Nhà sách ABC" },
         itemOffered: { "@type": "Book", bookFormat: "https://schema.org/Paperback" },
@@ -530,7 +530,7 @@ describe("knowledge structured data", () => {
 
   const siteOrg = {
     "@type": "Organization",
-    name: "Infinity Books",
+    name: "Infinity Books Press",
     url: "https://books.example",
   };
 

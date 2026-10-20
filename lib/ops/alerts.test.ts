@@ -15,7 +15,7 @@ import type { OperationsAlertState, OperationsReport, OpsFinding, OpsRuleName } 
 const NOW = new Date("2026-09-16T12:00:00.000Z");
 const EARLIER = "2026-09-16T11:00:00.000Z";
 const SITE = "https://books.example.com";
-const MAIL = { from: "Infinity Books <ops@example.com>", to: "operator@example.com" };
+const MAIL = { from: "Infinity Books Press <ops@example.com>", to: "operator@example.com" };
 const REQUEST_ID = "req_ops_alerts_1234";
 
 function sha256(value: string): string {
@@ -286,7 +286,7 @@ describe("reconcileOperationsAlerts", () => {
     const [message] = sent;
     expect(message.from).toBe(MAIL.from);
     expect(message.to).toBe(MAIL.to);
-    expect(message.subject).toBe("Infinity Books operations: 2 rules need attention");
+    expect(message.subject).toBe("Infinity Books Press operations: 2 rules need attention");
     expect(message.idempotencyKey).toMatch(/^ops-alert\/[0-9a-f]{64}$/);
     for (const body of [message.text, message.html]) {
       expect(body).toContain("Stale EPUB jobs: 1");
@@ -341,7 +341,7 @@ describe("reconcileOperationsAlerts", () => {
 
     expect(result.alertsSent).toBe(1);
     expect(sent).toHaveLength(1);
-    expect(sent[0].subject).toBe("Infinity Books operations: 1 rule needs attention");
+    expect(sent[0].subject).toBe("Infinity Books Press operations: 1 rule needs attention");
     for (const body of [sent[0].text, sent[0].html]) {
       expect(body).toContain("Unanswered reader questions: 1");
       expect(body).toContain(`${SITE}/admin/questions`);

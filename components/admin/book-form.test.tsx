@@ -9,18 +9,18 @@ it("offers existing authors by stable ID while preserving a new-author name fiel
   render(
     <BookForm
       authorOptions={[
-        { id: "4a1b2c3d-0000-4000-8000-000000000001", name: "Phương Bùi", canonicalSlug: "phuong-bui" },
-        { id: "4a1b2c3d-0000-4000-8000-000000000002", name: "Phương Bùi", canonicalSlug: "phuong-bui-essays" },
+        { id: "4a1b2c3d-0000-4000-8000-000000000001", name: "Jane Austen", canonicalSlug: "jane-austen" },
+        { id: "4a1b2c3d-0000-4000-8000-000000000002", name: "Jane Austen", canonicalSlug: "jane-austen-essays" },
       ]}
     />,
   );
 
   const existingAuthor = screen.getByLabelText("Existing author (optional)");
   expect(existingAuthor).toHaveDisplayValue("Create a new author");
-  expect(screen.getByRole("option", { name: "Phương Bùi (phuong-bui)" })).toHaveValue(
+  expect(screen.getByRole("option", { name: "Jane Austen (jane-austen)" })).toHaveValue(
     "4a1b2c3d-0000-4000-8000-000000000001",
   );
-  expect(screen.getByRole("option", { name: "Phương Bùi (phuong-bui-essays)" })).toHaveValue(
+  expect(screen.getByRole("option", { name: "Jane Austen (jane-austen-essays)" })).toHaveValue(
     "4a1b2c3d-0000-4000-8000-000000000002",
   );
   expect(screen.getByLabelText("Author name")).toBeInTheDocument();

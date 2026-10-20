@@ -201,7 +201,7 @@ describe("BookPage paperback block", () => {
     const shopee = within(section).getByRole("link", { name: "Shopee" });
     expect(shopee).toHaveAttribute(
       "href",
-      "https://shopee.vn/harbour-lights?utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=en",
+      "https://shopee.vn/harbour-lights?utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=en",
     );
     expect(shopee).toHaveAttribute("rel", "nofollow noopener sponsored");
     expect(within(section).getByText(/^List price.*129[.,]000/)).toBeVisible();

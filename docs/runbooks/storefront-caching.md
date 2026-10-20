@@ -179,7 +179,7 @@ can be the one that populates the cache:
 
 ```bash
 for i in 1 2 3; do
-  curl -s -o /tmp/p.html -D - -A Googlebot https://www.infinitybooks.vn/vi/books/quan-sat-tinh-biet \
+  curl -s -o /tmp/p.html -D - -A Googlebot "$SITE_URL/en/books/<a-published-book-slug>" \
     | grep -iE "^(cache-control|x-vercel-cache|x-vercel-id|age)"
   echo "---"
 done

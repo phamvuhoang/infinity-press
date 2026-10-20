@@ -69,7 +69,7 @@ describe("buildPageMetadata", () => {
     const metadata = buildPageMetadata({ siteUrl, locale: "en", paths: { en: "/en" }, description: "Hello" });
     expect(metadata.openGraph).toMatchObject({
       type: "website",
-      siteName: "Infinity Books",
+      siteName: "Infinity Books Press",
       locale: "en_US",
       url: "https://books.example/en",
       images: [{ ...DEFAULT_OG_IMAGE, url: "https://books.example/opengraph-image" }],

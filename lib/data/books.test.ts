@@ -37,7 +37,7 @@ const retailLink = { retailer: "tiki", label: null, url: "https://tiki.vn/x", pr
 const createInput = {
   canonicalKey: "the-golden-book",
   authorId: null,
-  authorName: "Phuong Bui",
+  authorName: "Jane Austen",
   locale: "vi" as const,
   language: "en" as const,
   title: "The Golden Book",
@@ -68,7 +68,7 @@ const editorRow = {
   status: "draft",
   primary_author_id: "4a1b2c3d-0000-4000-8000-000000000001",
   active_publication_id: null,
-  author: { display_name: "Phuong Bui", localizations: [{ id: "5a1b2c3d-0000-4000-8000-000000000003" }] },
+  author: { display_name: "Jane Austen", localizations: [{ id: "5a1b2c3d-0000-4000-8000-000000000003" }] },
   localizations: [
     {
       id: "5a1b2c3d-0000-4000-8000-000000000002",
@@ -188,7 +188,7 @@ describe("createBook", () => {
     expect(fake.rpc).toHaveBeenCalledWith("admin_create_book", {
       p_canonical_key: "the-golden-book",
       p_author_id: null,
-      p_author_name: "Phuong Bui",
+      p_author_name: "Jane Austen",
       p_locale: "vi",
       p_language: "en",
       p_title: "The Golden Book",
@@ -250,7 +250,7 @@ describe("getAdminBook", () => {
   it("treats an author without localized copy as missing", async () => {
     const fake = fakeSupabaseClient({
       tables: {
-        books: { data: { ...editorRow, author: { display_name: "Phuong Bui", localizations: [] } }, error: null },
+        books: { data: { ...editorRow, author: { display_name: "Jane Austen", localizations: [] } }, error: null },
         media_assets: { data: null, error: null },
       },
     });
