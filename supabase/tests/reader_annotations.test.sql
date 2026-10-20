@@ -228,7 +228,7 @@ reset role;
 update public.ebook_publications set status = 'published' where id = 'd1000000-0000-0000-0000-000000000050';
 update public.books set status = 'draft' where id = 'd1000000-0000-0000-0000-000000000020';
 set local role authenticated; select set_config('request.jwt.claim.sub', 'd1000000-0000-0000-0000-000000000001', true);
-select is((select count(*) from public.reader_annotation_request((select id from t_session), 'd1000000-0000-0000-0000-000000000050', 'list'))::int, 0, 'unpublished book cannot be annotated');
+select is((select count(*) from public.reader_annotation_request((select id from t_session), 'd1000000-0000-0000-0000-000000000050', 'list'))::int, 1, 'an unpublished book can still be annotated by its owner');
 reset role;
 
 update public.books set status = 'published' where id = 'd1000000-0000-0000-0000-000000000020';
