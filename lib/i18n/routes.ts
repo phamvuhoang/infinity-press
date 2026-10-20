@@ -29,6 +29,8 @@ export function getCatalogRoutes(locale: Locale) {
     // interface locale. Prefer readEdition wherever the edition is known.
     read: (bookId: string) => withLocale(locale, `/read/${bookId}`),
     readEdition: (editionId: string) => withLocale(locale, `/read/editions/${editionId}`),
+    // Translation error report for an edition the reader owns.
+    reportError: (editionId: string) => withLocale(locale, `/library/report/${editionId}`),
     // S13 reader voice: the review form is a library page; ask-the-author is prefilled by query.
     // A reader holding several editions of a work names the one they are reviewing.
     review: (bookId: string, editionId?: string) =>

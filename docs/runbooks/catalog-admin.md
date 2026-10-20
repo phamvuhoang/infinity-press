@@ -138,3 +138,27 @@ The acceptance coverage is split across `admin-catalog`, `admin-create-book`, `a
 catalog journey creates localized entities and a complete book through the UI, uploads/processes
 its EPUB, checks readiness at the UI and RPC, replaces a cover, publishes, renames twice without
 a redirect chain, and unpublishes. It also checks every S1 page's non-admin HTTP 403 response.
+
+## Editorial review before an edition goes on sale
+
+Each edition (the edition page, **Provenance & editorial review**) carries evidence and a decision:
+
+- **Provenance**: source of the original text, source of the translation, rights note, territories.
+  Notes of up to 2000 characters. This records evidence; it is not a legal opinion that a work is free
+  to use.
+- **Decision**: Not reviewed, Approved, or Blocked. Approving needs the translation source, the rights
+  note and the territories (the form says what is missing). Blocking needs a reason. The reviewer and
+  the date are recorded.
+- **Gate**: a new EPUB version of an edition cannot be published unless the edition is Approved
+  (`editorial_unreviewed` / `editorial_blocked` on the version page say why). Rolling back to an
+  earlier version of an approved edition is unaffected.
+- **Changing the evidence after approval withdraws the approval** (and its reviewer and date).
+  Editions that existed when this was introduced were marked approved with a note saying so.
+
+## Translation reports
+
+Readers flag a translation error from the reader menu; the place they were reading travels with it.
+**Admin > Translation reports** lists them (New / Resolved / Dismissed). Resolve or dismiss with a
+note; reopen if needed. Reports are limited to 5 an hour and 20 a day per reader, plain text, 2000
+characters, and only for editions the reader holds. They go to the editors; nothing is emailed to the
+original author.

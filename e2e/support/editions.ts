@@ -62,3 +62,30 @@ export async function addPublishedEdition(
   if (error) throw error;
   return { editionId: edition.id, publicationId: publication.id, offerIds };
 }
+
+// Editorial approval for a fixture edition, written directly: a publication goes live only for an
+// approved edition, and fixtures that are not about that workflow (the golden path is) skip the form.
+// Needs a profile to record as the reviewer; the first admin, else any profile.
+export async function approveEditionDirectly(editionId: string): Promise<void> {
+  const service = createServiceRoleClient();
+  const admins = await service.from("user_roles").select("profile_id").eq("role", "admin").limit(1);
+  if (admins.error) throw admins.error;
+  let reviewer = admins.data?.[0]?.profile_id;
+  if (!reviewer) {
+    const anyone = await service.from("profiles").select("id").limit(1).single();
+    if (anyone.error) throw anyone.error;
+    reviewer = anyone.data.id;
+  }
+  const { error } = await service
+    .from("editions")
+    .update({
+      translation_source: "E2E fixture",
+      rights_note: "E2E fixture",
+      territory_note: "E2E fixture",
+      editorial_state: "approved",
+      reviewed_by: reviewer,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", editionId);
+  if (error) throw error;
+}

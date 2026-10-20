@@ -5,8 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createEditionAction,
   createOfferAction,
+  saveProvenanceAction,
   setDefaultEditionAction,
   setDefaultOfferAction,
+  setReviewAction,
   updateEditionAction,
 } from "@/app/admin/books/[bookId]/editions/actions";
 import { requireAdmin } from "@/lib/auth/admin";
@@ -16,8 +18,11 @@ import {
   createOffer,
   DuplicateEditionError,
   EditionIdentityLockedError,
+  ProvenanceIncompleteError,
+  saveEditionProvenance,
   setDefaultEdition,
   setDefaultOffer,
+  setEditionReview,
   updateEdition,
 } from "@/lib/data/admin-editions";
 
@@ -35,6 +40,8 @@ vi.mock("@/lib/data/admin-editions", async (importOriginal) => ({
   createOffer: vi.fn(),
   setDefaultEdition: vi.fn(),
   setDefaultOffer: vi.fn(),
+  saveEditionProvenance: vi.fn(),
+  setEditionReview: vi.fn(),
 }));
 
 const bookId = "3a1b2c3d-0000-4000-8000-000000000001";
@@ -58,6 +65,8 @@ describe("every edition action denies before touching anything", () => {
     ["updateEditionAction", () => updateEditionAction(bookId, editionId, initialAdminFormState, form({ languageCode: "ja", editionNumber: "1" }))],
     ["createOfferAction", () => createOfferAction(bookId, editionId, initialAdminFormState, form({ marketCode: "JP", currency: "JPY", priceMinor: "500" }))],
     ["setDefaultEditionAction", () => setDefaultEditionAction(bookId, editionId, "ja", initialAdminFormState, form({}))],
+    ["saveProvenanceAction", () => saveProvenanceAction(bookId, editionId, initialAdminFormState, form({}))],
+    ["setReviewAction", () => setReviewAction(bookId, editionId, initialAdminFormState, form({ state: "approved" }))],
     ["setDefaultOfferAction", () => setDefaultOfferAction(bookId, editionId, offerId, initialAdminFormState, form({}))],
   ])("%s", async (_name, call) => {
     const denied = new Error("NEXT_FORBIDDEN");
@@ -155,5 +164,43 @@ describe("defaults", () => {
     const result = await setDefaultOfferAction(bookId, editionId, offerId, initialAdminFormState, form({}));
     expect(result.savedAt).not.toBeNull();
     expect(setDefaultOffer).toHaveBeenCalledWith(editionId, offerId);
+  });
+});
+
+describe("editorial actions", () => {
+  it("saves provenance, treating blank notes as none", async () => {
+    const state = await saveProvenanceAction(bookId, editionId, initialAdminFormState, form({ translationSource: " Translated 1925 ", rightsNote: "", textSourceNote: "", territoryNote: "Worldwide" }));
+    expect(saveEditionProvenance).toHaveBeenCalledWith(editionId, {
+      textSourceNote: null,
+      translationSource: "Translated 1925",
+      rightsNote: null,
+      territoryNote: "Worldwide",
+    });
+    expect(state.savedAt).not.toBeNull();
+    expect(revalidatePath).toHaveBeenCalledWith(`/admin/books/${bookId}/editions/${editionId}`);
+  });
+
+  it("records the decision", async () => {
+    const state = await setReviewAction(bookId, editionId, initialAdminFormState, form({ state: "approved", note: "Checked." }));
+    expect(setEditionReview).toHaveBeenCalledWith(editionId, { state: "approved", note: "Checked." });
+    expect(state.savedAt).not.toBeNull();
+  });
+
+  it("refuses a block with no reason without asking the database", async () => {
+    const state = await setReviewAction(bookId, editionId, initialAdminFormState, form({ state: "blocked", note: "  " }));
+    expect(state.fieldErrors.note).toBeTruthy();
+    expect(setEditionReview).not.toHaveBeenCalled();
+  });
+
+  it("refuses an unknown state", async () => {
+    const state = await setReviewAction(bookId, editionId, initialAdminFormState, form({ state: "maybe" }));
+    expect(state.savedAt).toBeNull();
+    expect(setEditionReview).not.toHaveBeenCalled();
+  });
+
+  it("explains why approval was refused", async () => {
+    vi.mocked(setEditionReview).mockRejectedValue(new ProvenanceIncompleteError());
+    const state = await setReviewAction(bookId, editionId, initialAdminFormState, form({ state: "approved" }));
+    expect(state.formError).toContain("translation source");
   });
 });

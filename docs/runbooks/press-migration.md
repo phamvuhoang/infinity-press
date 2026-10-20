@@ -277,3 +277,18 @@ default it has no price until an admin chooses. Never the cheapest.
 - Japanese is searchable without word breaks (substring match on the normalized title).
 - Not in this step: public discovery pages for bundles (none exist yet); the quote card page sells the
   edition its card resolves to rather than the quoted publication's edition.
+
+## Editorial, Japanese reader and reports (Task 9)
+
+Migration `20261020200000_press_editorial.sql`.
+
+- `editions` gains provenance notes and `editorial_state` (`unreviewed` / `approved` / `blocked`) with
+  reviewer and date (a check requires both once decided). `publication_readiness_issues` adds
+  `editorial_unreviewed` / `editorial_blocked`, so `publish_publication` refuses (EB012) until an admin
+  approves. Existing published or archived editions were marked approved when this migration ran, with
+  a note; a database with no admin leaves them unreviewed.
+- `admin_save_edition_provenance`, `admin_set_edition_review` (EB044 when approving without evidence).
+- `edition_feedback` + `submit_edition_feedback` (reader rule, plain text, 5/hour and 20/day, EB045),
+  `admin_list_edition_feedback`, `admin_resolve_edition_feedback`.
+- No migration for layout: vertical writing is refused by the processor (`UNSUPPORTED_LAYOUT`).
+- Japanese: no reader or sanitizer change was needed; the evidence is in `reader-corpus-matrix.md`.

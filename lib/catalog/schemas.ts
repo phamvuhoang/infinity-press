@@ -139,6 +139,21 @@ export const editionSchema = z.object({
   contributors: z.array(contributorSchema).max(20, "Use at most 20 credits.").default([]),
 });
 
+// Where the text and its translation come from, and the rights evidence an approver looks at. Notes,
+// not a legal determination.
+const provenanceNote = z.string().trim().max(2000, "Keep each note to 2000 characters.").nullable();
+export const provenanceSchema = z.object({
+  textSourceNote: provenanceNote,
+  translationSource: provenanceNote,
+  rightsNote: provenanceNote,
+  territoryNote: provenanceNote,
+});
+
+export const editionReviewSchema = z.object({
+  state: z.enum(["unreviewed", "approved", "blocked"]),
+  note: provenanceNote,
+});
+
 // A new edition of an existing work. The number defaults to the next free one for that language.
 export const createEditionSchema = z.object({
   languageCode: contentLanguageSchema,
@@ -509,6 +524,8 @@ export type EntityLocalizationInput = z.infer<typeof entityLocalizationSchema>;
 export type BookLocalizationInput = z.infer<typeof bookLocalizationSchema>;
 export type BookDetailsInput = z.infer<typeof bookDetailsSchema>;
 export type EditionInput = z.infer<typeof editionSchema>;
+export type ProvenanceInput = z.infer<typeof provenanceSchema>;
+export type EditionReviewInput = z.infer<typeof editionReviewSchema>;
 export type CreateEditionInput = z.infer<typeof createEditionSchema>;
 export type CreateOfferInput = z.infer<typeof createOfferSchema>;
 export type OfferInput = z.output<typeof offerSchema>;

@@ -66,6 +66,8 @@ export type ReaderClientProps = ReaderClientBaseProps &
         authorName: string;
         canonicalBookUrl: string;
         reviewHref: string;
+        // Where "Report a translation error" goes; the reader adds the place they are reading.
+        reportHref?: string;
         askHref: string | null;
         relatedBooks: Array<{ title: string; authorName: string; href: string; coverUrl: string | null }>;
       }
@@ -74,6 +76,7 @@ export type ReaderClientProps = ReaderClientBaseProps &
         authorName?: string;
         canonicalBookUrl?: string;
         reviewHref?: string;
+        reportHref?: string;
         askHref?: string;
         relatedBooks?: Array<{ title: string; authorName: string; href: string; coverUrl: string | null }>;
       }
@@ -141,6 +144,7 @@ export function ReaderClient({
   authorName,
   canonicalBookUrl,
   reviewHref,
+  reportHref,
   askHref,
   relatedBooks = [],
 }: ReaderClientProps) {
@@ -930,6 +934,17 @@ export function ReaderClient({
               <button className="min-h-11 rounded-md px-3 text-left text-sm hover:bg-current/5" onClick={() => { setMenuOpen(false); setSettingsOpen(true); }} role="menuitem" type="button">{copy.settings}</button>
               <button aria-checked={desktopPageChoice === 1} className="min-h-11 rounded-md px-3 text-left text-sm hover:bg-current/5" onClick={() => { setDesktopPageChoice(1); setMenuOpen(false); }} role="menuitemradio" type="button">{copy.onePage}</button>
               <button aria-checked={desktopPageChoice === 2} className="min-h-11 rounded-md px-3 text-left text-sm hover:bg-current/5" onClick={() => { setDesktopPageChoice(2); setMenuOpen(false); }} role="menuitemradio" type="button">{copy.twoPages}</button>
+              {mode === "entitled" && reportHref ? <button className="min-h-11 rounded-md px-3 text-left text-sm hover:bg-current/5" onClick={() => {
+                setMenuOpen(false);
+                // The place being read travels with the report; leaving the page flushes the saved position.
+                const place = locatorRef.current;
+                const query = new URLSearchParams();
+                if (place) {
+                  query.set("href", place.href.slice(0, 500));
+                  query.set("progression", String(place.totalProgression ?? place.progression));
+                }
+                window.location.assign(`${reportHref}?${query}`);
+              }} role="menuitem" type="button">{copy.reportError}</button> : null}
               <button aria-describedby="reader-ask-soon" className="min-h-11 rounded-md px-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60" disabled role="menuitem" type="button">{copy.askInfinity}</button>
             </div></DialogPanel>
           </Dialog> : null}

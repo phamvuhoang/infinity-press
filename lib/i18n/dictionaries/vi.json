@@ -419,6 +419,24 @@
     "detailsDescription": "Email được liên kết với tài khoản của bạn."
   },
   "library": {
+    "report": {
+      "title": "Báo lỗi bản dịch",
+      "intro": "Cho ban biên tập biết điều gì có vẻ sai trong {title}. Báo cáo do ban biên tập đọc, không gửi tới tác giả.",
+      "place": "Vị trí bạn đang đọc",
+      "messageLabel": "Có gì chưa đúng?",
+      "counter": "{count}/2000",
+      "send": "Gửi báo cáo",
+      "sent": "Cảm ơn bạn. Ban biên tập sẽ xem xét.",
+      "back": "Về thư viện của bạn",
+      "errors": {
+        "empty": "Hãy mô tả vấn đề trước.",
+        "tooLong": "Tối đa 2000 ký tự.",
+        "markup": "Vui lòng dùng văn bản thuần.",
+        "notAllowed": "Ấn bản này không có trong thư viện của bạn.",
+        "tooMany": "Gần đây bạn đã gửi nhiều báo cáo. Vui lòng thử lại sau.",
+        "failed": "Đã có lỗi xảy ra. Vui lòng thử lại."
+      }
+    },
     "eyebrow": "Thư viện của bạn",
     "title": "Tiếp tục đọc từ nơi bạn dừng lại",
     "description": "Những cuốn sách bạn mở khóa sẽ xuất hiện tại đây.",
@@ -615,6 +633,7 @@
     "noRelatedBooks": "Chưa có gợi ý sách.",
     "rateBook": "Đánh giá sách",
     "askAuthor": "Hỏi ban biên tập",
+    "reportError": "Báo lỗi bản dịch",
     "chooseEdition": {
       "title": "Chọn bản để đọc",
       "description": "Bạn sở hữu nhiều bản ngôn ngữ của tác phẩm này."

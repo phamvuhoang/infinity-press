@@ -280,6 +280,22 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
   const previewFrame = page.frameLocator("iframe[title='Preview of OEBPS/text/chapter1.xhtml']");
   await expect(previewFrame.getByText(CHAPTER_ONE_MARKER)).toBeVisible({ timeout: 15_000 });
 
+  // An edition nobody has approved cannot go live: the editor is told why.
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByTestId("publication-action-message")).toContainText("not been editorially approved");
+
+  // Record the provenance and approve it, through the supported UI.
+  await page.goto(`/admin/books/${bookId}/editions/${await soleEditionId(bookId)}`);
+  await page.getByLabel("Source of the translation").fill("Public-domain translation, 1925 (e2e fixture)");
+  await page.getByLabel("Rights note").fill("Fixture text written for the test suite.");
+  await page.getByLabel("Territories").fill("Worldwide");
+  await page.getByRole("button", { name: "Save provenance" }).click();
+  await expect(page.getByText("Saved.").first()).toBeVisible();
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  await expect(page.getByTestId("editorial-state")).toContainText("Approved");
+
+  await page.goto(`/admin/publications/${asset.id}`);
   page.once("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByTestId("publication-action-message")).toContainText("Published.");

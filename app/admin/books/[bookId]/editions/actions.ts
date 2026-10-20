@@ -14,15 +14,18 @@ import {
   type AdminFormState,
 } from "@/lib/catalog/form";
 import { revalidateBookAdmin } from "@/lib/catalog/revalidate";
-import { createEditionSchema, createOfferSchema, editionSchema } from "@/lib/catalog/schemas";
+import { createEditionSchema, createOfferSchema, editionReviewSchema, editionSchema, provenanceSchema } from "@/lib/catalog/schemas";
 import {
   createEdition,
   createOffer,
   DuplicateEditionError,
   EditionIdentityLockedError,
   EditionNotFoundError,
+  ProvenanceIncompleteError,
+  saveEditionProvenance,
   setDefaultEdition,
   setDefaultOffer,
+  setEditionReview,
   UnknownLanguageError,
   updateEdition,
 } from "@/lib/data/admin-editions";
@@ -43,6 +46,7 @@ function knownFailure(error: unknown): AdminFormState {
   if (error instanceof UnknownLanguageError || error instanceof EditionIdentityLockedError) {
     return { fieldErrors: { languageCode: error.message }, formError: null, savedAt: null };
   }
+  if (error instanceof ProvenanceIncompleteError) return { fieldErrors: {}, formError: error.message, savedAt: null };
   if (error instanceof EditionNotFoundError) return { fieldErrors: {}, formError: error.message, savedAt: null };
   return { fieldErrors: {}, formError: "Something went wrong saving. Try again.", savedAt: null };
 }
@@ -147,6 +151,53 @@ export async function setDefaultOfferAction(
   await requireAdmin({ next: `/admin/books/${bookId}/editions/${editionId}` });
   try {
     await setDefaultOffer(editionId, offerId);
+  } catch (error) {
+    return knownFailure(error);
+  }
+  revalidateEdition(bookId, editionId);
+  return saved();
+}
+
+export async function saveProvenanceAction(
+  bookId: string,
+  editionId: string,
+  _previous: AdminFormState,
+  formData: FormData,
+): Promise<AdminFormState> {
+  await requireAdmin({ next: `/admin/books/${bookId}/editions/${editionId}` });
+  const parsed = provenanceSchema.safeParse({
+    textSourceNote: readOptionalText(formData, "textSourceNote"),
+    translationSource: readOptionalText(formData, "translationSource"),
+    rightsNote: readOptionalText(formData, "rightsNote"),
+    territoryNote: readOptionalText(formData, "territoryNote"),
+  });
+  if (!parsed.success) return invalid(parsed.error);
+
+  try {
+    await saveEditionProvenance(editionId, parsed.data);
+  } catch (error) {
+    return knownFailure(error);
+  }
+  revalidateEdition(bookId, editionId);
+  return saved();
+}
+
+export async function setReviewAction(
+  bookId: string,
+  editionId: string,
+  _previous: AdminFormState,
+  formData: FormData,
+): Promise<AdminFormState> {
+  await requireAdmin({ next: `/admin/books/${bookId}/editions/${editionId}` });
+  const parsed = editionReviewSchema.safeParse({ state: readText(formData, "state"), note: readOptionalText(formData, "note") });
+  if (!parsed.success) return invalid(parsed.error);
+  // A block is a decision against publishing; saying nothing about why is not one.
+  if (parsed.data.state === "blocked" && !parsed.data.note) {
+    return { fieldErrors: { note: "Say why this edition is blocked." }, formError: null, savedAt: null };
+  }
+
+  try {
+    await setEditionReview(editionId, parsed.data);
   } catch (error) {
     return knownFailure(error);
   }

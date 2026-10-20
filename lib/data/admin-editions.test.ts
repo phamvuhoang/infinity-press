@@ -10,7 +10,10 @@ import {
   getAdminEdition,
   listPricingDefaults,
   setDefaultEdition,
+  ProvenanceIncompleteError,
+  saveEditionProvenance,
   setDefaultOffer,
+  setEditionReview,
   UnknownLanguageError,
   updateEdition,
 } from "@/lib/data/admin-editions";
@@ -45,6 +48,8 @@ describe("admin gate ordering", () => {
     ["setDefaultEdition", () => setDefaultEdition(bookId, "ja", editionId)],
     ["setDefaultOffer", () => setDefaultOffer(editionId, offerId)],
     ["listPricingDefaults", () => listPricingDefaults("ja")],
+    ["saveEditionProvenance", () => saveEditionProvenance(editionId, { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null })],
+    ["setEditionReview", () => setEditionReview(editionId, { state: "approved", note: null })],
   ])("%s never builds a client when the admin gate denies", async (_name, call) => {
     vi.mocked(requireAdmin).mockRejectedValue(new Error("NEXT_FORBIDDEN"));
     await expect(call()).rejects.toThrow("NEXT_FORBIDDEN");
@@ -177,6 +182,13 @@ describe("getAdminEdition", () => {
       },
     ],
     default_offer: { offer_id: offerId },
+    text_source_note: "1912 edition",
+    translation_source: "Translated 1925",
+    rights_note: null,
+    territory_note: null,
+    editorial_state: "unreviewed",
+    reviewed_at: null,
+    review_note: null,
   };
 
   it("builds the edition DTO with its offers and default flags", async () => {
@@ -197,6 +209,15 @@ describe("getAdminEdition", () => {
       { id: offerId, marketCode: "JP", currency: "JPY", priceMinor: 500, active: true, isDefault: true, sale: null, effectivePriceMinor: 500, saleState: "none" },
     ]);
     expect(edition.sku).toEqual({ id: "7a1b2c3d-0000-4000-8000-000000000001", skuCode: "book-ja-ebook", active: true });
+    expect(edition.editorial).toEqual({
+      state: "unreviewed",
+      textSourceNote: "1912 edition",
+      translationSource: "Translated 1925",
+      rightsNote: null,
+      territoryNote: null,
+      reviewedAt: null,
+      reviewNote: null,
+    });
   });
 
   it("is not found when the edition belongs to a different book", async () => {
@@ -213,5 +234,52 @@ describe("listPricingDefaults", () => {
     });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
     await expect(listPricingDefaults("ja")).resolves.toEqual([{ marketCode: "JP", currency: "JPY", priceMinor: 500 }]);
+  });
+});
+
+describe("editorial review", () => {
+  it("saves the provenance notes exactly as entered", async () => {
+    const fake = fakeSupabaseClient({ rpc: { data: null, error: null } });
+    vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
+
+    await saveEditionProvenance(editionId, {
+      textSourceNote: "1912 edition",
+      translationSource: "Translated 1925",
+      rightsNote: "Public domain",
+      territoryNote: "Worldwide",
+    });
+
+    expect(fake.rpc).toHaveBeenCalledWith("admin_save_edition_provenance", {
+      p_edition_id: editionId,
+      p_text_source_note: "1912 edition",
+      p_translation_source: "Translated 1925",
+      p_rights_note: "Public domain",
+      p_territory_note: "Worldwide",
+    });
+  });
+
+  it("records a decision with the reviewer's note", async () => {
+    const fake = fakeSupabaseClient({ rpc: { data: null, error: null } });
+    vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
+
+    await setEditionReview(editionId, { state: "blocked", note: "Rights unclear." });
+
+    expect(fake.rpc).toHaveBeenCalledWith("admin_set_edition_review", {
+      p_edition_id: editionId,
+      p_state: "blocked",
+      p_note: "Rights unclear.",
+    });
+  });
+
+  it("says what is missing when approval is refused for want of evidence", async () => {
+    const fake = fakeSupabaseClient({ rpc: { data: null, error: { code: "EB044", message: "record the translation source" } } });
+    vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
+
+    await expect(setEditionReview(editionId, { state: "approved", note: null })).rejects.toBeInstanceOf(ProvenanceIncompleteError);
+  });
+
+  it("rejects a malformed edition id before calling the database", async () => {
+    await expect(setEditionReview("nope", { state: "approved", note: null })).rejects.toThrow();
+    expect(createClient).not.toHaveBeenCalled();
   });
 });

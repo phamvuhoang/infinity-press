@@ -22,6 +22,8 @@ vi.mock("../actions", () => ({
   createOfferAction: vi.fn(),
   setDefaultEditionAction: vi.fn(),
   setDefaultOfferAction: vi.fn(),
+  saveProvenanceAction: vi.fn(),
+  setReviewAction: vi.fn(),
 }));
 vi.mock("@/app/admin/books/[bookId]/editor-actions", () => ({ updateOfferAction: vi.fn() }));
 vi.mock("@/app/admin/books/[bookId]/epub/actions", () => ({ createEpubUploadAction: vi.fn(), finalizeEpubUploadAction: vi.fn() }));
@@ -43,6 +45,7 @@ const edition: AdminEditionDTO = {
   activePublicationId: null,
   identityLocked: false,
   sku: { id: "sku-id", skuCode: "golden-ja-ebook", active: true },
+  editorial: { state: "unreviewed", textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, reviewedAt: null, reviewNote: null },
   offers: [
     { id: "offer-id", marketCode: "JP", currency: "JPY", priceMinor: 500, active: true, isDefault: true, sale: null, effectivePriceMinor: 500, saleState: "none" },
   ],
@@ -119,4 +122,16 @@ it("prefills a new offer from the pricing template but offers the default offer 
   expect(document.querySelector<HTMLInputElement>("#new-offer-currency")?.value).toBe("JPY");
   expect(document.querySelector<HTMLInputElement>("#new-offer-priceMinor")?.value).toBe("500");
   expect(screen.getAllByRole("button", { name: "Make default offer" })).toHaveLength(1);
+});
+
+it("shows the editorial status and the provenance form, so an edition cannot be published unseen", async () => {
+  vi.mocked(getAdminEdition).mockResolvedValue({
+    ...edition,
+    editorial: { ...edition.editorial, state: "approved", translationSource: "Translated 1925", reviewedAt: "2026-10-01T00:00:00Z" },
+  });
+  render(await AdminEditionPage({ params: Promise.resolve({ bookId, editionId }) }));
+  expect(screen.getByTestId("editorial-state")).toHaveTextContent("Approved");
+  expect(screen.getByLabelText("Source of the translation")).toHaveValue("Translated 1925");
+  expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Block" })).toBeInTheDocument();
 });

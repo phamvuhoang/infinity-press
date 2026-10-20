@@ -419,6 +419,24 @@
     "detailsDescription": "The email connected to your account."
   },
   "library": {
+    "report": {
+      "title": "Report a translation error",
+      "intro": "Tell the editors what looks wrong in {title}. Reports are read by the editorial team; they are not sent to the author.",
+      "place": "Where you were reading",
+      "messageLabel": "What is wrong?",
+      "counter": "{count}/2000",
+      "send": "Send report",
+      "sent": "Thank you. The editors will look at it.",
+      "back": "Back to your library",
+      "errors": {
+        "empty": "Describe the problem first.",
+        "tooLong": "Keep it to 2000 characters.",
+        "markup": "Please use plain text.",
+        "notAllowed": "This edition is not in your library.",
+        "tooMany": "You have sent several reports recently. Please try again later.",
+        "failed": "Something went wrong. Please try again."
+      }
+    },
     "eyebrow": "Your library",
     "title": "Keep reading where you left off",
     "description": "Books you unlock will live here.",
@@ -615,6 +633,7 @@
     "noRelatedBooks": "No recommendations yet.",
     "rateBook": "Rate this book",
     "askAuthor": "Ask the editors",
+    "reportError": "Report a translation error",
     "chooseEdition": {
       "title": "Choose an edition to read",
       "description": "You own more than one language edition of this work."

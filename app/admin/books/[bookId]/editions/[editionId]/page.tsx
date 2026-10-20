@@ -4,7 +4,9 @@ import { updateOfferAction } from "@/app/admin/books/[bookId]/editor-actions";
 import {
   createOfferAction,
   setDefaultEditionAction,
+  saveProvenanceAction,
   setDefaultOfferAction,
+  setReviewAction,
   updateEditionAction,
 } from "@/app/admin/books/[bookId]/editions/actions";
 import { AdminPageHeader, AdminSection } from "@/components/admin/admin-page-header";
@@ -14,6 +16,7 @@ import {
   EditionForm,
   OfferForm,
 } from "@/components/admin/book-editor/edition-offer-forms";
+import { ProvenanceForm, ReviewForm } from "@/components/admin/book-editor/edition-editorial-forms";
 import { EpubUploadForm } from "@/components/admin/epub-upload-form";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getAdminEdition, listPricingDefaults } from "@/lib/data/admin-editions";
@@ -108,6 +111,18 @@ export default async function AdminEditionPage({ params }: { params: Promise<{ b
               <h3 className="mb-3 text-[0.6875rem] font-medium tracking-[0.08em] text-sage-text uppercase">New offer</h3>
               <CreateOfferForm action={createOfferAction.bind(null, bookId, editionId)} defaults={pricingDefaults} />
             </div>
+          </div>
+        </AdminSection>
+
+        <AdminSection id="editorial" title="Provenance & editorial review">
+          <p className="mb-4 text-sm text-sage-text">
+            Press republishes works with a translation history. Record where the text and translation come from and what supports
+            publishing them; a new EPUB version can go live only while this edition is approved. This stores evidence and a decision, not
+            a legal opinion. Changing the evidence after approval withdraws the approval.
+          </p>
+          <div className="space-y-10">
+            <ProvenanceForm action={saveProvenanceAction.bind(null, bookId, editionId)} editorial={edition.editorial} />
+            <ReviewForm action={setReviewAction.bind(null, bookId, editionId)} editorial={edition.editorial} />
           </div>
         </AdminSection>
 

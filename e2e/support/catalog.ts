@@ -8,7 +8,7 @@ const PNG = Buffer.from(
   "base64",
 );
 
-type Locale = "vi" | "en";
+type Locale = "vi" | "en" | "ja";
 
 // Throws on a failed write. Inserts without `.select()` return null data, which callers ignore.
 function check<T>(result: { data: T; error: { message: string } | null }): NonNullable<T> {

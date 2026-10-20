@@ -3,7 +3,7 @@ import "server-only";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
-import type { CreateEditionInput, CreateOfferInput, EditionInput } from "@/lib/catalog/schemas";
+import type { CreateEditionInput, CreateOfferInput, EditionInput, EditionReviewInput, ProvenanceInput } from "@/lib/catalog/schemas";
 import { createClient } from "@/lib/supabase/server";
 
 // Edition administration (spec section 6). Every function runs requireAdmin() before building a
@@ -31,6 +31,13 @@ export class UnknownLanguageError extends Error {
   }
 }
 
+export class ProvenanceIncompleteError extends Error {
+  constructor() {
+    super("Record the translation source, the rights note and the territories before approving.");
+    this.name = "ProvenanceIncompleteError";
+  }
+}
+
 export class EditionIdentityLockedError extends Error {
   constructor() {
     super("This edition has orders or readers, so its language cannot change. Create a new edition instead.");
@@ -46,6 +53,7 @@ function failure(operation: string, error: DatabaseError): Error {
     return new DuplicateEditionError();
   }
   if (error.code === "23503" && error.message.includes("language")) return new UnknownLanguageError();
+  if (error.code === "EB044") return new ProvenanceIncompleteError();
   if (error.code === "23514") return new EditionIdentityLockedError();
   return new Error(`${operation} failed.`);
 }
@@ -87,6 +95,16 @@ export type AdminEditionDTO = {
   identityLocked: boolean;
   sku: { id: string; skuCode: string; active: boolean } | null;
   offers: AdminOfferDTO[];
+  // The accountable record: where the text comes from and whether an editor approved publishing it.
+  editorial: {
+    state: "unreviewed" | "approved" | "blocked";
+    textSourceNote: string | null;
+    translationSource: string | null;
+    rightsNote: string | null;
+    territoryNote: string | null;
+    reviewedAt: string | null;
+    reviewNote: string | null;
+  };
 };
 
 export type OfferRow = {
@@ -158,6 +176,13 @@ type EditionRow = {
   active_publication_id: string | null;
   skus: { id: string; sku_code: string; active: boolean; offers: OfferRow[] }[];
   default_offer: { offer_id: string } | { offer_id: string }[] | null;
+  text_source_note: string | null;
+  translation_source: string | null;
+  rights_note: string | null;
+  territory_note: string | null;
+  editorial_state: "unreviewed" | "approved" | "blocked";
+  reviewed_at: string | null;
+  review_note: string | null;
 };
 
 function oneOrNull<T>(value: T | T[] | null): T | null {
@@ -173,6 +198,7 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
     .from("editions")
     .select(
       `id, book_id, language_code, edition_number, isbn, publication_date, introduction, contributors, status, active_publication_id,
+       text_source_note, translation_source, rights_note, territory_note, editorial_state, reviewed_at, review_note,
        skus ( id, sku_code, active, offers ( ${offerColumns} ) ),
        default_offer:edition_default_offers ( offer_id )`,
     )
@@ -211,6 +237,15 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
     identityLocked: (entitlements.count ?? 0) > 0 || (orderItems.count ?? 0) > 0,
     sku: sku ? { id: sku.id, skuCode: sku.sku_code, active: sku.active } : null,
     offers: (sku?.offers ?? []).map((offer) => toOfferDto(offer, offer.id === defaultOfferId, now)),
+    editorial: {
+      state: row.editorial_state,
+      textSourceNote: row.text_source_note,
+      translationSource: row.translation_source,
+      rightsNote: row.rights_note,
+      territoryNote: row.territory_note,
+      reviewedAt: row.reviewed_at,
+      reviewNote: row.review_note,
+    },
   };
 }
 
@@ -307,4 +342,34 @@ export async function listPricingDefaults(languageCode: string): Promise<Pricing
     currency: row.currency,
     priceMinor: Number(row.price_minor),
   }));
+}
+
+export async function saveEditionProvenance(editionId: string, input: ProvenanceInput): Promise<void> {
+  await requireAdmin();
+  assertUuid(editionId);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_save_edition_provenance", {
+    p_edition_id: editionId,
+    p_text_source_note: input.textSourceNote ?? "",
+    p_translation_source: input.translationSource ?? "",
+    p_rights_note: input.rightsNote ?? "",
+    p_territory_note: input.territoryNote ?? "",
+  });
+  if (error) throw failure("saveEditionProvenance", error);
+}
+
+// The editor's decision. Approval is what lets a new EPUB version of this edition go live; changing
+// the evidence afterwards withdraws it in the database.
+export async function setEditionReview(editionId: string, input: EditionReviewInput): Promise<void> {
+  await requireAdmin();
+  assertUuid(editionId);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_edition_review", {
+    p_edition_id: editionId,
+    p_state: input.state,
+    p_note: input.note ?? "",
+  });
+  if (error) throw failure("setEditionReview", error);
 }

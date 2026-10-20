@@ -1,3 +1,4 @@
+import { approveEditionDirectly } from "./support/editions";
 import { type Page, expect, test } from "@playwright/test";
 
 import { createServiceRoleClient } from "./support/supabase";
@@ -62,6 +63,7 @@ async function seedReadyPublication() {
     .select("id")
     .single();
   if (editionError) throw editionError;
+  await approveEditionDirectly(edition.id);
 
   const { data: asset, error: assetError } = await admin
     .from("ebook_assets")

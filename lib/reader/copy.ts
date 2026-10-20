@@ -13,6 +13,6 @@ export type ReaderCopy = {
   shareCancelled: string; quoteTruncated: string; shareUnavailable: string; shareCreated: string; sharePublic: string; emptyBookmarks: string; emptyNotes: string; loadingSavedItems: string;
   search: string; searchPlaceholder: string; searchPrompt: string; searching: string; searchEmpty: string; searchFailed: string; untitledChapter: string;
   annotationsFailed: string; page: string; pages: string; searchOpen: string; menu: string; onePage: string; twoPages: string;
-  relatedBooks: string; noRelatedBooks: string; rateBook: string; askAuthor: string;
+  relatedBooks: string; noRelatedBooks: string; rateBook: string; askAuthor: string; reportError: string;
   annotationTooLong: string;
 };

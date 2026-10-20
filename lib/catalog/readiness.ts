@@ -69,6 +69,8 @@ export const publicationIssueMessage: Record<string, string> = {
   epub_language_unverified:
     "The EPUB's language was not recorded. Re-process this upload with the current worker so it can be verified.",
   epub_language_mismatch: "The EPUB is written in a different language than this edition declares.",
+  editorial_unreviewed: "This edition has not been editorially approved. Record its provenance and approve it on the edition page first.",
+  editorial_blocked: "This edition is blocked by an editorial review. Lift the block on the edition page before publishing.",
 };
 
 const publicationErrorPattern = /publication is not ready: ([a-z_,]+)/;

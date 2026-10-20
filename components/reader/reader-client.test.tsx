@@ -156,7 +156,7 @@ const copy: ReaderCopy = {
   askInfinity: "Ask Infinity", comingSoon: "Coming soon", copied: "Copied", copyFailed: "Could not copy quote", shareCancelled: "Sharing cancelled",
   quoteTruncated: "Quote shortened to 300 characters", shareUnavailable: "Sharing is unavailable; copied instead.", shareCreated: "A public quote page was created. You can remove it from your library.", sharePublic: "Sharing creates a public quote page you can remove from your library.", emptyBookmarks: "No bookmarks yet.", emptyNotes: "No notes yet.", loadingSavedItems: "Loading saved items…",
   search: "Search this book", searchPlaceholder: "Search words or phrases", searchPrompt: "Type at least 2 characters.", searching: "Searching…", searchEmpty: "No matches found.", searchFailed: "Search is unavailable right now.", untitledChapter: "Untitled chapter",
-  annotationsFailed: "Saved items are unavailable right now.", locationUnavailable: "Location unavailable.", page: "Page", pages: "pages", searchOpen: "Search this book", menu: "Reader menu", onePage: "One page", twoPages: "Two pages", relatedBooks: "Continue reading", noRelatedBooks: "No recommendations yet.", rateBook: "Rate this book", askAuthor: "Ask the author",
+  annotationsFailed: "Saved items are unavailable right now.", locationUnavailable: "Location unavailable.", page: "Page", pages: "pages", searchOpen: "Search this book", menu: "Reader menu", onePage: "One page", twoPages: "Two pages", relatedBooks: "Continue reading", noRelatedBooks: "No recommendations yet.", rateBook: "Rate this book", askAuthor: "Ask the author", reportError: "Report a translation error",
 };
 
 let fetchSpy: MockInstance<typeof fetch>;
