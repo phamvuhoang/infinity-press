@@ -1,8 +1,11 @@
 # Runbook: testing environments
 
-There are three environments and **no dev or staging tier**. One Supabase project and one Vercel
-production project serve everything, which is a deliberate pre-go-live choice and the reason several
-rules below are stricter than they would otherwise need to be.
+There are three environments and **no dev or staging tier**. Infinity Books Press (this fork) uses
+its **own** Supabase and Vercel projects, separate from the infinitybooks.vn project this code was
+forked from. A cloud project named by an inherited `supabase/.temp` link or `.env.local` is the VN
+project and is **not** a Press environment: never run `db reset`, fixtures, or EPUB
+`process`/`retry` against it. One Press Supabase project and one Press Vercel project serve
+everything, which is the reason several rules below are stricter than they would otherwise need to be.
 
 | # | App runs | Database | What it is for |
 | --- | --- | --- | --- |
@@ -423,10 +426,9 @@ Not testing instructions — things a tester will notice and should not file twi
   problem, and it is the most likely reason a book that "should work" does not. When evaluating a
   set of real books, **record which contain SVG before interpreting any failure**, or a profile
   rejection will be misread as an engine failure.
-- **There is no public catalog.** No book listing or detail page exists — only a marketing page. The
-  RLS policies that would expose published books to anonymous visitors are correct and tested, but
-  nothing renders them. "Published" currently means visible to an anonymous SQL client, not to a
-  reader.
+- **The public catalog exists** (`/{locale}/books`, book detail, search, authors, topics, bundles).
+  Earlier revisions of this runbook said otherwise; that was stale. Catalog language selection is
+  specified in `docs/superpowers/specs/2026-10-20-infinity-books-press-design.md` section 7.
 - **S1 provides public covers in the `covers` bucket.** Source EPUBs and derived resources remain
   private. The catalog admin can upload and replace covers; public catalog pages still belong to S2.
 - **The generated database types enforce nothing for application code.** Neither `createClient()` nor
