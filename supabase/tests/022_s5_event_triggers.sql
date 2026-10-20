@@ -35,8 +35,9 @@ insert into public.ebook_assets (id, edition_id, source_storage_key, version, st
 values ('94000000-0000-0000-0000-00000000000a', '93000000-0000-0000-0000-00000000000a', 's5-events/a/1.epub', 1, 'published');
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
 values ('95000000-0000-0000-0000-00000000000a', '94000000-0000-0000-0000-00000000000a', 1, 's5-events/a/1/manifest.json', 'published', 'vi');
-update public.books set active_publication_id = '95000000-0000-0000-0000-00000000000a'
-where id = '92000000-0000-0000-0000-00000000000a';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = '95000000-0000-0000-0000-00000000000a' and (b.id = '92000000-0000-0000-0000-00000000000a');
 insert into public.entitlements (id, profile_id, book_id, source_type, actor_profile_id, reason, status)
 select '96000000-0000-0000-0000-00000000000a', t_ids.reader_id, '92000000-0000-0000-0000-00000000000a', 'admin_grant', t_ids.admin_id, 'Test fixture', 'active'
 from t_ids;

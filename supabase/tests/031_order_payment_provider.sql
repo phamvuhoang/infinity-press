@@ -1,6 +1,34 @@
 begin;
 select plan(7);
 
+-- The work-level order entry point was removed by the contract migration. This fixture stands in for
+-- it (one edition on sale -> that edition's best payable offer) so these older tests keep exercising
+-- the order machinery through create_edition_order.
+create function public.create_ebook_order(p_book_id uuid) returns uuid
+language plpgsql security definer set search_path = '' as $f$
+declare v_edition_ids uuid[]; v_offer_id uuid;
+begin
+  select array_agg(distinct s.edition_id) into v_edition_ids
+  from public.offers o join public.skus s on s.id = o.sku_id and s.active
+  join public.editions ed on ed.id = s.edition_id
+  where ed.book_id = p_book_id and ed.status = 'published' and ed.active_publication_id is not null
+    and o.active and public.offer_effective_price_minor(o) > 0
+    and (o.starts_at is null or o.starts_at <= now()) and (o.ends_at is null or o.ends_at > now());
+  if coalesce(cardinality(v_edition_ids), 0) = 0 then
+    raise exception 'create_ebook_order: book % is not purchasable', p_book_id using errcode = 'EB012';
+  end if;
+  if cardinality(v_edition_ids) > 1 then
+    raise exception 'create_ebook_order: book % has several editions on sale; name one', p_book_id using errcode = 'EB042';
+  end if;
+  select o.id into v_offer_id from public.offers o join public.skus s on s.id = o.sku_id and s.active
+  where s.edition_id = v_edition_ids[1] and o.active and public.offer_effective_price_minor(o) > 0
+    and (o.starts_at is null or o.starts_at <= now()) and (o.ends_at is null or o.ends_at > now())
+  order by public.currency_is_payable(o.currency) desc, public.offer_effective_price_minor(o), o.currency limit 1;
+  return public.create_edition_order(v_edition_ids[1], v_offer_id, null);
+end $f$;
+revoke all on function public.create_ebook_order(uuid) from public, anon;
+grant execute on function public.create_ebook_order(uuid) to authenticated;
+
 -- S7: orders.payment_provider, the reader-readable copy of the provider the order is booked under.
 --
 -- The provider already lives on the order's payments row, and every admin surface reads it there.
@@ -45,8 +73,9 @@ values ('c6000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-0000000
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
 values ('c7000000-0000-0000-0000-000000000001', 'c6000000-0000-0000-0000-000000000001', 1, 's7-orderprovider/1/manifest.json', 'published');
 
-update public.books set active_publication_id = 'c7000000-0000-0000-0000-000000000001'
-where id = 'c2000000-0000-0000-0000-000000000001';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'c7000000-0000-0000-0000-000000000001' and (b.id = 'c2000000-0000-0000-0000-000000000001');
 
 -- The column (1-2)
 select col_not_null('public'::name, 'orders'::name, 'payment_provider'::name, 'orders.payment_provider is not null');

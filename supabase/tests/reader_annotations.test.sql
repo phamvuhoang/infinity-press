@@ -41,8 +41,12 @@ where id = 'd1000000-0000-0000-0000-000000000050';
 insert into public.ebook_resources (publication_id, href, media_type, storage_key, byte_size, sha256, access_class) values
   ('d1000000-0000-0000-0000-000000000050', 'OEBPS/text/ch1.xhtml', 'application/xhtml+xml', 'annotation/ch1.xhtml', 10, 'sha-ch1', 'paid'),
   ('d1000000-0000-0000-0000-000000000050', 'OEBPS/text/chương.xhtml', 'application/xhtml+xml', 'annotation/chapter-vi.xhtml', 10, 'sha-vi', 'paid');
-update public.books set active_publication_id = 'd1000000-0000-0000-0000-000000000050' where id = 'd1000000-0000-0000-0000-000000000020';
-update public.books set active_publication_id = 'd1000000-0000-0000-0000-000000000052' where id = 'd1000000-0000-0000-0000-000000000021';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'd1000000-0000-0000-0000-000000000050' and (b.id = 'd1000000-0000-0000-0000-000000000020');
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'd1000000-0000-0000-0000-000000000052' and (b.id = 'd1000000-0000-0000-0000-000000000021');
 insert into public.entitlements (profile_id, book_id, source_type, actor_profile_id, reason, status)
 select owner_id, 'd1000000-0000-0000-0000-000000000020', 'admin_grant', owner_id, 'fixture', 'active' from t_readers;
 insert into public.entitlements (profile_id, book_id, source_type, actor_profile_id, reason, status)
@@ -208,11 +212,15 @@ reset role;
 
 -- Isolate the three publication-state predicates with otherwise valid access/session rows.
 update public.reader_sessions set expires_at = now() + interval '15 minutes' where id = (select id from t_session);
-update public.books set active_publication_id = 'd1000000-0000-0000-0000-000000000051' where id = 'd1000000-0000-0000-0000-000000000020';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'd1000000-0000-0000-0000-000000000051' and (b.id = 'd1000000-0000-0000-0000-000000000020');
 set local role authenticated; select set_config('request.jwt.claim.sub', 'd1000000-0000-0000-0000-000000000001', true);
 select is((select count(*) from public.reader_annotation_request((select id from t_session), 'd1000000-0000-0000-0000-000000000050', 'list'))::int, 0, 'superseded publication cannot be annotated');
 reset role;
-update public.books set active_publication_id = 'd1000000-0000-0000-0000-000000000050' where id = 'd1000000-0000-0000-0000-000000000020';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'd1000000-0000-0000-0000-000000000050' and (b.id = 'd1000000-0000-0000-0000-000000000020');
 update public.ebook_publications set status = 'ready_for_preview' where id = 'd1000000-0000-0000-0000-000000000050';
 set local role authenticated; select set_config('request.jwt.claim.sub', 'd1000000-0000-0000-0000-000000000001', true);
 select is((select count(*) from public.reader_annotation_request((select id from t_session), 'd1000000-0000-0000-0000-000000000050', 'list'))::int, 0, 'non-published publication cannot be annotated');

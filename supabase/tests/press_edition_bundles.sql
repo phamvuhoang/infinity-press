@@ -57,7 +57,7 @@ select lives_ok($$select public.admin_set_bundle_members('e8800000-0000-0000-000
 select lives_ok($$select public.admin_set_bundle_members('e8800000-0000-0000-0000-000000000002', array['e8400000-0000-0000-0000-000000000001', 'e8400000-0000-0000-0000-000000000003']::uuid[])$$, 'and a second bundle');
 reset role;
 select is((select count(*) from public.bundle_editions where bundle_id = 'e8800000-0000-0000-0000-000000000001'), 3::bigint, 'three editions are members');
-select is((select count(*) from public.bundle_books where bundle_id = 'e8800000-0000-0000-0000-000000000001'), 2::bigint, 'the work-level read model has the two works, not three rows');
+select is((select count(*) from public.bundle_works where bundle_id = 'e8800000-0000-0000-0000-000000000001'), 2::bigint, 'the work-level read model has the two works, not three rows');
 
 -- (5)-(6) The lines are the editions, with languages and per-edition SKUs.
 select is((select string_agg(language_code, ',' order by line_position) from public.bundle_order_lines('e8800000-0000-0000-0000-000000000001')), 'en,ja,en', 'lines carry each edition''s language in membership order');

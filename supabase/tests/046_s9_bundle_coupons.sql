@@ -76,11 +76,13 @@ insert into public.bundles (id, status) values
 insert into public.bundle_localizations (bundle_id, locale, slug, title) values
   ('e8000000-0000-0000-0000-000000000001', 'vi', 's9-coupon-bundle-one', 'Bundle One'),
   ('e8000000-0000-0000-0000-000000000002', 'vi', 's9-coupon-bundle-two', 'Bundle Two');
-insert into public.bundle_books (bundle_id, book_id, position) values
+insert into public.bundle_editions (bundle_id, edition_id, position)
+select v.bundle_id::uuid, (select e.id from public.editions e where e.book_id = v.book_id::uuid order by e.id limit 1), v.position
+from (values
   ('e8000000-0000-0000-0000-000000000001', 'e2000000-0000-0000-0000-000000000001', 1),
   ('e8000000-0000-0000-0000-000000000001', 'e2000000-0000-0000-0000-000000000002', 2),
   ('e8000000-0000-0000-0000-000000000001', 'e2000000-0000-0000-0000-000000000003', 3),
-  ('e8000000-0000-0000-0000-000000000002', 'e2000000-0000-0000-0000-000000000002', 1);
+  ('e8000000-0000-0000-0000-000000000002', 'e2000000-0000-0000-0000-000000000002', 1)) as v(bundle_id, book_id, position);
 
 -- The four scope shapes, plus the 100%-off bundle code. All percent codes, so no currency branch
 -- is involved and a rejection can only be about scope.

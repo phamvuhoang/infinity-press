@@ -1,5 +1,5 @@
 begin;
-select plan(42);
+select plan(41);
 
 -- Press Task 5: access is per edition. Owning English never opens Japanese, whatever route is
 -- tried: session, authorization, progress, annotations, shared quotes.
@@ -164,7 +164,6 @@ select throws_ok($$select public.grant_complimentary_entitlement((select r3 from
 
 -- (41)-(44) Free acquisition names one edition and grants that one only.
 select set_config('request.jwt.claim.sub', 'e6100000-0000-0000-0000-000000000004', true);
-select throws_ok($$select public.acquire_free_ebook('e6300000-0000-0000-0000-000000000001')$$, 'EB006', null, 'the work-level entry point refuses to pick between two free editions');
 select lives_ok($$select public.acquire_free_edition('e6400000-0000-0000-0000-000000000002')$$, 'a reader acquires the Japanese edition by name');
 select is((select count(*) from public.entitlements where profile_id = (select r3 from t_p) and edition_id = 'e6400000-0000-0000-0000-000000000002' and status = 'active'), 1::bigint, 'and holds Japanese');
 select is((select count(*) from public.entitlements where profile_id = (select r3 from t_p) and edition_id = 'e6400000-0000-0000-0000-000000000001'), 0::bigint, 'but not English');

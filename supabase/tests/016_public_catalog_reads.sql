@@ -42,8 +42,9 @@ insert into public.ebook_assets (id, edition_id, source_storage_key, version, st
 values ('d8000000-0000-0000-0000-000000000001', 'd6000000-0000-0000-0000-000000000001', 's2/source.epub', 1, 'published');
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
 values ('d9000000-0000-0000-0000-000000000001', 'd8000000-0000-0000-0000-000000000001', 1, 's2/manifest.json', 'published');
-update public.books set active_publication_id = 'd9000000-0000-0000-0000-000000000001'
-where id = 'd3000000-0000-0000-0000-000000000001';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'd9000000-0000-0000-0000-000000000001' and (b.id = 'd3000000-0000-0000-0000-000000000001');
 insert into public.book_samples (publication_id, allowed_hrefs)
 values ('d9000000-0000-0000-0000-000000000001', '["OEBPS/text/chapter1.xhtml"]');
 -- The paid book has a published publication with a sample, but it is not the active publication.
@@ -58,8 +59,9 @@ insert into public.ebook_assets (id, edition_id, source_storage_key, version, st
 values ('d8000000-0000-0000-0000-000000000003', 'd6000000-0000-0000-0000-000000000002', 's2/paid-source-2.epub', 2, 'published');
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
 values ('d9000000-0000-0000-0000-000000000003', 'd8000000-0000-0000-0000-000000000003', 2, 's2/paid-manifest-2.json', 'published');
-update public.books set active_publication_id = 'd9000000-0000-0000-0000-000000000003'
-where id = 'd3000000-0000-0000-0000-000000000002';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'd9000000-0000-0000-0000-000000000003' and (b.id = 'd3000000-0000-0000-0000-000000000002');
 insert into public.media_assets (owner_type, owner_id, kind, storage_key, alt_text)
 values ('book', 'd3000000-0000-0000-0000-000000000001', 'cover',
         'books/d3000000-0000-0000-0000-000000000001/dddddddd-dddd-dddd-dddd-dddddddddddd.png', 'Bìa sách S2');

@@ -85,7 +85,7 @@ from every admin mutation that changes what a public page shows: publish, unpubl
 price change, localization edit, cover replace. There is no separate per-page invalidation — one
 call refreshes home, every book/entity/bundle page, the filtered list, and search together. The
 local EPUB worker (`lib/epub/worker.ts`, `scripts/ebook.ts`) is not one of those callers: it only
-ever moves a publication to `ready_for_preview` and never sets `books.active_publication_id` or
+ever moves a publication to `ready_for_preview` and never sets an edition's `active_publication_id` or
 touches `books.status` — that happens exclusively in the admin's publication review/publish/reject/
 rollback Server Action (`app/admin/publications/[publicationId]/actions.ts`), which does call
 `revalidateStorefront()`. So there is no gap on that path: every way a publication actually becomes

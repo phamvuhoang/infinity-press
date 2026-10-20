@@ -1,5 +1,5 @@
 begin;
-select plan(58);
+select plan(55);
 
 -- Press Task 4: publishing is per edition. Publishing or rolling back Japanese never touches the
 -- English publication, pointer, or progress.
@@ -63,7 +63,6 @@ select is((select active_publication_id from public.editions where id = 'e540000
 select is((select status::text from public.editions where id = 'e5400000-0000-0000-0000-000000000001'), 'published', 'the English edition is published');
 select is((select status::text from public.ebook_publications where id = 'e5600000-0000-0000-0000-000000000001'), 'published', 'the publication is published');
 select is((select edition_id from public.book_language_editions where book_id = 'e5300000-0000-0000-0000-000000000001' and language_code = 'en'), 'e5400000-0000-0000-0000-000000000001'::uuid, 'the first published edition becomes the language default');
-select is((select active_publication_id from public.books where id = 'e5300000-0000-0000-0000-000000000001'), 'e5600000-0000-0000-0000-000000000001'::uuid, 'the transitional book pointer follows the first edition');
 select is((select status::text from public.editions where id = 'e5400000-0000-0000-0000-000000000002'), 'draft', 'the Japanese edition is untouched');
 
 -- (10)-(15) Publish Japanese: English is not touched.
@@ -71,13 +70,11 @@ select lives_ok($$select public.publish_publication('e5600000-0000-0000-0000-000
 select is((select status::text from public.ebook_publications where id = 'e5600000-0000-0000-0000-000000000001'), 'published', 'English v1 is still published');
 select is((select active_publication_id from public.editions where id = 'e5400000-0000-0000-0000-000000000001'), 'e5600000-0000-0000-0000-000000000001'::uuid, 'the English pointer did not move');
 select is((select active_publication_id from public.editions where id = 'e5400000-0000-0000-0000-000000000002'), 'e5600000-0000-0000-0000-000000000003'::uuid, 'the Japanese pointer is set');
-select is((select active_publication_id from public.books where id = 'e5300000-0000-0000-0000-000000000001'), 'e5600000-0000-0000-0000-000000000001'::uuid, 'the book pointer still names English, not whichever published last');
 
 -- (16)-(19) A new English version supersedes only English.
 select lives_ok($$select public.publish_publication('e5600000-0000-0000-0000-000000000002')$$, 'English v2 publishes (en-GB matches en)');
 select is((select status::text from public.ebook_publications where id = 'e5600000-0000-0000-0000-000000000001'), 'superseded', 'English v1 is superseded');
 select is((select status::text from public.ebook_publications where id = 'e5600000-0000-0000-0000-000000000003'), 'published', 'Japanese v1 stays published');
-select is((select active_publication_id from public.books where id = 'e5300000-0000-0000-0000-000000000001'), 'e5600000-0000-0000-0000-000000000002'::uuid, 'the book pointer follows its own edition forward');
 
 -- (20)-(25) Rolling Japanese forward and back leaves English alone.
 select lives_ok($$select public.publish_publication('e5600000-0000-0000-0000-000000000004')$$, 'Japanese v2 publishes (ja-JP matches ja)');

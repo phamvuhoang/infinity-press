@@ -40,7 +40,7 @@ export async function GET(): Promise<Response> {
 
   // The default locale leads: its section is the document title, the others nest below it.
   for (const locale of [defaultLocale, ...locales.filter((candidate) => candidate !== defaultLocale)]) {
-    const [cards, ideas, articles, dictionary] = await Promise.all([
+    const [allCards, ideas, articles, dictionary] = await Promise.all([
       getBookCards(locale),
       getPublishedIdeas(locale),
       getArticleIndex(locale),
@@ -48,6 +48,8 @@ export async function GET(): Promise<Response> {
     ]);
     const catalog = getCatalogRoutes(locale);
     const hub = getKnowledgeRoutes(locale);
+    // Only works with a real copy in this locale; a fallback copy is listed once, under its own locale.
+    const cards = allCards.filter((card) => card.metadataLocale === locale);
 
     sections.push({
       locale,

@@ -54,7 +54,7 @@ select throws_ok(
 select lives_ok($$select public.publish_publication('c9000000-0000-0000-0000-000000000001')$$, 'admin publishes the EPUB version');
 reset role;
 select is((select status from public.books where id = 'c3000000-0000-0000-0000-000000000001'), 'draft'::public.content_status, 'publish_publication leaves the book draft');
-select is((select active_publication_id from public.books where id = 'c3000000-0000-0000-0000-000000000001'), 'c9000000-0000-0000-0000-000000000001'::uuid, 'publish_publication still moves the active pointer');
+select is((select e.active_publication_id from public.editions e where e.book_id = 'c3000000-0000-0000-0000-000000000001'), 'c9000000-0000-0000-0000-000000000001'::uuid, 'publish_publication still moves the active pointer');
 select is((select status from public.authors where id = 'c2000000-0000-0000-0000-000000000001'), 'draft'::public.content_status, 'publish_publication leaves the author draft');
 
 update public.book_localizations set description = 'A complete description.' where book_id = 'c3000000-0000-0000-0000-000000000001';

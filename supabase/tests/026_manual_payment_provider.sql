@@ -51,8 +51,8 @@ select is(
 -- entitlements_source_consistency still fails closed: a manual_payment entitlement without the
 -- order it was paid for is as invalid as a free_order without one.
 select throws_ok(
-  $$insert into public.entitlements (profile_id, book_id, source_type, source_order_id, status)
-    select reader_id, '72000000-0000-0000-0000-000000000002', 'manual_payment', null, 'active' from t_ids$$,
+  $$insert into public.entitlements (profile_id, book_id, edition_id, source_type, source_order_id, status)
+    select reader_id, '72000000-0000-0000-0000-000000000002', '74000000-0000-0000-0000-000000000001', 'manual_payment', null, 'active' from t_ids$$,
   '23514', null, 'a manual_payment entitlement still requires its source order');
 
 -- An unknown provider is refused rather than silently defaulting to a source type.

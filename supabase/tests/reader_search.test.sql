@@ -11,7 +11,9 @@ insert into public.books (id, canonical_key, original_language, primary_author_i
 insert into public.editions (id, book_id, language_code) values ('d2000000-0000-0000-0000-000000000030', 'd2000000-0000-0000-0000-000000000020', 'vi');
 insert into public.ebook_assets (id, edition_id, source_storage_key, version, status) values ('d2000000-0000-0000-0000-000000000040', 'd2000000-0000-0000-0000-000000000030', 'search.epub', 1, 'published');
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status) values ('d2000000-0000-0000-0000-000000000050', 'd2000000-0000-0000-0000-000000000040', 1, 'search.json', 'published');
-update public.books set active_publication_id = 'd2000000-0000-0000-0000-000000000050' where id = 'd2000000-0000-0000-0000-000000000020';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'd2000000-0000-0000-0000-000000000050' and (b.id = 'd2000000-0000-0000-0000-000000000020');
 insert into public.entitlements (profile_id, book_id, source_type, actor_profile_id, reason, status) select id, 'd2000000-0000-0000-0000-000000000020', 'admin_grant', id, 'fixture', 'active' from t_reader;
 
 select has_table('public', 'ebook_search_chunks', 'private chunks exist');

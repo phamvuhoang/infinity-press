@@ -144,13 +144,11 @@ test("an admin previews a ready-for-preview version and publishes it", async ({ 
   await expect(page.getByTestId("publication-lifecycle")).toContainText("currently active");
 
   const admin = createServiceRoleClient();
-  const { data: bookRow, error } = await admin
-    .from("books")
-    .select("active_publication_id, status")
-    .eq("id", bookId)
-    .single();
+  const { data: bookRow, error } = await admin.from("books").select("status").eq("id", bookId).single();
   if (error) throw error;
-  expect(bookRow.active_publication_id).toBe(publicationId);
+  const { data: editionRow, error: editionError } = await admin.from("editions").select("active_publication_id").eq("book_id", bookId).single();
+  if (editionError) throw editionError;
+  expect(editionRow.active_publication_id).toBe(publicationId);
   // Since migration 20260913120000, publishing a version moves the active pointer only; the book
   // stays draft until an admin publishes the book itself (covered by e2e/admin-catalog.spec.ts).
   expect(bookRow.status).toBe("draft");

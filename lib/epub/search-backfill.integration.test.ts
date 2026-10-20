@@ -47,7 +47,7 @@ async function snapshotPublication(publicationId: string, bookId: string) {
       .eq("publication_id", publicationId)
       .order("ordinal"),
   );
-  const book = requireData(await service.from("books").select("active_publication_id").eq("id", bookId).single());
+  const book = requireData(await service.from("editions").select("active_publication_id").eq("book_id", bookId).single());
   return {
     publication,
     resources,

@@ -62,7 +62,7 @@ for (const [type, path] of [["author", "authors"], ["series", "series"], ["topic
     expect(await headerDetails.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await page.goto(`/admin/${path}`);
     const row = page.getByRole("row").filter({ has: page.getByRole("link", { name, exact: true }) }).filter({ hasText: slug });
-    await expect(row.getByRole("cell", { name: "vi", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: /^vi/ })).toBeVisible();
     await expect(row.getByRole("cell", { name: "published", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 

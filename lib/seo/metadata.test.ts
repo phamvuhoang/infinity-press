@@ -44,6 +44,31 @@ describe("fixedPaths", () => {
   });
 });
 
+describe("buildPageMetadata for a page whose copy is in another locale", () => {
+  // A Japanese URL that shows the English copy (no Japanese translation exists) is not a Japanese
+  // translation: its canonical is the English page, and it does not claim an hreflang of its own.
+  const paths = { en: "/en/books/a", vi: "/vi/books/b" };
+
+  it("canonicalizes to the page the copy belongs to", () => {
+    const metadata = buildPageMetadata({ siteUrl, locale: "ja", paths, copyFrom: "en", title: "A" });
+    expect(metadata.alternates?.canonical).toBe("https://books.example/en/books/a");
+    expect(metadata.openGraph).toMatchObject({ url: "https://books.example/en/books/a", locale: "ja_JP" });
+  });
+
+  it("lists only the locales that really have the page, never the fallback locale", () => {
+    const metadata = buildPageMetadata({ siteUrl, locale: "ja", paths, copyFrom: "en", title: "A" });
+    expect(metadata.alternates?.languages).toEqual({
+      en: "https://books.example/en/books/a",
+      vi: "https://books.example/vi/books/b",
+      "x-default": "https://books.example/en/books/a",
+    });
+  });
+
+  it("refuses a fallback that names a locale with no page", () => {
+    expect(() => buildPageMetadata({ siteUrl, locale: "ja", paths, copyFrom: "ja" })).toThrow();
+  });
+});
+
 describe("buildPageMetadata", () => {
   it("sets an absolute canonical and every locale alternate for a fixed page", () => {
     const metadata = buildPageMetadata({

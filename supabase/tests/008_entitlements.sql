@@ -1,6 +1,27 @@
 begin;
 select plan(70);
 
+-- Stand-in for the removed work-level free claim (see create_ebook_order above).
+create function public.acquire_free_ebook(p_book_id uuid) returns uuid
+language plpgsql security definer set search_path = '' as $f$
+declare v_editions uuid[];
+begin
+  select coalesce(array_agg(distinct e.id), '{}'::uuid[]) into v_editions
+  from public.editions e join public.skus s on s.edition_id = e.id and s.active
+  join public.offers o on o.sku_id = s.id and o.active and o.price_minor = 0
+    and (o.starts_at is null or o.starts_at <= now()) and (o.ends_at is null or o.ends_at > now())
+  where e.book_id = p_book_id;
+  if cardinality(v_editions) = 0 then
+    raise exception 'acquire_free_ebook: no active free offer for book %', p_book_id using errcode = 'EB006';
+  end if;
+  if cardinality(v_editions) > 1 then
+    raise exception 'acquire_free_ebook: book % has several free editions; name one', p_book_id using errcode = 'EB006';
+  end if;
+  return public.acquire_free_edition(v_editions[1]);
+end $f$;
+revoke all on function public.acquire_free_ebook(uuid) from public, anon;
+grant execute on function public.acquire_free_ebook(uuid) to authenticated;
+
 -- Task 7: acquire_free_ebook, grant_complimentary_entitlement, and apply_payment_event.
 -- Numbered 008, not the brief's 007 - that collides with Task 6's 007_publication_transitions.sql.
 

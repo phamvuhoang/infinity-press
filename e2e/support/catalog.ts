@@ -148,12 +148,8 @@ export async function seedCatalogBook(options: {
     check(await service.from("book_series").insert({ book_id: book.id, series_id: series.id, position: 1 }));
   }
 
-  check(
-    await service
-      .from("books")
-      .update({ active_publication_id: publication.id, status: options.status ?? "published" })
-      .eq("id", book.id),
-  );
+  check(await service.from("editions").update({ active_publication_id: publication.id, status: "published" }).eq("id", edition.id));
+  check(await service.from("books").update({ status: options.status ?? "published" }).eq("id", book.id));
 
   // authorId and topicId are the two handles a recommendation fixture needs: the signals
   // recommend_books scores are shared author and shared topic, and each seeded book otherwise

@@ -60,14 +60,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const book = await getBookPage(locale, slug);
   if (!book) return {};
+  const alternates = alternatePaths(book.alternateSlugs, (l, s) => getCatalogRoutes(l).book(s));
+  // This URL shows another locale's copy: it is that page's duplicate, not a translation.
+  const copyFrom = book.metadataLocale !== locale && isLocale(book.metadataLocale) ? book.metadataLocale : undefined;
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    paths: localePaths(
-      locale,
-      getCatalogRoutes(locale).book(book.slug),
-      alternatePaths(book.alternateSlugs, (l, s) => getCatalogRoutes(l).book(s)),
-    ),
+    copyFrom,
+    paths: copyFrom ? alternates : localePaths(locale, getCatalogRoutes(locale).book(book.slug), alternates),
     title: book.seoTitle ?? book.title,
     description: book.seoDescription ?? book.shortDescription ?? undefined,
     image: book.cover,

@@ -29,7 +29,8 @@ insert into public.books (id, canonical_key, original_language, primary_author_i
   ('b2000000-0000-0000-0000-000000000002', 's9-bundle-book-2', 'vi', 'b3000000-0000-0000-0000-000000000001', 'published');
 
 insert into public.editions (id, book_id, language_code)
-values ('b4000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000001', 'vi');
+values ('b4000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000001', 'vi'),
+  ('b4000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000002', 'vi');
 insert into public.skus (id, edition_id, sku_code)
 values ('b5000000-0000-0000-0000-000000000001', 'b4000000-0000-0000-0000-000000000001', 'S9-BUNDLE-SKU-1');
 insert into public.offers (id, sku_id, market_code, currency, price_minor)
@@ -47,11 +48,13 @@ insert into public.bundle_localizations (bundle_id, locale, slug, title) values
   ('b7000000-0000-0000-0000-000000000002', 'vi', 'goi-sach-s9-nhap', 'Gói sách nháp'),
   ('b7000000-0000-0000-0000-000000000003', 'en', 's9-throwaway-bundle', 'Throwaway bundle');
 
-insert into public.bundle_books (bundle_id, book_id, position) values
+insert into public.bundle_editions (bundle_id, edition_id, position)
+select v.bundle_id::uuid, (select e.id from public.editions e where e.book_id = v.book_id::uuid order by e.id limit 1), v.position
+from (values
   ('b7000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000001', 1),
   ('b7000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000002', 2),
   ('b7000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000001', 1),
-  ('b7000000-0000-0000-0000-000000000003', 'b2000000-0000-0000-0000-000000000001', 1);
+  ('b7000000-0000-0000-0000-000000000003', 'b2000000-0000-0000-0000-000000000001', 1)) as v(bundle_id, book_id, position);
 
 insert into public.offers (id, bundle_id, market_code, currency, price_minor)
 values ('b6000000-0000-0000-0000-000000000002', 'b7000000-0000-0000-0000-000000000001', 'VN', 'VND', 199000);
@@ -59,13 +62,13 @@ values ('b6000000-0000-0000-0000-000000000002', 'b7000000-0000-0000-0000-0000000
 -- Shape ---------------------------------------------------------------------------------------
 select has_table('public', 'bundles', 'bundles exists');
 select has_table('public', 'bundle_localizations', 'bundle_localizations exists');
-select has_table('public', 'bundle_books', 'bundle_books exists');
+select has_table('public', 'bundle_editions', 'bundle_editions exists');
 select has_table('public', 'coupon_bundles', 'coupon_bundles exists');
 select has_column('public', 'offers', 'bundle_id', 'offers carries a bundle target');
 select has_column('public', 'orders', 'bundle_id', 'orders record the bundle they were placed for');
 select has_column('public', 'order_items', 'position', 'order_items carry a position');
-select col_is_pk('public', 'bundle_books', array['bundle_id', 'book_id'],
-  'bundle_books is keyed by (bundle_id, book_id)');
+select col_is_pk('public', 'bundle_editions', array['bundle_id', 'edition_id'],
+  'bundle_editions is keyed by (bundle_id, edition_id)');
 select col_not_null('public', 'order_items', 'position', 'order_items.position is not null');
 select col_is_null('public', 'offers', 'sku_id',
   'offers.sku_id is nullable now that a bundle can be the target instead');
@@ -114,20 +117,20 @@ select throws_ok(
 
 -- Membership ---------------------------------------------------------------------------------------
 select throws_ok(
-  $$insert into public.bundle_books (bundle_id, book_id, position)
-    values ('b7000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000002', 0)$$,
+  $$insert into public.bundle_editions (bundle_id, edition_id, position)
+    values ('b7000000-0000-0000-0000-000000000002', (select e.id from public.editions e where e.book_id = 'b2000000-0000-0000-0000-000000000002' limit 1), 0)$$,
   '23514', null, 'a zero position is refused');
 select throws_ok(
-  $$insert into public.bundle_books (bundle_id, book_id, position)
-    values ('b7000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000001', 3)$$,
+  $$insert into public.bundle_editions (bundle_id, edition_id, position)
+    values ('b7000000-0000-0000-0000-000000000001', (select e.id from public.editions e where e.book_id = 'b2000000-0000-0000-0000-000000000001' limit 1), 3)$$,
   '23505', null, 'a book appears at most once in a bundle');
 select throws_ok(
-  $$insert into public.bundle_books (bundle_id, book_id, position)
-    values ('b7000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000002', 1)$$,
+  $$insert into public.bundle_editions (bundle_id, edition_id, position)
+    values ('b7000000-0000-0000-0000-000000000002', (select e.id from public.editions e where e.book_id = 'b2000000-0000-0000-0000-000000000002' limit 1), 1)$$,
   '23505', null, 'two members of one bundle cannot share a position');
 select lives_ok(
-  $$insert into public.bundle_books (bundle_id, book_id, position)
-    values ('b7000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000002', 2)$$,
+  $$insert into public.bundle_editions (bundle_id, edition_id, position)
+    values ('b7000000-0000-0000-0000-000000000002', (select e.id from public.editions e where e.book_id = 'b2000000-0000-0000-0000-000000000002' limit 1), 2)$$,
   'the same position may be reused in a different bundle');
 
 -- Orders -----------------------------------------------------------------------------------------
@@ -169,7 +172,7 @@ select lives_ok(
   $$delete from public.bundles where id = 'b7000000-0000-0000-0000-000000000003'$$,
   'an unordered bundle can be deleted');
 select is(
-  (select count(*) from public.bundle_books where bundle_id = 'b7000000-0000-0000-0000-000000000003'),
+  (select count(*) from public.bundle_editions where bundle_id = 'b7000000-0000-0000-0000-000000000003'),
   0::bigint,
   'deleting a bundle cascades to its members');
 select is(
@@ -214,7 +217,7 @@ select is(
   1::bigint,
   'anon reads only the published bundle localization');
 select is(
-  (select count(*) from public.bundle_books),
+  (select count(*) from public.bundle_editions),
   2::bigint,
   'anon reads only the published bundle membership');
 select throws_ok(
@@ -230,15 +233,15 @@ select is(
   1::bigint,
   'a reader sees the published bundle only');
 select is(
-  (select count(*) from public.bundle_books),
+  (select count(*) from public.bundle_editions),
   2::bigint,
   'a reader reads only the published bundle membership');
 select throws_ok(
   $$insert into public.bundles (status) values ('published')$$,
   '42501', null, 'a reader holds no insert privilege on bundles');
 select throws_ok(
-  $$insert into public.bundle_books (bundle_id, book_id, position)
-    values ('b7000000-0000-0000-0000-000000000001', 'b2000000-0000-0000-0000-000000000002', 9)$$,
+  $$insert into public.bundle_editions (bundle_id, edition_id, position)
+    values ('b7000000-0000-0000-0000-000000000001', (select e.id from public.editions e where e.book_id = 'b2000000-0000-0000-0000-000000000002' limit 1), 9)$$,
   '42501', null, 'a reader holds no insert privilege on bundle members');
 select throws_ok(
   $$select 1 from public.coupon_bundles$$,
@@ -257,7 +260,7 @@ select is(
   2::bigint,
   'an admin reads draft bundle localizations');
 select is(
-  (select count(*) from public.bundle_books where bundle_id = 'b7000000-0000-0000-0000-000000000002'),
+  (select count(*) from public.bundle_editions where bundle_id = 'b7000000-0000-0000-0000-000000000002'),
   2::bigint,
   'an admin reads draft bundle membership');
 

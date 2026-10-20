@@ -94,7 +94,9 @@ export function bookSchema({
     ...(book.subtitle ? { alternativeHeadline: book.subtitle } : {}),
     ...(description ? { description } : {}),
     url,
-    inLanguage: locale,
+    // The language of the EPUB this page sells, not of the interface: a Japanese reader shown the
+    // English edition is looking at an English book.
+    inLanguage: book.languageCode,
     bookFormat: "https://schema.org/EBook",
     // The edition ISBN describes this ebook, so it sits on the Book node, not on any Offer.
     ...(book.isbn ? { isbn: book.isbn } : {}),

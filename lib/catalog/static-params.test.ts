@@ -21,7 +21,7 @@ function card(overrides: Partial<CatalogBookCard>): CatalogBookCard {
     cover: null,
     offer: null,
     hasActivePublication: true,
-    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "vi",
     series: null,
     topics: [],
     featured: false,
@@ -38,11 +38,23 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 
+describe("catalogStaticParams for a work shown under another locale's copy", () => {
+  it("does not list it as a page of this locale, so the sitemap has no duplicate of the English page under /ja", async () => {
+    vi.mocked(getBookCards).mockResolvedValue([
+      card({ slug: "own-copy", metadataLocale: "ja" }),
+      card({ slug: "english-copy", metadataLocale: "en", languageCode: "en", isLanguageFallback: true }),
+    ]);
+    vi.mocked(listPublicBundleSlugs).mockResolvedValue([]);
+
+    expect((await catalogStaticParams("ja")).books).toEqual(["own-copy"]);
+  });
+});
+
 describe("catalogStaticParams", () => {
   it("lists every slug the locale's visible books reach", async () => {
     vi.mocked(getBookCards).mockResolvedValue([
-      card({ slug: "one", series: { slug: "a-series", name: "S", position: 1 }, topics: [{ slug: "calm", name: "Calm" }] }),
-      card({ slug: "two", author: { name: "Mai Tran", slug: "mai-tran" }, topics: [{ slug: "calm", name: "Calm" }] }),
+      card({ slug: "one", metadataLocale: "vi", series: { slug: "a-series", name: "S", position: 1 }, topics: [{ slug: "calm", name: "Calm" }] }),
+      card({ slug: "two", metadataLocale: "vi", author: { name: "Mai Tran", slug: "mai-tran" }, topics: [{ slug: "calm", name: "Calm" }] }),
     ]);
     vi.mocked(listPublicBundleSlugs).mockResolvedValue([
       { locale: "vi", slug: "goi-khoi-dau" },
@@ -65,7 +77,7 @@ describe("catalogStaticParams", () => {
     ]);
     vi.mocked(listPublicBundleSlugs).mockResolvedValue([]);
 
-    const params = await catalogStaticParams("en");
+    const params = await catalogStaticParams("vi");
     expect(params.books).toEqual(["one"]);
     expect(params.authors).toEqual(["mai-tran"]);
     expect(params.bundles).toEqual([]);

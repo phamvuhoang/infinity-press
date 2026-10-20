@@ -116,13 +116,13 @@ edition), `editions.contributors`, `editions.introduction`, `books.default_conte
 composite key that refuses an edition of a different book. An edition with orders or entitlements
 keeps its book and language.
 
-Nothing is `NOT NULL` yet and the book-only unique indexes still exist. They go in the contract
-migration (Task 10), after the RPCs write `edition_id` themselves. Until then, re-run the backfill
-before any cutover: rows created by book-only RPCs after this migration have a null `edition_id`.
+Nothing is `NOT NULL` in this migration; the contract migration (below) makes it so, once the RPCs
+write `edition_id` themselves.
 
 ### Backfill
 
-`public.press_edition_backfill(p_apply boolean)` (service role only) maps legacy rows from evidence:
+`public.press_edition_backfill(p_apply boolean)` (service role only; removed again by the contract
+migration, so it exists only between the expand and contract migrations) maps legacy rows from evidence:
 the SKU on the order behind an entitlement, the asset behind a publication, the only edition of a
 single-edition book, the edition a reviewer owns. It never grants another language. A dry run
 (`false`) does the work, returns a report and rolls back. A row it cannot map is listed by id (no
@@ -292,3 +292,24 @@ Migration `20261020200000_press_editorial.sql`.
   `admin_list_edition_feedback`, `admin_resolve_edition_feedback`.
 - No migration for layout: vertical writing is refused by the processor (`UNSUPPORTED_LAYOUT`).
 - Japanese: no reader or sanitizer change was needed; the evidence is in `reader-corpus-matrix.md`.
+
+## Contract (Task 10)
+
+Migration `20261020210000_press_contract.sql`. Deploy it only after the application that reads
+editions is live and no older application instance is still running: it removes what that code used.
+
+- **Refuses to run on unscoped rows.** If any `entitlements`, `library_items`, `order_items` or
+  `book_reviews` row still has no edition it stops with EB046 naming the table and the count. Fix the
+  rows (the backfill from the expand phase maps them from evidence) and run again.
+- `edition_id` becomes `NOT NULL` on those four tables; the old one-review-per-book unmapped index goes.
+- Removed: `create_ebook_order(uuid)`, `acquire_free_ebook(uuid)`, `press_edition_backfill(boolean)`.
+  Callers use `create_edition_order` and `acquire_free_edition`.
+- Removed: `books.active_publication_id` and its two-way bridge trigger. The edition owns the live
+  publication; `publish_publication` and `rollback_publication` already write it.
+- `bundle_books` (a derived table) becomes the `bundle_works` view over `bundle_editions` (service role
+  only); `recommend_books` reads the view.
+- `catalog_book_page` names, as hreflang alternates, only localizations whose locale resolves the work
+  to a readable edition.
+- Not reversible in place: restore from a backup, or re-create the dropped column and functions from the
+  earlier migrations. The upgrade rehearsal (`scripts/rehearse-upgrade.sh`) runs the contract migration
+  against the legacy fixture; reset the scratch database afterwards.

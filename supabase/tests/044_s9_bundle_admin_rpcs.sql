@@ -166,7 +166,7 @@ select public.admin_set_bundle_members(
   (select id from t_bundles where label = 'main'),
   array['c4000000-0000-0000-0000-000000000002', 'c4000000-0000-0000-0000-000000000001']::uuid[]);
 select results_eq(
-  format($$select book_id, position from public.bundle_books where bundle_id = %L order by position$$,
+  format($$select ed.book_id, be.position from public.bundle_editions be join public.editions ed on ed.id = be.edition_id where be.bundle_id = %L order by be.position$$,
          (select id from t_bundles where label = 'main')),
   $$values ('c2000000-0000-0000-0000-000000000002'::uuid, 1), ('c2000000-0000-0000-0000-000000000001'::uuid, 2)$$,
   'members are numbered in the order they were submitted, not by id');
@@ -177,7 +177,7 @@ select public.admin_set_bundle_members(
   array['c4000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000003',
         'c4000000-0000-0000-0000-000000000002']::uuid[]);
 select results_eq(
-  format($$select book_id, position from public.bundle_books where bundle_id = %L order by position$$,
+  format($$select ed.book_id, be.position from public.bundle_editions be join public.editions ed on ed.id = be.edition_id where be.bundle_id = %L order by be.position$$,
          (select id from t_bundles where label = 'main')),
   $$values ('c2000000-0000-0000-0000-000000000001'::uuid, 1), ('c2000000-0000-0000-0000-000000000003'::uuid, 2),
            ('c2000000-0000-0000-0000-000000000002'::uuid, 3)$$,
@@ -318,7 +318,7 @@ select throws_ok(
 -- Only two of the three members are published, which is what readiness requires; the third being
 -- a draft is a warning the editor shows, never a refusal.
 select is(
-  (select count(*) from public.bundle_books bb join public.books b on b.id = bb.book_id
+  (select count(*) from public.bundle_editions bb join public.editions ed on ed.id = bb.edition_id join public.books b on b.id = ed.book_id
    where bb.bundle_id = (select id from t_bundles where label = 'main') and b.status <> 'published'),
   1::bigint, 'the published bundle still holds one unpublished member, the warning case');
 

@@ -66,7 +66,10 @@ const cards: Record<Exclude<Locale, "ja">, CatalogBookCard[]> = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getServerEnv).mockReturnValue({ siteUrl: SITE } as ReturnType<typeof getServerEnv>);
-  vi.mocked(getBookCards).mockImplementation(async (locale: Locale) => cards[locale as keyof typeof cards] ?? []);
+  // Each locale's cards carry that locale's own copy; a fallback card is added by the test that needs one.
+  vi.mocked(getBookCards).mockImplementation(async (locale: Locale) =>
+    (cards[locale as keyof typeof cards] ?? []).map((entry) => ({ ...entry, metadataLocale: locale })),
+  );
   vi.mocked(getPublishedIdeas).mockImplementation(async (locale: Locale) => [
     {
       ideaId: `idea-${locale}`,
@@ -118,8 +121,8 @@ describe("GET /llms.txt", () => {
   it("prints a book's price, with the list price and last day while a sale runs", async () => {
     vi.mocked(getBookCards).mockImplementation(async (locale: Locale) =>
       locale === "en"
-        ? [card({ slug: "book-one", title: "Book one", offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null } })]
-        : cards.vi,
+        ? [card({ slug: "book-one", title: "Book one", offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null }, metadataLocale: "en" })]
+        : cards.vi.map((entry) => ({ ...entry, metadataLocale: "vi" as const })),
     );
     const text = await (await GET()).text();
     expect(text).toContain("- [Sách một](https://books.example/vi/books/sach-mot): Mô tả hai dòng");
@@ -144,5 +147,20 @@ describe("GET /llms.txt", () => {
   it("fails rather than serving a partial index when a read fails", async () => {
     vi.mocked(getArticleIndex).mockRejectedValueOnce(new Error("getArticleIndex failed."));
     await expect(GET()).rejects.toThrow("getArticleIndex failed.");
+  });
+});
+
+describe("works shown under another locale's copy", () => {
+  it("are listed once, under their own locale, and not repeated under the fallback one", async () => {
+    vi.mocked(getBookCards).mockImplementation(async (locale: Locale) =>
+      locale === "ja"
+        ? [card({ slug: "english-only", title: "English only", metadataLocale: "en", isLanguageFallback: true })]
+        : locale === "en"
+          ? [card({ slug: "english-only", title: "English only", metadataLocale: "en" })]
+          : [],
+    );
+    const body = await (await GET()).text();
+    expect(body.match(/\/en\/books\/english-only/g)).toHaveLength(1);
+    expect(body).not.toContain("/ja/books/english-only");
   });
 });

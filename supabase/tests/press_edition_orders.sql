@@ -1,5 +1,34 @@
 begin;
-select plan(44);
+select plan(42);
+
+-- The work-level order entry point was removed by the contract migration. This fixture stands in for
+-- it (one edition on sale -> that edition's best payable offer) so these older tests keep exercising
+-- the order machinery through create_edition_order.
+create function public.create_ebook_order(p_book_id uuid) returns uuid
+language plpgsql security definer set search_path = '' as $f$
+declare v_edition_ids uuid[]; v_offer_id uuid;
+begin
+  select array_agg(distinct s.edition_id) into v_edition_ids
+  from public.offers o join public.skus s on s.id = o.sku_id and s.active
+  join public.editions ed on ed.id = s.edition_id
+  where ed.book_id = p_book_id and ed.status = 'published' and ed.active_publication_id is not null
+    and o.active and public.offer_effective_price_minor(o) > 0
+    and (o.starts_at is null or o.starts_at <= now()) and (o.ends_at is null or o.ends_at > now());
+  if coalesce(cardinality(v_edition_ids), 0) = 0 then
+    raise exception 'create_ebook_order: book % is not purchasable', p_book_id using errcode = 'EB012';
+  end if;
+  if cardinality(v_edition_ids) > 1 then
+    raise exception 'create_ebook_order: book % has several editions on sale; name one', p_book_id using errcode = 'EB042';
+  end if;
+  select o.id into v_offer_id from public.offers o join public.skus s on s.id = o.sku_id and s.active
+  where s.edition_id = v_edition_ids[1] and o.active and public.offer_effective_price_minor(o) > 0
+    and (o.starts_at is null or o.starts_at <= now()) and (o.ends_at is null or o.ends_at > now())
+  order by public.currency_is_payable(o.currency) desc, public.offer_effective_price_minor(o), o.currency limit 1;
+  return public.create_edition_order(v_edition_ids[1], v_offer_id, null);
+end $f$;
+revoke all on function public.create_ebook_order(uuid) from public, anon;
+grant execute on function public.create_ebook_order(uuid) to authenticated;
+
 
 -- Press Task 6: manual-transfer orders are per edition. English and Japanese of one work are
 -- separate products, orders, payments and entitlements; only VND can be paid by transfer.
@@ -113,9 +142,6 @@ select is((select language_code || ':' || unit_price_minor from public.order_ite
 select is((select title_snapshot from public.order_items where order_id = (select ja from t_j)), '二つの言語', 'and the Japanese title');
 select is((select count(*) from public.orders where profile_id = (select r1 from t_p) and status = 'pending'), 2::bigint, 'both orders are open at once');
 
--- (25) The work-level entry refuses to choose between two languages on sale.
-select throws_ok($$select public.create_ebook_order('e7300000-0000-0000-0000-000000000001')$$, 'EB042', null, 'the work-level order names no language, so it is refused');
-select is(public.create_ebook_order('e7300000-0000-0000-0000-000000000002') is not null, true, 'a work with one edition on sale still orders through the old entry');
 
 -- (27) A stale order is replaced when the price moves.
 reset role;

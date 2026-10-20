@@ -28,6 +28,7 @@ insert into public.authors (id, canonical_slug, display_name, status)
 values ('d3000000-0000-0000-0000-000000000001', 's9-gift-author', 'S9 Gift Author', 'published');
 insert into public.books (id, canonical_key, original_language, primary_author_id, status)
 values ('d2000000-0000-0000-0000-000000000001', 's9-gift-book-1', 'vi', 'd3000000-0000-0000-0000-000000000001', 'published');
+insert into public.editions (id, book_id, language_code) values ('d2e00000-0000-0000-0000-000000000001', 'd2000000-0000-0000-0000-000000000001', 'vi');
 
 -- An ordinary entitlement, which the S5 trigger turns into exactly one book_ready outbox row. It
 -- is the control for every outbox assertion below: whatever gifts do, this row must keep behaving

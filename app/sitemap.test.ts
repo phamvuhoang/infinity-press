@@ -79,7 +79,7 @@ beforeEach(() => {
     typeof getServerEnv
   >);
   vi.mocked(getBookCards).mockImplementation(
-    async (locale: Locale) => cards[locale as keyof typeof cards] ?? [],
+    async (locale: Locale) => (cards[locale as keyof typeof cards] ?? []).map((entry) => ({ ...entry, metadataLocale: locale })),
   );
   vi.mocked(listPublicBundleSlugs).mockResolvedValue([]);
   vi.mocked(getKnowledgeSitemapEntries).mockResolvedValue([]);
@@ -274,4 +274,11 @@ describe("knowledge hub", () => {
     );
     await expect(sitemap()).rejects.toThrow("getArticleIndex failed.");
   });
+});
+
+it("leaves out a work that is only shown under another locale's copy", async () => {
+  vi.mocked(getBookCards).mockImplementation(async (locale: Locale) =>
+    locale === "ja" ? [card({ slug: "english-only", metadataLocale: "en" })] : [],
+  );
+  expect((await urls()).filter((url) => url.includes("english-only"))).toEqual([]);
 });

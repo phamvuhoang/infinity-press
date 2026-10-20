@@ -307,7 +307,7 @@ select extensions.dblink_exec('mem_setup', $stmt$delete from public.payments whe
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.orders where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.offers where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_editions where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
-select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_books where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
+select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_editions where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_localizations where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundles where id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.skus where sku_code like 'S9-MEM-SKU-%'$stmt$);
@@ -428,7 +428,7 @@ select extensions.dblink_exec('mem_setup', $stmt$delete from public.payments whe
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.orders where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.offers where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_editions where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
-select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_books where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
+select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_editions where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_localizations where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundles where id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.skus where sku_code like 'S9-MEM-SKU-%'$stmt$);

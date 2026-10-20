@@ -645,3 +645,12 @@ describe("knowledge structured data", () => {
     ).toBeNull();
   });
 });
+
+describe("bookSchema language", () => {
+  it("describes the language of the EPUB sold, not of the interface", () => {
+    const schema = bookSchema({ siteUrl, locale: "ja", path: "/ja/books/harbour-lights", book: { ...book, languageCode: "en" }, paymentsEnabled: true });
+    expect(schema.inLanguage).toBe("en");
+    const japanese = bookSchema({ siteUrl, locale: "en", path: "/en/books/harbour-lights", book: { ...book, languageCode: "ja" }, paymentsEnabled: true });
+    expect(japanese.inLanguage).toBe("ja");
+  });
+});

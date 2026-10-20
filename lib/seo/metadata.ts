@@ -43,6 +43,7 @@ export function buildPageMetadata({
   description,
   image,
   index = "index",
+  copyFrom,
 }: {
   siteUrl: string;
   locale: Locale;
@@ -51,15 +52,18 @@ export function buildPageMetadata({
   description?: string;
   image?: { url: string; alt: string } | null;
   index?: IndexRule;
+  // The page shows another locale's copy (metadata fallback): its canonical is that locale's page and
+  // it takes no hreflang of its own. `paths` then lists only the locales that really have the page.
+  copyFrom?: Locale;
 }): Metadata {
-  const currentPath = paths[locale];
-  if (!currentPath) throw new Error(`buildPageMetadata needs a ${locale} path`);
+  const currentPath = copyFrom ? paths[copyFrom] : paths[locale];
+  if (!currentPath) throw new Error(`buildPageMetadata needs a ${copyFrom ?? locale} path`);
   const canonical = absoluteUrl(siteUrl, currentPath);
 
   const languages: Record<string, string> = {};
   for (const candidate of locales) {
     const path = paths[candidate];
-    if (path) languages[candidate] = absoluteUrl(siteUrl, path);
+    if (path && !(copyFrom && candidate === locale)) languages[candidate] = absoluteUrl(siteUrl, path);
   }
   // x-default is what Google serves a searcher whose language matches no alternate. `/` redirects to
   // the default locale, so that page answers for everyone else; an entity localized in the other
