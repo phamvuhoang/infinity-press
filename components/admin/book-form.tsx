@@ -8,6 +8,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
+import type { ContentLanguageOption } from "@/lib/i18n/settings";
 import {
   Select,
   SelectContent,
@@ -34,7 +35,13 @@ function FieldError({ message }: { message?: string }) {
 // language) and language (the book's own language) are separate selects on
 // purpose - the golden-path plan requires the two stay independent, e.g. a
 // Vietnamese-locale page describing an English-language book.
-export function BookForm({ authorOptions }: { authorOptions: { id: string; name: string; canonicalSlug: string }[] }) {
+export function BookForm({
+  authorOptions,
+  languages,
+}: {
+  authorOptions: { id: string; name: string; canonicalSlug: string }[];
+  languages: ContentLanguageOption[];
+}) {
   const [state, formAction] = useActionState(createBookAction, initialFormState);
 
   return (
@@ -90,17 +97,14 @@ export function BookForm({ authorOptions }: { authorOptions: { id: string; name:
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="language-trigger">Book language</Label>
-          <Select defaultValue="en" name="language">
-            <SelectTrigger className="w-full" id="language-trigger">
-              <SelectValue placeholder="Select the book's language" />
-            </SelectTrigger>
-            <SelectContent>
-              {locales.map((code) => (
-<SelectItem key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</SelectItem>
-))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="language">Book language</Label>
+          <NativeSelect defaultValue={languages.some((language) => language.code === "en") ? "en" : languages[0]?.code} id="language" name="language">
+            {languages.map((language) => (
+              <option key={language.code} value={language.code}>
+                {`${language.name} (${language.code})`}
+              </option>
+            ))}
+          </NativeSelect>
           <FieldError message={state.fieldErrors.language} />
         </div>
       </div>

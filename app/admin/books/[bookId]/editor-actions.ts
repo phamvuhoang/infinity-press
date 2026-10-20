@@ -19,7 +19,6 @@ import {
   bookDetailsSchema,
   bookLocalizationSchema,
   bookRelationsSchema,
-  editionSchema,
   offerSchema,
   relatedBooksSchema,
 } from "@/lib/catalog/schemas";
@@ -33,7 +32,6 @@ import {
   setBookRetailLinks,
   setRelatedBooks,
   updateBookDetails,
-  updateEdition,
   updateOffer,
 } from "@/lib/data/books";
 import { type Locale } from "@/lib/i18n/config";
@@ -98,30 +96,6 @@ export async function saveBookLocalizationAction(
 
   try {
     await saveBookLocalization(bookId, parsed.data);
-  } catch (error) {
-    return knownFailure(error);
-  }
-  revalidateBookAdmin(bookId);
-  return saved();
-}
-
-export async function updateEditionAction(
-  bookId: string,
-  editionId: string,
-  _previous: AdminFormState,
-  formData: FormData,
-): Promise<AdminFormState> {
-  await requireAdmin({ next: `/admin/books/${bookId}` });
-  const parsed = editionSchema.safeParse({
-    languageCode: readText(formData, "languageCode"),
-    isbn: readOptionalText(formData, "isbn"),
-    editionNumber: readInteger(formData, "editionNumber"),
-    publicationDate: readOptionalText(formData, "publicationDate"),
-  });
-  if (!parsed.success) return invalid(parsed.error);
-
-  try {
-    await updateEdition(editionId, parsed.data);
   } catch (error) {
     return knownFailure(error);
   }

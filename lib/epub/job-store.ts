@@ -504,6 +504,7 @@ export class SupabaseJobStore implements JobStore {
       p_sample_hrefs: publication.sampleHrefs,
       p_search_chunks: searchChunks,
       p_positions: publication.positions,
+      p_epub_language: publication.metadata.language,
     });
 
     if (error) {

@@ -92,6 +92,7 @@ function validateEpubFile(input: { fileName: string; mimeType: string; sizeBytes
 
 export type CreateEpubUploadInput = {
   bookId: string;
+  editionId: string;
   fileName: string;
   mimeType: string;
   sizeBytes: number;
@@ -109,15 +110,10 @@ type ReserveEbookAssetRow = { asset_id: string; storage_key: string; version: nu
 // Reserves a private-storage upload slot for one edition's next EPUB asset version, and returns a
 // signed upload target the browser can PUT bytes to directly.
 //
-// Which edition: resolved here from `bookId`, not accepted as an editionId from the caller.
-// `admin_create_ebook` returns only the book id (supabase/migrations/20260911120000_admin_create_
-// ebook.sql), and `editions` is keyed `unique(book_id, language_code, edition_number)` with
-// exactly one edition inserted per book today - so "the edition with the lowest edition_number
-// for this book" is unambiguous for the one-book golden path. That tie-break is explicit (`order
-// by edition_number asc`) rather than relying on whatever order Postgres happens to return, and
-// it stops being correct the moment a book can carry more than one language edition - a caller at
-// that point needs to pass an explicit edition selector instead of this function guessing "the
-// first one".
+// Which edition: the caller names it explicitly. `bookId` is the work the admin page was opened for;
+// the lookup requires the edition to belong to that work, so an edition id from another work (or a
+// stale form) is refused instead of being uploaded against. Nothing here ever picks an edition for
+// the caller: with several language editions per work, "the first one" would be the wrong book.
 //
 // Ruling AD / Ruling AE: requireAdmin() gates everything below it - it runs first, ahead of even
 // the (cheap, side-effect-free) input validation, matching the brief's own step order and every
@@ -138,13 +134,12 @@ export async function createEpubUpload(input: CreateEpubUploadInput): Promise<Cr
   const { data: edition, error: editionError } = await supabase
     .from("editions")
     .select("id")
+    .eq("id", input.editionId)
     .eq("book_id", input.bookId)
-    .order("edition_number", { ascending: true })
-    .limit(1)
     .maybeSingle();
 
   if (editionError) {
-    throw new Error(`createEpubUpload: failed to resolve edition for book ${input.bookId}: ${editionError.message}`);
+    throw new Error(`createEpubUpload: failed to resolve edition ${input.editionId}: ${editionError.message}`);
   }
   if (!edition || typeof edition !== "object" || !("id" in edition)) {
     throw new EditionNotFoundError();

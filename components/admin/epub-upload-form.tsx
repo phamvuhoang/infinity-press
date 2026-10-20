@@ -56,7 +56,7 @@ const phaseLabel: Record<Exclude<Phase, "idle" | "error">, string> = {
 // because admin_reserve_ebook_asset always allocates the next version rather than reusing one,
 // and admin_finalize_ebook_asset rejects a second finalize of an asset that already succeeded
 // instead of double-queuing a job.
-export function EpubUploadForm({ bookId }: { bookId: string }) {
+export function EpubUploadForm({ bookId, editionId }: { bookId: string; editionId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -85,7 +85,7 @@ export function EpubUploadForm({ bookId }: { bookId: string }) {
     setErrorMessage(null);
     setPhase("reserving");
 
-    const reservation = await createEpubUploadAction(bookId, {
+    const reservation = await createEpubUploadAction(bookId, editionId, {
       fileName: file.name,
       mimeType: file.type,
       sizeBytes: file.size,

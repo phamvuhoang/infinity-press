@@ -9,6 +9,7 @@ import {
   MissingRejectionReasonError,
   PreviewResourceNotFoundError,
   PublicationNotFoundError,
+  PublicationNotReadyError,
   publishPublication,
   PublicationTransitionRejectedError,
   rejectPublication,
@@ -84,6 +85,7 @@ describe("publishPublication / rejectPublication / rollbackPublication", () => {
   it.each([
     ["P0002", PublicationNotFoundError],
     ["EB002", PublicationTransitionRejectedError],
+    ["EB012", PublicationNotReadyError],
   ] as const)("publishPublication maps %s to %s", async (code, ErrorClass) => {
     vi.mocked(createClient).mockResolvedValue(rpcClient({ data: null, error: { code, message: "x" } }));
 
@@ -108,6 +110,16 @@ describe("publishPublication / rejectPublication / rollbackPublication", () => {
     vi.mocked(createClient).mockResolvedValue(rpcClient({ data: null, error: { code, message: "x" } }));
 
     await expect(rollbackPublication(bookId, publicationId)).rejects.toBeInstanceOf(ErrorClass);
+  });
+
+  it("explains a language mismatch in words an admin can act on", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      rpcClient({ data: null, error: { code: "EB012", message: "publish_publication: publication is not ready: epub_language_mismatch" } }),
+    );
+    const error = await publishPublication(publicationId).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(PublicationNotReadyError);
+    expect((error as PublicationNotReadyError).issues).toEqual(["epub_language_mismatch"]);
+    expect((error as Error).message).toMatch(/different language than this edition/);
   });
 
   it("does not guess an error class for an unrecognized failure", async () => {
@@ -178,7 +190,8 @@ describe("getPublicationOverview", () => {
     const editionRow = {
       id: editionId,
       book_id: bookId,
-      books: { id: bookId, active_publication_id: null, book_localizations: [{ locale: "en", slug: "s", title: "T" }] },
+      active_publication_id: null,
+      books: { id: bookId, book_localizations: [{ locale: "en", slug: "s", title: "T" }] },
     };
 
     const client = {

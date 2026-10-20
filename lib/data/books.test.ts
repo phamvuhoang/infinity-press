@@ -18,7 +18,6 @@ import {
   setRelatedBooks,
   updateOffer,
   updateBookDetails,
-  updateEdition,
   unpublishBook,
 } from "@/lib/data/books";
 import { fakeSupabaseClient } from "@/lib/data/supabase-test-client";
@@ -67,7 +66,6 @@ const editorRow = {
   original_language: "en",
   status: "draft",
   primary_author_id: "4a1b2c3d-0000-4000-8000-000000000001",
-  active_publication_id: null,
   author: { display_name: "Jane Austen", localizations: [{ id: "5a1b2c3d-0000-4000-8000-000000000003" }] },
   localizations: [
     {
@@ -103,13 +101,13 @@ const editorRow = {
     {
       id: "6a1b2c3d-0000-4000-8000-000000000001",
       language_code: "en",
-      isbn: null,
       edition_number: 1,
-      publication_date: null,
+      status: "draft",
+      active_publication_id: null,
+      publication: null,
       skus: [
         {
           id: "7a1b2c3d-0000-4000-8000-000000000001",
-          sku_code: "the-golden-book-ebook",
           active: true,
           offers: [
             { id: "8a1b2c3d-0000-4000-8000-000000000001", market_code: "VN", currency: "VND", price_minor: 0, active: true, starts_at: null, ends_at: null, sale_kind: null, sale_percent_off: null, sale_amount_off_minor: null, sale_starts_at: null, sale_ends_at: null, offer_effective_price_minor: 0 },
@@ -130,8 +128,8 @@ const editorRow = {
     { id: "c1000000-0000-4000-8000-000000000002", retailer: "other", label: "ABC", url: "https://abc.example/x", price_minor: "129000" as unknown as number, currency: "VND", position: 10, active: false },
     { id: "c1000000-0000-4000-8000-000000000001", retailer: "shopee", label: null, url: "https://shopee.vn/x", price_minor: null, currency: null, position: 2, active: true },
   ],
+  defaults: [{ language_code: "en", edition_id: "6a1b2c3d-0000-4000-8000-000000000001" }],
   series: { series_id: "aa1b2c3d-0000-4000-8000-000000000001", position: 2 },
-  active_publication: null,
 };
 
 function queryResult(result: { data: unknown; error: unknown }) {
@@ -155,7 +153,6 @@ afterEach(() => {
 });
 
 const detailsInput = { canonicalKey: "updated", originalLanguage: "vi" as const, primaryAuthorId: editorRow.primary_author_id };
-const editionInput = { languageCode: "vi" as const, isbn: null, editionNumber: 2, publicationDate: "2026-09-13" };
 const offerInput = { marketCode: "VN", currency: "VND", priceMinor: 0, active: true, sale: null };
 const relationInput = { topicIds: ["9a1b2c3d-0000-4000-8000-000000000001"], seriesId: null, seriesPosition: null };
 
@@ -167,7 +164,6 @@ describe("admin gate ordering", () => {
     ["publishBook", () => publishBook(bookId)],
     ["listAdminBooks", () => listAdminBooks()],
     ["updateBookDetails", () => updateBookDetails(bookId, detailsInput)],
-    ["updateEdition", () => updateEdition(bookId, editionInput)],
     ["saveBookLocalization", () => saveBookLocalization(bookId, localizationInput)],
     ["setBookRelations", () => setBookRelations(bookId, relationInput)],
     ["setRelatedBooks", () => setRelatedBooks(bookId, [relatedA])],
@@ -235,7 +231,9 @@ describe("getAdminBook", () => {
 
     expect(book.localizations.map((localization) => localization.locale)).toEqual(["vi", "en"]);
     expect(book.localization).toEqual({ locale: "vi", slug: "cuon-sach-vang", title: "Cuốn sách vàng" });
-    expect(book.offer).toEqual({ id: "8a1b2c3d-0000-4000-8000-000000000001", marketCode: "VN", currency: "VND", priceMinor: 0, active: true, sale: null, effectivePriceMinor: 0, saleState: "none" });
+    expect(book.editions).toEqual([
+      { id: "6a1b2c3d-0000-4000-8000-000000000001", languageCode: "en", editionNumber: 1, status: "draft", isDefault: true, activePublicationId: null, offerCount: 1, hasLiveOffer: true },
+    ]);
     expect(book.topicIds).toEqual(["9a1b2c3d-0000-4000-8000-000000000001"]);
     expect(book.relatedBookIds).toEqual([relatedB, relatedA]);
     expect(book.retailLinks.map((link) => [link.retailer, link.priceMinor, link.active])).toEqual([
@@ -245,6 +243,8 @@ describe("getAdminBook", () => {
     expect(book.series).toEqual({ seriesId: "aa1b2c3d-0000-4000-8000-000000000001", position: 2 });
     expect(book.cover).toBeNull();
     expect(book.readinessIssues).toEqual(["missing_cover", "missing_publication"]);
+    expect(book).not.toHaveProperty("offer");
+    expect(book).not.toHaveProperty("edition");
   });
 
   it("treats an author without localized copy as missing", async () => {
@@ -331,14 +331,14 @@ describe("setBookRelations", () => {
 describe("publishBook", () => {
   it("turns EB010 into BookNotReadyError with the issue codes", async () => {
     const fake = fakeSupabaseClient({
-      rpc: { data: null, error: { code: "EB010", message: "publish_book: book is not ready: missing_cover,missing_offer" } },
+      rpc: { data: null, error: { code: "EB010", message: "publish_book: book is not ready: missing_cover,missing_publication" } },
     });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
 
     const error = await publishBook(bookId).catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(BookNotReadyError);
-    expect((error as BookNotReadyError).issues).toEqual(["missing_cover", "missing_offer"]);
+    expect((error as BookNotReadyError).issues).toEqual(["missing_cover", "missing_publication"]);
   });
 });
 
@@ -357,7 +357,7 @@ describe("read boundaries", () => {
   it("preserves all localization fields and builds the public cover URL", async () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co/");
     const fake = fakeSupabaseClient({ tables: {
-      books: { data: { ...editorRow, series: [editorRow.series], active_publication: [{ status: "published" }], active_publication_id: bookId }, error: null },
+      books: { data: { ...editorRow, series: [editorRow.series], editions: [{ ...editorRow.editions[0], status: "published", active_publication_id: bookId, publication: [{ status: "published" }] }] }, error: null },
       media_assets: { data: null, error: { code: "42501", message: "permission denied" } },
     }, rpc: { data: [{ storage_key: "books/abc/cover.png", alt_text: "Golden cover" }], error: null } });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
@@ -375,14 +375,14 @@ describe("read boundaries", () => {
   });
 
   it.each([
-    [true, true, null, null, false],
-    [false, true, null, null, true],
-    [true, false, null, null, true],
-    [true, true, "2026-09-14T00:00:00Z", null, true],
-    [true, true, "2026-09-13T00:00:00Z", null, false],
-    [true, true, null, "2026-09-13T00:00:00Z", true],
-    [true, true, null, "2026-09-14T00:00:00Z", false],
-  ])("evaluates offer readiness for SKU=%s offer=%s start=%s end=%s", async (skuActive, active, starts_at, ends_at, missing) => {
+    [true, true, null, null, true],
+    [false, true, null, null, false],
+    [true, false, null, null, false],
+    [true, true, "2026-09-14T00:00:00Z", null, false],
+    [true, true, "2026-09-13T00:00:00Z", null, true],
+    [true, true, null, "2026-09-13T00:00:00Z", false],
+    [true, true, null, "2026-09-14T00:00:00Z", true],
+  ])("summarizes an edition's live offer for SKU=%s offer=%s start=%s end=%s", async (skuActive, active, starts_at, ends_at, live) => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-13T00:00:00Z"));
     const row = structuredClone(editorRow);
@@ -390,7 +390,26 @@ describe("read boundaries", () => {
     Object.assign(row.editions[0].skus[0].offers[0], { active, starts_at, ends_at });
     const fake = fakeSupabaseClient({ tables: { books: { data: row, error: null } } });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
-    expect((await getAdminBook(bookId)).readinessIssues.includes("missing_offer")).toBe(missing);
+    const edition = (await getAdminBook(bookId)).editions[0];
+    expect(edition.hasLiveOffer).toBe(live);
+    expect(edition.offerCount).toBe(skuActive ? 1 : 0);
+  });
+
+  it("never requires an offer to publish: a work with no live offer lists no offer issue", async () => {
+    const row = structuredClone(editorRow);
+    row.editions[0].skus[0].offers = [];
+    const fake = fakeSupabaseClient({ tables: { books: { data: row, error: null } } });
+    vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
+    expect((await getAdminBook(bookId)).readinessIssues).not.toContain("missing_offer");
+  });
+
+  it("counts a work as published only when an edition is published with a live publication", async () => {
+    const row = structuredClone(editorRow);
+    Object.assign(row.editions[0], { status: "published", active_publication_id: "p1", publication: { status: "published" } });
+    const fake = fakeSupabaseClient({ tables: { books: { data: row, error: null }, media_assets: { data: null, error: null } } });
+    vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
+    expect((await getAdminBook(bookId)).readinessIssues).not.toContain("missing_publication");
+    expect((await getAdminBook(bookId)).editions[0].activePublicationId).toBe("p1");
   });
 
   it("handles missing nested records and falls back to the canonical key", async () => {
@@ -399,7 +418,7 @@ describe("read boundaries", () => {
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
     expect(await listAdminBooks("  GOLDEN  ")).toEqual([{
       id: bookId, canonicalKey: "the-golden-book", title: "the-golden-book", authorName: "", status: "draft", hasActivePublication: false,
-      readinessIssues: ["missing_localization", "missing_author", "missing_cover", "missing_offer", "missing_publication"],
+      readinessIssues: ["missing_localization", "missing_author", "missing_cover", "missing_publication"],
     }]);
     expect(await listAdminBooks("no match")).toEqual([]);
   });
@@ -408,7 +427,6 @@ describe("read boundaries", () => {
 describe("write boundaries", () => {
   const writes = [
     ["details", (id: string) => updateBookDetails(id, detailsInput)],
-    ["edition", (id: string) => updateEdition(id, editionInput)],
     ["offer", (id: string) => updateOffer(id, offerInput)],
     ["localization", (id: string) => saveBookLocalization(id, localizationInput)],
     ["relations", (id: string) => setBookRelations(id, relationInput)],
@@ -432,7 +450,6 @@ describe("write boundaries", () => {
 
   it.each([
     ["books", () => updateBookDetails(bookId, detailsInput), { canonical_key: "updated", original_language: "vi", primary_author_id: editorRow.primary_author_id }],
-    ["editions", () => updateEdition(bookId, editionInput), { language_code: "vi", isbn: null, edition_number: 2, publication_date: "2026-09-13" }],
     ["offers", () => updateOffer(bookId, offerInput), { market_code: "VN", currency: "VND", price_minor: 0, active: true, sale_kind: null, sale_percent_off: null, sale_amount_off_minor: null, sale_starts_at: null, sale_ends_at: null }],
   ] as const)("writes validated columns to the exact %s target", async (table, write, payload) => {
     const select = vi.fn().mockResolvedValue({ data: [{ id: bookId }], error: null });
@@ -446,7 +463,7 @@ describe("write boundaries", () => {
     expect(eq).toHaveBeenCalledWith("id", bookId);
   });
 
-  it.each(writes.slice(0, 3))("rejects a %s update that affected no row", async (_name, write) => {
+  it.each(writes.slice(0, 2))("rejects a %s update that affected no row", async (_name, write) => {
     const result = { data: [], error: null };
     const fake = fakeSupabaseClient({ tables: { books: result, editions: result, offers: result } });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);

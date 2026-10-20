@@ -32,13 +32,14 @@ const storageKey = `${editionId}/${assetId}/source.epub`;
 
 const validFile = {
   bookId,
+  editionId,
   fileName: "the-golden-book.epub",
   mimeType: "application/epub+zip",
   sizeBytes: 1024,
 };
 
-// Mirrors the session client's call shape createEpubUpload needs: a lookup of the edition by
-// book_id (`.from("editions").select(...).eq(...).order(...).limit(...).maybeSingle()`) and the
+// Mirrors the session client's call shape createEpubUpload needs: a lookup of the exact edition and
+// its book (`.from("editions").select(...).eq("id", ...).eq("book_id", ...).maybeSingle()`) and the
 // reservation RPC (`.rpc("admin_reserve_ebook_asset", ...)`), each independently stubbable.
 function sessionClient(options: {
   edition?: { data: unknown; error: { message: string } | null };
@@ -47,9 +48,8 @@ function sessionClient(options: {
 }) {
   const editionResult = options.edition ?? { data: { id: editionId }, error: null };
   const maybeSingle = vi.fn().mockResolvedValue(editionResult);
-  const limit = vi.fn(() => ({ maybeSingle }));
-  const order = vi.fn(() => ({ limit }));
-  const eq = vi.fn(() => ({ order }));
+  const eqBook = vi.fn(() => ({ maybeSingle }));
+  const eq = vi.fn(() => ({ eq: eqBook }));
   const select = vi.fn(() => ({ eq }));
   const from = vi.fn(() => ({ select }));
 
@@ -173,11 +173,24 @@ describe("createEpubUpload authorization", () => {
 });
 
 describe("createEpubUpload reservation", () => {
-  it("throws EditionNotFoundError when the book has no edition", async () => {
+  it("throws EditionNotFoundError when the edition does not exist or belongs to another book", async () => {
     vi.mocked(createClient).mockResolvedValue(sessionClient({ edition: { data: null, error: null } }));
 
     await expect(createEpubUpload(validFile)).rejects.toBeInstanceOf(EditionNotFoundError);
     expect(createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it("looks the edition up by its own id and the book it was submitted under, never by guessing", async () => {
+    const client = sessionClient({});
+    vi.mocked(createClient).mockResolvedValue(client);
+    vi.mocked(createAdminClient).mockReturnValue(adminClient(signedUploadResult));
+
+    await createEpubUpload(validFile);
+
+    const select = (client.from as unknown as ReturnType<typeof vi.fn>).mock.results[0].value.select;
+    const eq = select.mock.results[0].value.eq;
+    expect(eq).toHaveBeenCalledWith("id", editionId);
+    expect(eq.mock.results[0].value.eq).toHaveBeenCalledWith("book_id", bookId);
   });
 
   it("reserves the asset for the resolved edition and requests a signed upload for its exact storage key", async () => {

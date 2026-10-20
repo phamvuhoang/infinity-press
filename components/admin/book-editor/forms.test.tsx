@@ -3,16 +3,35 @@ import { afterEach, expect, it } from "vitest";
 import { DetailsForm } from "./details-form";
 import { LocalizationForm } from "./localization-form";
 import { EditionForm, OfferForm } from "./edition-offer-forms";
+import type { AdminEditionDTO } from "@/lib/data/admin-editions";
+
+const languages = [{ code: "vi", name: "Vietnamese" }, { code: "ja", name: "Japanese" }];
+const edition: AdminEditionDTO = {
+  id: "edition",
+  bookId: "book",
+  languageCode: "vi",
+  editionNumber: 1,
+  isbn: null,
+  publicationDate: null,
+  introduction: null,
+  contributors: [],
+  status: "draft",
+  isDefault: false,
+  activePublicationId: null,
+  identityLocked: false,
+  sku: null,
+  offers: [],
+};
 import { RelationsForm } from "./relations-form";
 import type { AdminFormState } from "@/lib/catalog/form";
 
 afterEach(cleanup);
-const action = async (): Promise<AdminFormState> => ({ fieldErrors: { canonicalKey: "Key is taken", originalLanguage: "Invalid language", primaryAuthorId: "Choose an author", "keyIdeas.1.summary": "Summary too long", "faq.2.answer": "Answer too long", languageCode: "Invalid language", isbn: "Invalid ISBN", editionNumber: "Invalid number", publicationDate: "Invalid date", marketCode: "Invalid market", currency: "Invalid currency", priceMinor: "Invalid price", active: "Invalid status", "topicIds.1": "Invalid topic", seriesId: "Invalid series", seriesPosition: "Position taken" }, formError: null, savedAt: null });
+const action = async (): Promise<AdminFormState> => ({ fieldErrors: { canonicalKey: "Key is taken", originalLanguage: "Invalid language", primaryAuthorId: "Choose an author", "keyIdeas.1.summary": "Summary too long", "faq.2.answer": "Answer too long", languageCode: "Invalid language", isbn: "Invalid ISBN", editionNumber: "Invalid number", publicationDate: "Invalid date", contributors: "Invalid credits", introduction: "Too long", marketCode: "Invalid market", currency: "Invalid currency", priceMinor: "Invalid price", active: "Invalid status", "topicIds.1": "Invalid topic", seriesId: "Invalid series", seriesPosition: "Position taken" }, formError: null, savedAt: null });
 const cases = [
-  { name: "details", ui: <DetailsForm action={action} authors={[]} defaults={{ canonicalKey: "golden", originalLanguage: "vi", primaryAuthorId: "" }} />, labels: ["Canonical key", "Book language", "Primary author"] },
+  { name: "details", ui: <DetailsForm action={action} authors={[]} languages={[{ code: "vi", name: "Vietnamese" }, { code: "en", name: "English" }]} defaults={{ canonicalKey: "golden", originalLanguage: "vi", primaryAuthorId: "" }} />, labels: ["Canonical key", "Book language", "Primary author"] },
   { name: "localization", ui: <LocalizationForm action={action} locale="vi" localization={null} />, labels: ["Key ideas (vi)", "FAQ (vi)"] },
-  { name: "edition", ui: <EditionForm action={action} edition={{ id: "edition", languageCode: "vi", isbn: null, editionNumber: 1, publicationDate: null }} />, labels: ["Edition language", "ISBN", "Edition number", "Publication date"] },
-  { name: "offer", ui: <OfferForm action={action} offer={{ id: "offer", marketCode: "VN", currency: "VND", priceMinor: 0, active: true, sale: null, effectivePriceMinor: 0, saleState: "none" }} />, labels: ["Market", "Currency", "Price (minor units)", "Offer is active"] },
+  { name: "edition", ui: <EditionForm action={action} edition={edition} languages={languages} />, labels: ["Edition language", "ISBN", "Edition number", "Publication date", "Credits", "Translation introduction"] },
+  { name: "offer", ui: <OfferForm action={action} offer={{ id: "offer", marketCode: "VN", currency: "VND", priceMinor: 0, active: true, isDefault: true, sale: null, effectivePriceMinor: 0, saleState: "none" }} />, labels: ["Market", "Currency", "Price (minor units)", "Offer is active"] },
   { name: "relations", ui: <RelationsForm action={action} topics={[{ id: "topic", name: "Topic" }]} series={[]} defaults={{ topicIds: [], seriesId: null, seriesPosition: null }} />, labels: ["Topic", "Series", "Series position"] },
 ];
 it.each(cases)("$name connects every invalid field to its inline error", async ({ ui, labels }) => {
@@ -35,6 +54,7 @@ it("disambiguates duplicate author names in the details form", () => {
         { id: "author-one", name: "Shared Name", canonicalSlug: "shared-name-one" },
         { id: "author-two", name: "Shared Name", canonicalSlug: "shared-name-two" },
       ]}
+      languages={[{ code: "vi", name: "Vietnamese" }]}
       defaults={{ canonicalKey: "golden", originalLanguage: "vi", primaryAuthorId: "author-one" }}
     />,
   );
@@ -103,9 +123,9 @@ it("preserves selected topics and series after missing-position validation and s
 });
 
 it.each([
-  { name: "details", ui: <DetailsForm action={action} authors={[{ id: "author", name: "Author", canonicalSlug: "author" }]} defaults={{ canonicalKey: "old-key", originalLanguage: "vi", primaryAuthorId: "author" }} />, label: "Canonical key", value: "draft-key" },
-  { name: "edition", ui: <EditionForm action={action} edition={{ id: "edition", languageCode: "vi", isbn: null, editionNumber: 1, publicationDate: null }} />, label: "Edition number", value: 2 },
-  { name: "offer", ui: <OfferForm action={action} offer={{ id: "offer", marketCode: "VN", currency: "VND", priceMinor: 0, active: true, sale: null, effectivePriceMinor: 0, saleState: "none" }} />, label: "Price (minor units)", value: 2500 },
+  { name: "details", ui: <DetailsForm action={action} authors={[{ id: "author", name: "Author", canonicalSlug: "author" }]} languages={[{ code: "vi", name: "Vietnamese" }]} defaults={{ canonicalKey: "old-key", originalLanguage: "vi", primaryAuthorId: "author" }} />, label: "Canonical key", value: "draft-key" },
+  { name: "edition", ui: <EditionForm action={action} edition={edition} languages={languages} />, label: "Edition number", value: 2 },
+  { name: "offer", ui: <OfferForm action={action} offer={{ id: "offer", marketCode: "VN", currency: "VND", priceMinor: 0, active: true, isDefault: true, sale: null, effectivePriceMinor: 0, saleState: "none" }} />, label: "Price (minor units)", value: 2500 },
 ])("preserves $name drafts after failed saves", async ({ ui, label, value }) => {
   const { container } = render(ui);
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
@@ -119,7 +139,7 @@ it.each([
 // S19 review fix: only the field the chosen kind uses is enabled, so a stale 100% cannot block
 // a "No sale" or "Amount off" submit through the input's max.
 it("enables only the sale fields the chosen discount kind uses", () => {
-  const offer = { id: "offer", marketCode: "VN", currency: "VND", priceMinor: 129000, active: true, sale: { kind: "percent" as const, percentOff: 30, amountOffMinor: null, startsAt: null, endsAt: null }, effectivePriceMinor: 90300, saleState: "running" as const };
+  const offer = { id: "offer", marketCode: "VN", currency: "VND", priceMinor: 129000, active: true, isDefault: false, sale: { kind: "percent" as const, percentOff: 30, amountOffMinor: null, startsAt: null, endsAt: null }, effectivePriceMinor: 90300, saleState: "running" as const };
   render(<OfferForm action={action} offer={offer} />);
   const kind = screen.getByLabelText("Discount");
   const percent = screen.getByLabelText("Percentage off");

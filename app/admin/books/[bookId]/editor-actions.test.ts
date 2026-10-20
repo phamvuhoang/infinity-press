@@ -8,19 +8,18 @@ import {
   setRelatedBooksAction,
   updateOfferAction,
   updateBookDetailsAction,
-  updateEditionAction,
 } from "@/app/admin/books/[bookId]/editor-actions";
 import { requireAdmin } from "@/lib/auth/admin";
 import { initialAdminFormState } from "@/lib/catalog/form";
 import { revalidatePath } from "next/cache";
-import { BookNotFoundError, DuplicateCanonicalKeyError, updateBookDetails, updateEdition } from "@/lib/data/books";
+import { BookNotFoundError, DuplicateCanonicalKeyError, updateBookDetails } from "@/lib/data/books";
 import { DuplicateSlugError, saveBookLocalization, SeriesPositionTakenError, setBookRelations, setBookRetailLinks, setRelatedBooks, updateOffer } from "@/lib/data/books";
 
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/data/books", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/lib/data/books")>();
-  return { ...original, saveBookLocalization: vi.fn(), setBookRelations: vi.fn(), setBookRetailLinks: vi.fn(), setRelatedBooks: vi.fn(), updateOffer: vi.fn(), updateBookDetails: vi.fn(), updateEdition: vi.fn() };
+  return { ...original, saveBookLocalization: vi.fn(), setBookRelations: vi.fn(), setBookRetailLinks: vi.fn(), setRelatedBooks: vi.fn(), updateOffer: vi.fn(), updateBookDetails: vi.fn() };
 });
 
 const bookId = "3a1b2c3d-0000-4000-8000-000000000001";
@@ -43,7 +42,6 @@ describe("book editor actions", () => {
   const cases = [
     { name: "details", run: (data: FormData) => updateBookDetailsAction(bookId, initialAdminFormState, data), write: updateBookDetails, entries: [["canonicalKey", "new-key"], ["originalLanguage", "vi"], ["primaryAuthorId", bookId]], payload: { canonicalKey: "new-key", originalLanguage: "vi", primaryAuthorId: bookId }, target: bookId, field: "canonicalKey", error: new DuplicateCanonicalKeyError() },
     { name: "localization", run: (data: FormData) => saveBookLocalizationAction(bookId, "en", initialAdminFormState, data), write: saveBookLocalization, entries: [["slug", "new-slug"], ["title", "New title"]], payload: expect.objectContaining({ locale: "en", slug: "new-slug", title: "New title" }), target: bookId, field: "slug", error: new DuplicateSlugError() },
-    { name: "edition", run: (data: FormData) => updateEditionAction(bookId, offerId, initialAdminFormState, data), write: updateEdition, entries: [["languageCode", "en"], ["editionNumber", "2"], ["publicationDate", "2026-09-14"]], payload: { languageCode: "en", isbn: null, editionNumber: 2, publicationDate: "2026-09-14" }, target: offerId, field: "editionNumber", error: new BookNotFoundError() },
     { name: "offer", run: (data: FormData) => updateOfferAction(bookId, offerId, initialAdminFormState, data), write: updateOffer, entries: [["marketCode", "VN"], ["currency", "VND"], ["priceMinor", "2500"], ["active", "on"]], payload: { marketCode: "VN", currency: "VND", priceMinor: 2500, active: true, sale: null }, target: offerId, field: "priceMinor", error: new BookNotFoundError() },
     { name: "relations", run: (data: FormData) => setBookRelationsAction(bookId, initialAdminFormState, data), write: setBookRelations, entries: [["topicIds", bookId], ["topicIds", offerId], ["seriesId", ""], ["seriesPosition", "99"]], payload: { topicIds: [bookId, offerId], seriesId: null, seriesPosition: null }, target: bookId, field: "topicIds", error: new SeriesPositionTakenError() },
     { name: "related books", run: (data: FormData) => setRelatedBooksAction(bookId, initialAdminFormState, data), write: setRelatedBooks, entries: [["relatedBookIds", relatedB], ["relatedBookIds", relatedA]], payload: [relatedB, relatedA], target: bookId, field: "relatedBookIds", error: new BookNotFoundError() },

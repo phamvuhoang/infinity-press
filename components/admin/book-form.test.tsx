@@ -12,6 +12,7 @@ it("offers existing authors by stable ID while preserving a new-author name fiel
         { id: "4a1b2c3d-0000-4000-8000-000000000001", name: "Jane Austen", canonicalSlug: "jane-austen" },
         { id: "4a1b2c3d-0000-4000-8000-000000000002", name: "Jane Austen", canonicalSlug: "jane-austen-essays" },
       ]}
+      languages={[{ code: "en", name: "English" }]}
     />,
   );
 
@@ -24,4 +25,18 @@ it("offers existing authors by stable ID while preserving a new-author name fiel
     "4a1b2c3d-0000-4000-8000-000000000002",
   );
   expect(screen.getByLabelText("Author name")).toBeInTheDocument();
+});
+
+it("offers every registered content language for the book, including ones that are not interface locales", async () => {
+  render(
+    <BookForm
+      authorOptions={[]}
+      languages={[
+        { code: "en", name: "English" },
+        { code: "fr", name: "French" },
+      ]}
+    />,
+  );
+
+  expect(screen.getByRole("option", { name: "French (fr)" })).toBeInTheDocument();
 });

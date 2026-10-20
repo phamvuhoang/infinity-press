@@ -1,49 +1,144 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { localeRegistry, locales } from "@/lib/i18n/config";
 
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { initialAdminFormState, type AdminFormState } from "@/lib/catalog/form";
+import { Textarea } from "@/components/ui/textarea";
+import { formatContributors, initialAdminFormState, type AdminFormState } from "@/lib/catalog/form";
 import { formatPrice } from "@/lib/catalog/price";
-import type { AdminBookDTO } from "@/lib/data/books";
+import type { AdminEditionDTO, AdminOfferDTO, PricingDefaultDTO } from "@/lib/data/admin-editions";
+import type { ContentLanguageOption } from "@/lib/i18n/settings";
 
 type FormAction = (state: AdminFormState, formData: FormData) => Promise<AdminFormState>;
 
-export function EditionForm({ action, edition }: { action: FormAction; edition: NonNullable<AdminBookDTO["edition"]> }) {
+function LanguageSelect({
+  languages,
+  defaultValue,
+  disabled,
+  error,
+  id,
+}: {
+  languages: ContentLanguageOption[];
+  defaultValue: string;
+  disabled?: boolean;
+  error?: string;
+  id: string;
+}) {
+  return (
+    <>
+      <NativeSelect
+        aria-describedby={error ? `${id}-error` : undefined}
+        aria-invalid={Boolean(error)}
+        defaultValue={defaultValue}
+        disabled={disabled}
+        id={id}
+        name="languageCode"
+      >
+        {languages.map((language) => (
+          <option key={language.code} value={language.code}>
+            {`${language.name} (${language.code})`}
+          </option>
+        ))}
+      </NativeSelect>
+      <FieldError id={`${id}-error`} message={error} />
+    </>
+  );
+}
+
+// A new edition of this work in another language. The admin picks the language; the edition opens
+// on its own page for credits, offers and the EPUB.
+export function CreateEditionForm({ action, languages }: { action: FormAction; languages: ContentLanguageOption[] }) {
   const [state, formAction] = useActionState(action, initialAdminFormState);
+
+  return (
+    <form action={formAction} className="space-y-4" onReset={(event) => event.preventDefault()}>
+      <div className="grid min-w-0 gap-5 sm:grid-cols-2">
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor="new-edition-languageCode">Language</Label>
+          <LanguageSelect
+            defaultValue={languages[0]?.code ?? "en"}
+            error={state.fieldErrors.languageCode}
+            id="new-edition-languageCode"
+            languages={languages}
+          />
+        </div>
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor="new-edition-editionNumber">Edition number (optional)</Label>
+          <Input id="new-edition-editionNumber" min={1} name="editionNumber" type="number" />
+          <FieldError id="new-edition-editionNumber-error" message={state.fieldErrors.editionNumber} />
+        </div>
+      </div>
+      <FormStatus state={state} />
+      <SubmitButton pendingLabel="Creating…">Add edition</SubmitButton>
+    </form>
+  );
+}
+
+export function EditionForm({
+  action,
+  edition,
+  languages,
+}: {
+  action: FormAction;
+  edition: AdminEditionDTO;
+  languages: ContentLanguageOption[];
+}) {
+  const [state, formAction] = useActionState(action, initialAdminFormState);
+  const field = (name: string) => ({
+    "aria-invalid": Boolean(state.fieldErrors[name]),
+    "aria-describedby": state.fieldErrors[name] ? `edition-${name}-error` : undefined,
+    id: `edition-${name}`,
+    name,
+  });
 
   return (
     <form action={formAction} onReset={(event) => event.preventDefault()} className="space-y-5">
       <div className="grid min-w-0 gap-5 sm:grid-cols-2">
         <div className="min-w-0 space-y-2">
           <Label htmlFor="edition-languageCode">Edition language</Label>
-          <NativeSelect defaultValue={edition.languageCode} aria-invalid={Boolean(state.fieldErrors.languageCode)} aria-describedby={state.fieldErrors.languageCode ? "edition-languageCode-error" : undefined} id="edition-languageCode" name="languageCode">
-            {locales.map((code) => (
-<option key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</option>
-))}
-          </NativeSelect>
-          <FieldError id="edition-languageCode-error" message={state.fieldErrors.languageCode} />
+          <LanguageSelect
+            defaultValue={edition.languageCode}
+            disabled={edition.identityLocked}
+            error={state.fieldErrors.languageCode}
+            id="edition-languageCode"
+            languages={languages}
+          />
+          {edition.identityLocked ? (
+            <p className="text-[0.8125rem] text-sage-text">
+              This edition has orders or readers, so its language is fixed. Create a new edition if it was entered wrongly.
+            </p>
+          ) : null}
         </div>
         <div className="min-w-0 space-y-2">
           <Label htmlFor="edition-isbn">ISBN</Label>
-          <Input defaultValue={edition.isbn ?? ""} aria-invalid={Boolean(state.fieldErrors.isbn)} aria-describedby={state.fieldErrors.isbn ? "edition-isbn-error" : undefined} id="edition-isbn" name="isbn" />
+          <Input defaultValue={edition.isbn ?? ""} {...field("isbn")} />
           <FieldError id="edition-isbn-error" message={state.fieldErrors.isbn} />
         </div>
         <div className="min-w-0 space-y-2">
           <Label htmlFor="edition-editionNumber">Edition number</Label>
-          <Input defaultValue={edition.editionNumber} aria-invalid={Boolean(state.fieldErrors.editionNumber)} aria-describedby={state.fieldErrors.editionNumber ? "edition-editionNumber-error" : undefined} id="edition-editionNumber" min={1} name="editionNumber" type="number" />
+          <Input defaultValue={edition.editionNumber} min={1} type="number" {...field("editionNumber")} />
           <FieldError id="edition-editionNumber-error" message={state.fieldErrors.editionNumber} />
         </div>
         <div className="min-w-0 space-y-2">
           <Label htmlFor="edition-publicationDate">Publication date</Label>
-          <Input defaultValue={edition.publicationDate ?? ""} aria-invalid={Boolean(state.fieldErrors.publicationDate)} aria-describedby={state.fieldErrors.publicationDate ? "edition-publicationDate-error" : undefined} id="edition-publicationDate" name="publicationDate" type="date" />
+          <Input defaultValue={edition.publicationDate ?? ""} type="date" {...field("publicationDate")} />
           <FieldError id="edition-publicationDate-error" message={state.fieldErrors.publicationDate} />
         </div>
+      </div>
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor="edition-contributors">Credits</Label>
+        <Textarea defaultValue={formatContributors(edition.contributors)} rows={3} {...field("contributors")} />
+        <p className="text-[0.8125rem] text-sage-text">One per line, like &ldquo;translator: Jane Doe&rdquo;. Shown on the book page.</p>
+        <FieldError id="edition-contributors-error" message={state.fieldErrors.contributors} />
+      </div>
+      <div className="min-w-0 space-y-2">
+        <Label htmlFor="edition-introduction">Translation introduction</Label>
+        <Textarea defaultValue={edition.introduction ?? ""} rows={5} {...field("introduction")} />
+        <FieldError id="edition-introduction-error" message={state.fieldErrors.introduction} />
       </div>
       <FormStatus state={state} />
       <SubmitButton pendingLabel="Saving…">Save edition</SubmitButton>
@@ -51,7 +146,55 @@ export function EditionForm({ action, edition }: { action: FormAction; edition: 
   );
 }
 
-export function OfferForm({ action, offer }: { action: FormAction; offer: NonNullable<AdminBookDTO["offer"]> }) {
+// A button that makes this edition (or this offer) the default. Shown only while it is not already.
+export function DefaultButtonForm({ action, label, pendingLabel }: { action: FormAction; label: string; pendingLabel: string }) {
+  const [state, formAction] = useActionState(action, initialAdminFormState);
+  return (
+    <form action={formAction} className="space-y-2">
+      <FormStatus state={state} />
+      <SubmitButton pendingLabel={pendingLabel}>{label}</SubmitButton>
+    </form>
+  );
+}
+
+// A new offer. The price starts empty, or from the admin's template for this language when one
+// exists; an unset price is refused rather than becoming a free offer.
+export function CreateOfferForm({ action, defaults }: { action: FormAction; defaults: PricingDefaultDTO[] }) {
+  const [state, formAction] = useActionState(action, initialAdminFormState);
+  const prefill = defaults[0];
+
+  return (
+    <form action={formAction} className="space-y-4" onReset={(event) => event.preventDefault()}>
+      <div className="grid min-w-0 gap-5 sm:grid-cols-3">
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor="new-offer-marketCode">Market</Label>
+          <Input defaultValue={prefill?.marketCode ?? ""} id="new-offer-marketCode" maxLength={2} name="marketCode" />
+          <FieldError id="new-offer-marketCode-error" message={state.fieldErrors.marketCode} />
+        </div>
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor="new-offer-currency">Currency</Label>
+          <Input defaultValue={prefill?.currency ?? ""} id="new-offer-currency" maxLength={3} name="currency" />
+          <FieldError id="new-offer-currency-error" message={state.fieldErrors.currency} />
+        </div>
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor="new-offer-priceMinor">Price (minor units)</Label>
+          <Input defaultValue={prefill?.priceMinor ?? ""} id="new-offer-priceMinor" min={0} name="priceMinor" type="number" />
+          <FieldError id="new-offer-priceMinor-error" message={state.fieldErrors.priceMinor} />
+        </div>
+      </div>
+      <p className="text-[0.8125rem] text-sage-text">
+        {prefill
+          ? "Prefilled from the language's pricing template; change it freely. Existing offers are never touched."
+          : "There is no pricing template for this language."}{" "}
+        Enter 0 for a free edition. Minor units: 500 JPY is ¥500, 500 USD is $5.00.
+      </p>
+      <FormStatus state={state} />
+      <SubmitButton pendingLabel="Adding…">Add offer</SubmitButton>
+    </form>
+  );
+}
+
+export function OfferForm({ action, offer }: { action: FormAction; offer: AdminOfferDTO }) {
   const [state, formAction] = useActionState(action, initialAdminFormState);
 
   return (
@@ -78,7 +221,7 @@ export function OfferForm({ action, offer }: { action: FormAction; offer: NonNul
         Offer is active
       </label>
       <FieldError id="offer-active-error" message={state.fieldErrors.active} />
-      <p className="text-[0.8125rem] text-sage-text">A price of 0 makes the ebook free. Paid prices show as coming soon until payments launch.</p>
+      <p className="text-[0.8125rem] text-sage-text">A price of 0 makes the edition free.</p>
       <SaleFields offer={offer} fieldErrors={state.fieldErrors} />
       <FormStatus state={state} />
       <SubmitButton pendingLabel="Saving…">Save offer</SubmitButton>
@@ -99,7 +242,7 @@ function utcLabel(iso: string): string {
 
 // S19: a percent or fixed sale on the book's list price, optionally windowed. The state line is
 // computed from the saved row by offer_effective_price_minor, the function checkout uses.
-function SaleFields({ offer, fieldErrors }: { offer: NonNullable<AdminBookDTO["offer"]>; fieldErrors: AdminFormState["fieldErrors"] }) {
+function SaleFields({ offer, fieldErrors }: { offer: AdminOfferDTO; fieldErrors: AdminFormState["fieldErrors"] }) {
   const sale = offer.sale;
   // A field the chosen kind does not use is disabled, so it is neither submitted nor able to block
   // the submit with its own min/max (the schema nulls it again on the server).

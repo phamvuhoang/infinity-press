@@ -116,12 +116,18 @@ export const bookLocalizationSchema = z.object({
 
 export const bookDetailsSchema = z.object({
   canonicalKey: kebabCase,
-  originalLanguage: localeSchema,
+  originalLanguage: contentLanguageSchema,
   primaryAuthorId: z.uuid({ error: "Choose an author." }),
 });
 
+// A credit on an edition: who did what (translator, editor, illustrator...).
+const contributorSchema = z.object({
+  role: z.string().trim().min(1, "Enter a role.").max(40),
+  name: z.string().trim().min(1, "Enter a name.").max(120),
+});
+
 export const editionSchema = z.object({
-  languageCode: localeSchema,
+  languageCode: contentLanguageSchema,
   isbn: z
     .string()
     .trim()
@@ -129,6 +135,22 @@ export const editionSchema = z.object({
     .nullable(),
   editionNumber: z.number({ error: "Enter the edition number." }).int().min(1),
   publicationDate: z.iso.date({ error: "Use a date like 2026-09-13." }).nullable(),
+  introduction: z.string().trim().max(5000, "Keep the introduction to 5000 characters.").nullable().default(null),
+  contributors: z.array(contributorSchema).max(20, "Use at most 20 credits.").default([]),
+});
+
+// A new edition of an existing work. The number defaults to the next free one for that language.
+export const createEditionSchema = z.object({
+  languageCode: contentLanguageSchema,
+  editionNumber: z.number().int().min(1, "Edition numbers start at 1.").nullable(),
+});
+
+// A new offer on an edition. The price is required: an unset price must never become a free offer
+// (free is an explicit 0).
+export const createOfferSchema = z.object({
+  marketCode: z.string().regex(/^[A-Z]{2}$/, "Use a two-letter uppercase market code, e.g. JP."),
+  currency: z.string().regex(/^[A-Z]{3}$/, "Use a three-letter uppercase currency code, e.g. JPY."),
+  priceMinor: z.number({ error: "Enter a price." }).int().min(0, "Price cannot be negative."),
 });
 
 // The price fields every offer form shares. A bundle offer is exactly these (no sale, S19 spec 2).
@@ -487,6 +509,8 @@ export type EntityLocalizationInput = z.infer<typeof entityLocalizationSchema>;
 export type BookLocalizationInput = z.infer<typeof bookLocalizationSchema>;
 export type BookDetailsInput = z.infer<typeof bookDetailsSchema>;
 export type EditionInput = z.infer<typeof editionSchema>;
+export type CreateEditionInput = z.infer<typeof createEditionSchema>;
+export type CreateOfferInput = z.infer<typeof createOfferSchema>;
 export type OfferInput = z.output<typeof offerSchema>;
 export type BookRelationsInput = z.infer<typeof bookRelationsSchema>;
 export type RelatedBooksInput = z.infer<typeof relatedBooksSchema>;

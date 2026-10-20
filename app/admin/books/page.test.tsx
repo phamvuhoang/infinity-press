@@ -38,7 +38,7 @@ it("lists the searched books with publication and readiness state", async () => 
   expect(screen.getByText("None")).toBeInTheDocument();
   expect(screen.getByText("2 to fix")).toHaveAttribute(
     "title",
-    "Upload a cover image.\nPublish an EPUB version.",
+    "Upload a cover image.\nPublish an EPUB for at least one edition.",
   );
 });
 

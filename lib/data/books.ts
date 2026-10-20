@@ -1,5 +1,5 @@
 import "server-only";
-import { type Locale } from "@/lib/i18n/config";
+import { type Locale, locales } from "@/lib/i18n/config";
 
 import { notFound } from "next/navigation";
 
@@ -12,9 +12,9 @@ import type {
   BookLocalizationInput,
   BookRelationsInput,
   CreateBookInput,
-  EditionInput,
   OfferInput,
 } from "@/lib/catalog/schemas";
+import { isOfferLive, offerColumns, type OfferRow } from "@/lib/data/admin-editions";
 import { createClient } from "@/lib/supabase/server";
 
 // Every function here runs requireAdmin() before building a client, then uses the session client:
@@ -131,29 +131,29 @@ export type AdminRetailLinkDTO = {
   active: boolean;
 };
 
+// What the work page shows about an edition: enough to see its state and reach its own page.
+export type AdminEditionSummaryDTO = {
+  id: string;
+  languageCode: string;
+  editionNumber: number;
+  status: "draft" | "published" | "archived";
+  isDefault: boolean;
+  activePublicationId: string | null;
+  offerCount: number;
+  hasLiveOffer: boolean;
+};
+
 export type AdminBookDTO = {
   id: string;
   canonicalKey: string;
-  originalLanguage: "vi" | "en";
+  originalLanguage: string;
   status: "draft" | "published" | "archived";
   primaryAuthorId: string;
   authorName: string;
   localization: { locale: string; slug: string; title: string } | null;
   localizations: BookLocalizationDTO[];
-  edition: { id: string; languageCode: string; isbn: string | null; editionNumber: number; publicationDate: string | null } | null;
-  sku: { id: string; skuCode: string; active: boolean } | null;
-  offer: {
-    id: string;
-    marketCode: string;
-    currency: string;
-    priceMinor: number;
-    active: boolean;
-    // S19. effectivePriceMinor comes from offer_effective_price_minor, the same function the
-    // storefront and checkout use, so the editor's "current price" cannot disagree with them.
-    sale: { kind: "percent" | "fixed"; percentOff: number | null; amountOffMinor: number | null; startsAt: string | null; endsAt: string | null } | null;
-    effectivePriceMinor: number;
-    saleState: "none" | "running" | "scheduled" | "ended";
-  } | null;
+  // One entry per language edition, ordered by language then number. Each is managed on its own page.
+  editions: AdminEditionSummaryDTO[];
   cover: { storageKey: string; altText: string; publicUrl: string } | null;
   topicIds: string[];
   // Editorial pins, in saved position order. The relation is directed: these are the books pinned
@@ -162,7 +162,6 @@ export type AdminBookDTO = {
   series: { seriesId: string; position: number } | null;
   // Paperback retailers in saved position order, inactive rows included (admins read them all).
   retailLinks: AdminRetailLinkDTO[];
-  activePublicationId: string | null;
   readinessIssues: ReadinessIssueCode[];
 };
 
@@ -174,22 +173,6 @@ export type AdminBookListItemDTO = {
   status: AdminBookDTO["status"];
   hasActivePublication: boolean;
   readinessIssues: ReadinessIssueCode[];
-};
-
-type OfferRow = {
-  id: string;
-  market_code: string;
-  currency: string;
-  price_minor: number;
-  active: boolean;
-  starts_at: string | null;
-  ends_at: string | null;
-  sale_kind: "percent" | "fixed" | null;
-  sale_percent_off: number | null;
-  sale_amount_off_minor: number | null;
-  sale_starts_at: string | null;
-  sale_ends_at: string | null;
-  offer_effective_price_minor: number;
 };
 
 type LocalizationRow = {
@@ -210,20 +193,21 @@ type LocalizationRow = {
 type BookRow = {
   id: string;
   canonical_key: string;
-  original_language: "vi" | "en";
+  original_language: string;
   status: AdminBookDTO["status"];
   primary_author_id: string;
-  active_publication_id: string | null;
   author: { display_name: string; localizations: { id: string }[] } | null;
   localizations: LocalizationRow[];
   editions: {
     id: string;
     language_code: string;
-    isbn: string | null;
     edition_number: number;
-    publication_date: string | null;
-    skus: { id: string; sku_code: string; active: boolean; offers: OfferRow[] }[];
+    status: AdminBookDTO["status"];
+    active_publication_id: string | null;
+    publication: { status: string } | { status: string }[] | null;
+    skus: { id: string; active: boolean; offers: OfferRow[] }[];
   }[];
+  defaults: { language_code: string; edition_id: string }[];
   topics: { topic_id: string }[];
   related: { related_book_id: string; position: number }[];
   retail_links: {
@@ -239,7 +223,6 @@ type BookRow = {
   // One-to-one embeds arrive as an object or a one-element array depending on how PostgREST
   // resolves the relationship; oneOrNull() accepts both.
   series: { series_id: string; position: number } | { series_id: string; position: number }[] | null;
-  active_publication: { status: string } | { status: string }[] | null;
 };
 
 const bookSelect = `
@@ -248,15 +231,14 @@ const bookSelect = `
   original_language,
   status,
   primary_author_id,
-  active_publication_id,
   author:authors ( display_name, localizations:author_localizations ( id ) ),
   localizations:book_localizations ( id, locale, slug, title, subtitle, short_description, description, audience, key_ideas, faq, seo_title, seo_description ),
-  editions ( id, language_code, isbn, edition_number, publication_date, skus ( id, sku_code, active, offers ( id, market_code, currency, price_minor, active, starts_at, ends_at, sale_kind, sale_percent_off, sale_amount_off_minor, sale_starts_at, sale_ends_at, offer_effective_price_minor ) ) ),
+  editions ( id, language_code, edition_number, status, active_publication_id, publication:ebook_publications!editions_active_publication_id_fkey ( status ), skus ( id, active, offers ( ${offerColumns} ) ) ),
+  defaults:book_language_editions ( language_code, edition_id ),
   topics:book_topics ( topic_id ),
   related:related_books!related_books_book_id_fkey ( related_book_id, position ),
   retail_links:book_retail_links ( id, retailer, label, url, price_minor, currency, position, active ),
-  series:book_series ( series_id, position ),
-  active_publication:ebook_publications!books_active_publication_fk ( status )
+  series:book_series ( series_id, position )
 `;
 
 function oneOrNull<T>(value: T | T[] | null): T | null {
@@ -264,26 +246,9 @@ function oneOrNull<T>(value: T | T[] | null): T | null {
   return value;
 }
 
-// Running is read off the database's own answer; only the two not-running states use the clock.
-function saleState(offer: OfferRow, now: Date): "none" | "running" | "scheduled" | "ended" {
-  if (!offer.sale_kind) return "none";
-  if (Number(offer.offer_effective_price_minor) < offer.price_minor) return "running";
-  return offer.sale_starts_at !== null && new Date(offer.sale_starts_at) > now ? "scheduled" : "ended";
-}
-
-function isOfferLive(offer: OfferRow, now: Date) {
-  return (
-    offer.active &&
-    (offer.starts_at === null || new Date(offer.starts_at) <= now) &&
-    (offer.ends_at === null || new Date(offer.ends_at) > now)
-  );
-}
-
-const localeOrder: Record<string, number> = { vi: 0, en: 1 };
-
 function toDto(row: BookRow, cover: { storage_key: string; alt_text: string } | null): AdminBookDTO {
   const localizations = [...row.localizations]
-    .sort((a, b) => (localeOrder[a.locale] ?? 9) - (localeOrder[b.locale] ?? 9))
+    .sort((a, b) => locales.indexOf(a.locale) - locales.indexOf(b.locale))
     .map((localization) => ({
       id: localization.id,
       locale: localization.locale,
@@ -299,20 +264,32 @@ function toDto(row: BookRow, cover: { storage_key: string; alt_text: string } | 
       seoDescription: localization.seo_description,
     }));
 
-  // The ebook-only MVP creates one edition, one SKU, and one offer per book (admin_create_book).
-  const edition = row.editions[0] ?? null;
-  const sku = edition?.skus[0] ?? null;
-  const offer = sku?.offers[0] ?? null;
   const series = oneOrNull(row.series);
-  const activePublication = oneOrNull(row.active_publication);
   const now = new Date();
+  const defaultEditionIds = new Set(row.defaults.map((entry) => entry.edition_id));
+  const editions: AdminEditionSummaryDTO[] = [...row.editions]
+    .sort((a, b) => a.language_code.localeCompare(b.language_code) || a.edition_number - b.edition_number)
+    .map((edition) => {
+      const offers = edition.skus.filter((sku) => sku.active).flatMap((sku) => sku.offers);
+      return {
+        id: edition.id,
+        languageCode: edition.language_code,
+        editionNumber: edition.edition_number,
+        status: edition.status,
+        isDefault: defaultEditionIds.has(edition.id),
+        activePublicationId: edition.active_publication_id,
+        offerCount: offers.length,
+        hasLiveOffer: offers.some((offer) => isOfferLive(offer, now)),
+      };
+    });
 
   const readinessIssues = checkBookReadiness({
     localizations,
     hasAuthor: Boolean(row.author?.localizations.length),
     hasCover: cover !== null,
-    hasActiveOffer: Boolean(sku?.active && sku.offers.some((candidate) => isOfferLive(candidate, now))),
-    hasPublishedActivePublication: activePublication?.status === "published",
+    hasPublishedEdition: row.editions.some(
+      (edition) => edition.status === "published" && oneOrNull(edition.publication)?.status === "published",
+    ),
   });
 
   return {
@@ -326,36 +303,7 @@ function toDto(row: BookRow, cover: { storage_key: string; alt_text: string } | 
       ? { locale: localizations[0].locale, slug: localizations[0].slug, title: localizations[0].title }
       : null,
     localizations,
-    edition: edition
-      ? {
-          id: edition.id,
-          languageCode: edition.language_code,
-          isbn: edition.isbn,
-          editionNumber: edition.edition_number,
-          publicationDate: edition.publication_date,
-        }
-      : null,
-    sku: sku ? { id: sku.id, skuCode: sku.sku_code, active: sku.active } : null,
-    offer: offer
-      ? {
-          id: offer.id,
-          marketCode: offer.market_code,
-          currency: offer.currency,
-          priceMinor: offer.price_minor,
-          active: offer.active,
-          sale: offer.sale_kind
-            ? {
-                kind: offer.sale_kind,
-                percentOff: offer.sale_percent_off,
-                amountOffMinor: offer.sale_amount_off_minor,
-                startsAt: offer.sale_starts_at,
-                endsAt: offer.sale_ends_at,
-              }
-            : null,
-          effectivePriceMinor: Number(offer.offer_effective_price_minor),
-          saleState: saleState(offer, now),
-        }
-      : null,
+    editions,
     cover: cover
       ? { storageKey: cover.storage_key, altText: cover.alt_text, publicUrl: coverPublicUrl(cover.storage_key) }
       : null,
@@ -374,7 +322,6 @@ function toDto(row: BookRow, cover: { storage_key: string; alt_text: string } | 
         active: link.active,
       })),
     series: series ? { seriesId: series.series_id, position: series.position } : null,
-    activePublicationId: row.active_publication_id,
     readinessIssues,
   };
 }
@@ -432,7 +379,7 @@ export async function listAdminBooks(search?: string): Promise<AdminBookListItem
       title: book.localization?.title ?? book.canonicalKey,
       authorName: book.authorName,
       status: book.status,
-      hasActivePublication: book.activePublicationId !== null,
+      hasActivePublication: book.editions.some((edition) => edition.activePublicationId !== null),
       readinessIssues: book.readinessIssues,
     }));
 }
@@ -477,26 +424,6 @@ export async function saveBookLocalization(bookId: string, input: BookLocalizati
   });
 
   if (error) throw failure("saveBookLocalization", error);
-}
-
-export async function updateEdition(editionId: string, input: EditionInput): Promise<void> {
-  await requireAdmin();
-  assertUuid(editionId);
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("editions")
-    .update({
-      language_code: input.languageCode,
-      isbn: input.isbn,
-      edition_number: input.editionNumber,
-      publication_date: input.publicationDate,
-    })
-    .eq("id", editionId)
-    .select("id");
-
-  if (error) throw failure("updateEdition", error);
-  if (!data || data.length === 0) throw new BookNotFoundError();
 }
 
 export async function updateOffer(offerId: string, input: OfferInput): Promise<void> {

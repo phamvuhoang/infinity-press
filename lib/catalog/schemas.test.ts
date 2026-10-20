@@ -14,6 +14,9 @@ import {
   createBookSchema,
   createBundleSchema,
   couponSchema,
+  bookDetailsSchema,
+  createEditionSchema,
+  createOfferSchema,
   editionSchema,
   entityLocalizationSchema,
   ideaCreateSchema,
@@ -347,5 +350,48 @@ describe("S12 knowledge schemas", () => {
     expect(knowledgeImageUploadSchema.safeParse({ mimeType: "image/gif", sizeBytes: 10 }).success).toBe(false);
     expect(knowledgeImageUploadSchema.safeParse({ mimeType: "image/png", sizeBytes: 5 * 1024 * 1024 + 1 }).success).toBe(false);
     expect(knowledgeImageUploadSchema.safeParse({ mimeType: "image/png", sizeBytes: 0 }).success).toBe(false);
+  });
+});
+
+describe("edition schemas", () => {
+  const edition = { languageCode: "ja", isbn: null, editionNumber: 1, publicationDate: null, introduction: null, contributors: [] };
+
+  it("takes a content language from the registry shape, not only the interface locales", () => {
+    expect(editionSchema.safeParse({ ...edition, languageCode: "fr" }).success).toBe(true);
+    expect(editionSchema.safeParse({ ...edition, languageCode: "zh-Hant" }).success).toBe(true);
+    expect(editionSchema.safeParse({ ...edition, languageCode: "English" }).success).toBe(false);
+  });
+
+  it("keeps credits as a list of role and name", () => {
+    expect(
+      editionSchema.safeParse({ ...edition, contributors: [{ role: "translator", name: "T. Translator" }] }).success,
+    ).toBe(true);
+    expect(editionSchema.safeParse({ ...edition, contributors: [{ role: "translator", name: "" }] }).success).toBe(false);
+    expect(editionSchema.safeParse({ ...edition, contributors: "translator" }).success).toBe(false);
+  });
+
+  it("limits the introduction", () => {
+    expect(editionSchema.safeParse({ ...edition, introduction: "x".repeat(5001) }).success).toBe(false);
+  });
+
+  it("creates an edition from a language, with an optional number", () => {
+    expect(createEditionSchema.safeParse({ languageCode: "ja", editionNumber: null }).success).toBe(true);
+    expect(createEditionSchema.safeParse({ languageCode: "ja", editionNumber: 0 }).success).toBe(false);
+    expect(createEditionSchema.safeParse({ languageCode: "", editionNumber: null }).success).toBe(false);
+  });
+
+  it("creates an offer only with an explicit price: unset is never free", () => {
+    expect(createOfferSchema.safeParse({ marketCode: "JP", currency: "JPY", priceMinor: 500 }).success).toBe(true);
+    expect(createOfferSchema.safeParse({ marketCode: "JP", currency: "JPY", priceMinor: 0 }).success).toBe(true);
+    expect(createOfferSchema.safeParse({ marketCode: "JP", currency: "JPY" }).success).toBe(false);
+    expect(createOfferSchema.safeParse({ marketCode: "JP", currency: "jpy", priceMinor: 500 }).success).toBe(false);
+  });
+});
+
+describe("book details", () => {
+  it("accepts a French original: a work's language is not an interface locale", () => {
+    expect(
+      bookDetailsSchema.safeParse({ canonicalKey: "les-miserables", originalLanguage: "fr", primaryAuthorId: "4a1b2c3d-0000-4000-8000-000000000001" }).success,
+    ).toBe(true);
   });
 });
