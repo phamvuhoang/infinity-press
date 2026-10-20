@@ -816,36 +816,40 @@ test.describe("freshness matrix - each row seeds through the admin path, then re
     expect(new URL(redirected.headers()["location"], "http://relative-base.invalid").pathname).toBe(`/en/books/${newSlug}`);
   });
 
+  // Press: a page exists for a locale only when the work resolves to a readable edition there, so the
+  // work starts in the platform's default language (the default edition's language) and gains a
+  // second localization of its page.
   test("adding the other locale's translation makes both pages' hreflang point at each other", async ({ page, request }) => {
     test.setTimeout(60_000);
     const suffix = unique();
-    const viSlug = `fresh-translate-${suffix}`;
+    const enSlug = `fresh-translate-en-${suffix}`;
     const { bookId } = await seedCatalogBook({
       suffix,
-      localizations: { vi: { slug: viSlug, title: `Fresh Translate ${suffix}` } },
+      localizations: { en: { slug: enSlug, title: `Fresh Translate EN ${suffix}` } },
       priceMinor: 45000,
     });
 
-    const before = await fetchRaw(request, `/vi/books/${viSlug}`);
-    expect(tagAttr(before.body, "link", { rel: "alternate", hreflang: "en" }, "href")).toBeNull();
+    const before = await fetchRaw(request, `/en/books/${enSlug}`);
+    expect(tagAttr(before.body, "link", { rel: "alternate", hreflang: "vi" }, "href")).toBeNull();
 
-    const enSlug = `fresh-translate-en-${suffix}`;
+    const viSlug = `fresh-translate-${suffix}`;
     const admin = await createReader("fresh-translate-admin", { admin: true });
     await signInAs(page, admin.email, `/admin/books/${bookId}`);
-    await page.getByLabel("Title (en)", { exact: true }).fill(`Fresh Translate EN ${suffix}`);
-    await page.getByLabel("Slug (en)").fill(enSlug);
-    await page.getByLabel("Description (en)", { exact: true }).fill(`English copy ${suffix}`);
-    await saveAdminForm(page, "Save en copy");
+    await page.getByLabel("Title (vi)", { exact: true }).fill(`Fresh Translate ${suffix}`);
+    await page.getByLabel("Slug (vi)").fill(viSlug);
+    await page.getByLabel("Description (vi)", { exact: true }).fill(`Bản tiếng Việt ${suffix}`);
+    await saveAdminForm(page, "Save vi copy");
 
     await expect
       .poll(
-        async () => tagAttr((await fetchRaw(request, `/vi/books/${viSlug}`)).body, "link", { rel: "alternate", hreflang: "en" }, "href"),
-        { message: "the vi page gains an en alternate", timeout: 30_000 },
+        async () => tagAttr((await fetchRaw(request, `/en/books/${enSlug}`)).body, "link", { rel: "alternate", hreflang: "vi" }, "href"),
+        { message: "the en page gains a vi alternate", timeout: 30_000 },
       )
-      .toContain(`/en/books/${enSlug}`);
+      .toContain(`/vi/books/${viSlug}`);
 
-    const en = await fetchRaw(request, `/en/books/${enSlug}`);
-    expect(tagAttr(en.body, "link", { rel: "alternate", hreflang: "vi" }, "href")).toContain(`/vi/books/${viSlug}`);
+    // The vi page shows the same (English) edition under Vietnamese copy: its own page, pointing back.
+    const vi = await fetchRaw(request, `/vi/books/${viSlug}`);
+    expect(tagAttr(vi.body, "link", { rel: "alternate", hreflang: "en" }, "href")).toContain(`/en/books/${enSlug}`);
   });
 });
 
