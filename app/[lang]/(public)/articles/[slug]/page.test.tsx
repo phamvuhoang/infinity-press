@@ -62,6 +62,7 @@ const relatedIdea: KnowledgeIdeaSummary = {
   createdAt: "2026-09-01T00:00:00+00:00",
   updatedAt: "2026-09-02T00:00:00+00:00",
   alternateSlugs: {},
+  metadataLocale: "en",
   topics: [],
 };
 
@@ -75,6 +76,7 @@ const article: KnowledgeArticlePage = {
   publishedAt: "2026-09-20T03:00:00+00:00",
   updatedAt: "2026-09-21T03:00:00+00:00",
   alternateSlugs: { vi: "doc-mua-thu" },
+  metadataLocale: "en",
   author: { name: "Mai Tran", slug: "mai-tran" },
   blocks: [
     {
@@ -281,6 +283,7 @@ describe("ArticlePage", () => {
     vi.mocked(getArticlePage).mockResolvedValue({
       ...article,
       alternateSlugs: {},
+      metadataLocale: "en",
     });
     render(await ArticlePage({ params }));
     expect(header.props?.alternates).toEqual({});
@@ -360,6 +363,7 @@ describe("generateMetadata", () => {
     vi.mocked(getArticlePage).mockResolvedValue({
       ...article,
       alternateSlugs: {},
+      metadataLocale: "en",
       seoTitle: "Read this autumn",
       seoDescription: "Five picks.",
     });

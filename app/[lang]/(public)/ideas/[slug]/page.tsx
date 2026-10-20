@@ -12,10 +12,12 @@ import {
 import { SiteFooter } from "@/components/site-footer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SiteHeader } from "@/components/site-header";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getIdeaPage } from "@/lib/data/knowledge";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
+import { fillTemplate } from "@/lib/i18n/format";
 import {
   getCatalogRoutes,
   getKnowledgeRoutes,
@@ -57,14 +59,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const idea = await getIdeaPage(locale, slug);
   if (!idea) return {};
+  const alternates = alternatePaths(idea.alternateSlugs, (l, s) => getKnowledgeRoutes(l).idea(s));
+  // This URL shows another locale's copy: it is that page's duplicate, not a translation.
+  const copyFrom = idea.metadataLocale !== locale && isLocale(idea.metadataLocale) ? idea.metadataLocale : undefined;
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    paths: localePaths(
-      locale,
-      getKnowledgeRoutes(locale).idea(idea.slug),
-      alternatePaths(idea.alternateSlugs, (l, s) => getKnowledgeRoutes(l).idea(s)),
-    ),
+    copyFrom,
+    paths: copyFrom ? alternates : localePaths(locale, getKnowledgeRoutes(locale).idea(idea.slug), alternates),
     title: idea.seoTitle ?? idea.question,
     description: idea.seoDescription ?? idea.shortAnswer,
   });
@@ -125,6 +127,11 @@ export default async function IdeaPage({ params }: Props) {
             <h1 className="font-serif text-4xl leading-[1.08] font-normal tracking-[-0.01em] sm:text-5xl">
               {idea.question}
             </h1>
+            {idea.metadataLocale !== locale ? (
+              <p className="mt-3 text-xs text-sage-text">
+                {fillTemplate(dictionary.catalog.editions.metadataNote, { language: editionLanguageLabel(idea.metadataLocale) ?? idea.metadataLocale })}
+              </p>
+            ) : null}
             <p className="mt-6 mb-2 text-xs font-medium tracking-[0.1em] text-sage-text uppercase">
               {copy.shortAnswer}
             </p>

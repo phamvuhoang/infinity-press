@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CatalogBookCard } from "@/lib/catalog/public-types";
 import { catalogStaticParams } from "@/lib/catalog/static-params";
 import { getServerEnv } from "@/lib/config/server-env";
-import { getBookCards } from "@/lib/data/catalog";
+import { getBookCards, listEntitySlugs } from "@/lib/data/catalog";
 import { listPublicBundleSlugs } from "@/lib/data/public-bundles";
 
-vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn() }));
+vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn(), listEntitySlugs: vi.fn() }));
 vi.mock("@/lib/data/public-bundles", () => ({ listPublicBundleSlugs: vi.fn() }));
 vi.mock("@/lib/config/server-env", () => ({ getServerEnv: vi.fn() }));
 
@@ -35,6 +35,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   // getServerEnv() succeeds by default - most tests are not exercising the build-phase branch.
   vi.mocked(getServerEnv).mockReturnValue({} as ReturnType<typeof getServerEnv>);
+  vi.mocked(listEntitySlugs).mockResolvedValue({ author: [], series: [], topic: [] });
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -51,11 +52,14 @@ describe("catalogStaticParams for a work shown under another locale's copy", () 
 });
 
 describe("catalogStaticParams", () => {
-  it("lists every slug the locale's visible books reach", async () => {
+  // Entity slugs come from catalog_entity_slugs, which lists only pages with this locale's own copy;
+  // a card's author slug may be another locale's (metadata fallback) and is not used here.
+  it("lists the locale's books, its own entity pages and its bundles", async () => {
     vi.mocked(getBookCards).mockResolvedValue([
       card({ slug: "one", metadataLocale: "vi", series: { slug: "a-series", name: "S", position: 1 }, topics: [{ slug: "calm", name: "Calm" }] }),
-      card({ slug: "two", metadataLocale: "vi", author: { name: "Mai Tran", slug: "mai-tran" }, topics: [{ slug: "calm", name: "Calm" }] }),
+      card({ slug: "two", metadataLocale: "vi", author: { name: "Mai Tran", slug: "mai-tran-en" }, topics: [{ slug: "calm", name: "Calm" }] }),
     ]);
+    vi.mocked(listEntitySlugs).mockResolvedValue({ author: ["mai-tran"], series: ["a-series"], topic: ["calm"] });
     vi.mocked(listPublicBundleSlugs).mockResolvedValue([
       { locale: "vi", slug: "goi-khoi-dau" },
       { locale: "en", slug: "starter-bundle" },
@@ -68,9 +72,10 @@ describe("catalogStaticParams", () => {
       topics: ["calm"],
       bundles: ["goi-khoi-dau"],
     });
+    expect(listEntitySlugs).toHaveBeenCalledWith("vi");
   });
 
-  it("drops a book with no author slug and never repeats a slug", async () => {
+  it("never repeats a book slug", async () => {
     vi.mocked(getBookCards).mockResolvedValue([
       card({ slug: "one", author: { name: "Anon", slug: null } }),
       card({ slug: "one", author: { name: "Mai Tran", slug: "mai-tran" } }),
@@ -79,7 +84,7 @@ describe("catalogStaticParams", () => {
 
     const params = await catalogStaticParams("vi");
     expect(params.books).toEqual(["one"]);
-    expect(params.authors).toEqual(["mai-tran"]);
+    expect(params.authors).toEqual([]);
     expect(params.bundles).toEqual([]);
   });
 
@@ -94,6 +99,7 @@ describe("catalogStaticParams", () => {
 
     expect(await catalogStaticParams("vi")).toEqual({ books: [], authors: [], series: [], topics: [], bundles: [] });
     expect(getBookCards).not.toHaveBeenCalled();
+    expect(listEntitySlugs).not.toHaveBeenCalled();
     expect(listPublicBundleSlugs).not.toHaveBeenCalled();
   });
 

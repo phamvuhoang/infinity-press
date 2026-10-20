@@ -69,12 +69,16 @@ export default async function AdminEditionPage({ params }: { params: Promise<{ b
           <div className="space-y-6">
             {edition.isDefault ? (
               <p className="text-sm">This is the default {languageName} edition.</p>
-            ) : (
+            ) : edition.status === "published" ? (
               <DefaultButtonForm
                 action={setDefaultEditionAction.bind(null, bookId, editionId, edition.languageCode)}
                 label={`Make default ${languageName} edition`}
                 pendingLabel="Saving…"
               />
+            ) : (
+              // admin_set_default_edition refuses it too: a draft or archived default would hide the
+              // work from its language even while another edition of that language is live.
+              <p className="text-sm text-ink-soft">Only a published edition can be the default {languageName} edition.</p>
             )}
             <EditionForm
               action={updateEditionAction.bind(null, bookId, editionId)}

@@ -174,7 +174,7 @@ test("an admin creates, relates, and publishes an idea with one audit row per mu
   });
 });
 
-test("an idea without a Vietnamese localization is a 404 there, and the English page switches to the Vietnamese home", async ({
+test("an idea without a Vietnamese localization is shown there under its English copy, canonical to the English page", async ({
   page,
   request,
 }) => {
@@ -194,10 +194,6 @@ test("an idea without a Vietnamese localization is a 404 there, and the English 
   });
   await revalidateStorefront(request);
 
-  // No fallback to the other language: the English slug under /vi is simply not found.
-  const missing = await page.goto(`/vi/ideas/${slug}`);
-  expect(missing?.status()).toBe(404);
-
   const found = await page.goto(`/en/ideas/${slug}`);
   expect(found?.status()).toBe(200);
   await expect(page.getByRole("heading", { level: 1, name: question })).toBeVisible();
@@ -211,6 +207,17 @@ test("an idea without a Vietnamese localization is a 404 there, and the English 
   await expect(switcher).toHaveAttribute("href", "/vi");
   await switcher.click();
   await expect(page).toHaveURL(`${origin}/vi`);
+
+  // Metadata fallback (spec section 5): under /vi the idea is shown whole in its English copy, under
+  // its English slug, says so, and is canonical to the English page rather than claiming to be a
+  // Vietnamese one. A Vietnamese slug that does not exist is still a 404.
+  const fallback = await page.goto(`/vi/ideas/${slug}`);
+  expect(fallback?.status()).toBe(200);
+  await expect(page.getByRole("heading", { level: 1, name: question })).toBeVisible();
+  await expect(page.getByText("Tiêu đề và mô tả hiển thị bằng English.")).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", self);
+  await expect(page.locator('link[rel="alternate"][hreflang="vi"]')).toHaveCount(0);
+  expect((await page.goto(`/vi/ideas/${slug}-khong-co`))?.status()).toBe(404);
 
   let sitemap = "";
   await expect

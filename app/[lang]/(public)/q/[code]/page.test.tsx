@@ -78,9 +78,8 @@ describe("quote card page", () => {
     render(await QuoteCardPage({ params: Promise.resolve({ lang: "en", code: "AbCdEfGh12" }) }));
     expect(screen.getByText("“Một câu đáng nhớ.”")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sách S16" })).toHaveAttribute("href", "/vi/books/sach-s16");
-    expect(screen.getByRole("link", { name: "Đọc thử" })).toHaveAttribute("href", "/vi/read-sample/sach-s16");
-    // The quote page sells the one edition its card stands for, with no selector.
-    expect(viewer.props).toMatchObject({ bookId: card.bookId, locale: "vi", selectable: false });
+    // The sample link is the edition panel's, built from the slug and the edition it sells.
+    expect(viewer.props).toMatchObject({ bookId: card.bookId, bookSlug: "sach-s16", locale: "vi", selectable: false });
     expect((viewer.props!.editions as { editionId: string }[]).map((edition) => edition.editionId)).toEqual(["edition-1"]);
     expect(analytics.props).toEqual({ eventName: "view_quote", sharedQuoteId: card.id, bookId: card.bookId, locale: "vi" });
     // The card loads the book in ITS locale, not the path's.

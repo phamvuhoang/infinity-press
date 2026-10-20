@@ -18,6 +18,8 @@ export type KnowledgeIdeaSummary = KnowledgeIdeaReference & {
   // The localization's last edit.
   updatedAt: string;
   alternateSlugs: AlternateSlugs;
+  // The locale of the copy shown: the requested one, else the platform default metadata locale.
+  metadataLocale: string;
   // Every published topic with a public page in this locale, ordered by name.
   topics: KnowledgeTopicRef[];
 };
@@ -38,6 +40,7 @@ export type KnowledgeArticleSummary = {
   publishedAt: string;
   updatedAt: string;
   alternateSlugs: AlternateSlugs;
+  metadataLocale: string;
   author: KnowledgeAuthorRef;
 };
 
@@ -59,6 +62,7 @@ export type KnowledgeIdeaPage = KnowledgeRenderContext & {
   createdAt: string;
   updatedAt: string;
   alternateSlugs: AlternateSlugs;
+  metadataLocale: string;
   // Editorial order; unpublished or unlocalized targets are already dropped.
   books: CatalogBookCard[];
   relatedIdeas: KnowledgeIdeaSummary[];
@@ -75,6 +79,7 @@ export type KnowledgeArticlePage = KnowledgeRenderContext & {
   publishedAt: string;
   updatedAt: string;
   alternateSlugs: AlternateSlugs;
+  metadataLocale: string;
   author: KnowledgeAuthorRef;
   books: CatalogBookCard[];
   ideas: KnowledgeIdeaSummary[];

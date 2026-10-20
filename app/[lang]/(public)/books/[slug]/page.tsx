@@ -150,6 +150,7 @@ export default async function BookPage({ params }: Props) {
               <BookEditionPanel
                 bookId={book.bookId}
                 bookPath={bookPath}
+                bookSlug={book.slug}
                 buyAction={buyEbookAction.bind(null, locale, book.bookId, book.slug)}
                 copy={copy}
                 editions={book.editions}
@@ -190,14 +191,6 @@ export default async function BookPage({ params }: Props) {
                   ))}
                 </ul>
               </section>
-            ) : null}
-
-            {book.hasSample ? (
-              <p className="mt-4">
-                <Link className={textLink} href={routes.sample(book.slug)}>
-                  {copy.book.sample}
-                </Link>
-              </p>
             ) : null}
 
             {book.shortDescription ? <p className="mt-10 font-serif text-xl leading-normal">{book.shortDescription}</p> : null}

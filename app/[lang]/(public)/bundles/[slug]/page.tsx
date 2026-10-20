@@ -13,6 +13,7 @@ import { SiteHeader } from "@/components/site-header";
 import { formatPrice } from "@/lib/catalog/price";
 import { fillTemplate } from "@/lib/i18n/format";
 import { catalogStaticParams } from "@/lib/catalog/static-params";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getPublicBundle, publicBundleAction } from "@/lib/data/public-bundles";
@@ -50,16 +51,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const bundle = await getPublicBundle(locale, slug);
   if (!bundle) return {};
+  // The alternate only when the bundle really is localized there: a bundle with one localization
+  // is a one-locale page, not the same page under two URLs.
+  const alternates = alternatePaths(bundle.alternateSlugs, (l, s) => getCatalogRoutes(l).bundle(s));
+  // This URL shows another locale's copy: it is that page's duplicate, not a translation.
+  const copyFrom = bundle.metadataLocale !== locale ? bundle.metadataLocale : undefined;
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    // The alternate only when the bundle really is localized there: a bundle with one localization
-    // is a one-locale page, not the same page under two URLs.
-    paths: localePaths(
-      locale,
-      getCatalogRoutes(locale).bundle(bundle.slug),
-      alternatePaths(bundle.alternateSlugs, (l, s) => getCatalogRoutes(l).bundle(s)),
-    ),
+    copyFrom,
+    paths: copyFrom ? alternates : localePaths(locale, getCatalogRoutes(locale).bundle(bundle.slug), alternates),
     title: bundle.title,
     description: bundle.description ?? bundle.subtitle ?? undefined,
     image: bundle.cover,
@@ -120,6 +121,11 @@ export default async function BundlePage({ params }: Props) {
             <p className="text-xs tracking-[0.08em] text-sage-text uppercase">{copy.bundle.eyebrow}</p>
             <h1 className="mt-2 font-serif text-4xl leading-[1.08] font-normal tracking-[-0.01em] sm:text-5xl">{bundle.title}</h1>
             {bundle.subtitle ? <p className="mt-3 font-serif text-xl text-ink-soft">{bundle.subtitle}</p> : null}
+            {bundle.metadataLocale !== locale ? (
+              <p className="mt-3 text-xs text-sage-text">
+                {fillTemplate(copy.editions.metadataNote, { language: editionLanguageLabel(bundle.metadataLocale) ?? bundle.metadataLocale })}
+              </p>
+            ) : null}
 
             <div className="mt-8 flex flex-wrap items-start gap-x-6 gap-y-4 border-y border-hairline py-6">
               {bundle.offer ? (

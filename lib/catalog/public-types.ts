@@ -83,6 +83,8 @@ export type CatalogEntityPage = {
   name: string;
   description: string | null;
   alternateSlugs: AlternateSlugs;
+  // The locale of the copy shown: the requested one, else the platform default metadata locale.
+  metadataLocale: string;
   // Authors only. Series and topics always report null for both.
   quote: string | null;
   image: { url: string; alt: string } | null;

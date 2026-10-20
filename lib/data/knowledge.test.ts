@@ -66,6 +66,7 @@ function ideaRow(
     created_at: "2026-02-01T00:00:00+00:00",
     updated_at: "2026-02-02T00:00:00+00:00",
     alternate_slugs: {},
+    metadata_locale: "vi",
     topics,
   };
 }
@@ -97,6 +98,7 @@ function ideaPageData(overrides: Record<string, unknown> = {}) {
     createdAt: "2026-02-01T00:00:00+00:00",
     updatedAt: "2026-02-02T00:00:00+00:00",
     alternateSlugs: { vi: "y-tuong-mot" },
+    metadataLocale: "vi",
     bookIds: [BOOK_GONE, BOOK_A],
     relatedIdeaIds: [IDEA_2, IDEA_GONE],
     topics: [{ slug: "habits", name: "Habits" }],
@@ -116,6 +118,7 @@ function articlePageData(overrides: Record<string, unknown> = {}) {
     publishedAt: "2026-01-01T00:00:00+00:00",
     updatedAt: "2026-01-02T00:00:00+00:00",
     alternateSlugs: {},
+    metadataLocale: "vi",
     author: { name: "An Author", slug: null },
     bookIds: [BOOK_B, BOOK_A],
     ideaIds: [IDEA_3, IDEA_1],
@@ -180,6 +183,7 @@ describe("getPublishedIdeas", () => {
       createdAt: "2026-02-01T00:00:00+00:00",
       updatedAt: "2026-02-02T00:00:00+00:00",
       alternateSlugs: {},
+      metadataLocale: "vi",
       topics: [
         { slug: "habits", name: "Habits" },
         { slug: "focus", name: "Focus" },
@@ -244,6 +248,7 @@ describe("getArticleIndex", () => {
             published_at: "2026-03-01T00:00:00+00:00",
             updated_at: "2026-03-02T00:00:00+00:00",
             alternate_slugs: { vi: "moi-hon" },
+            metadata_locale: "vi",
             author: { name: "An Author", slug: "an-author" },
           },
           {
@@ -254,6 +259,7 @@ describe("getArticleIndex", () => {
             published_at: "2026-01-01T00:00:00+00:00",
             updated_at: "2026-01-02T00:00:00+00:00",
             alternate_slugs: {},
+            metadata_locale: "vi",
             author: { name: "Someone", slug: null },
           },
         ],
@@ -273,6 +279,7 @@ describe("getArticleIndex", () => {
       publishedAt: "2026-03-01T00:00:00+00:00",
       updatedAt: "2026-03-02T00:00:00+00:00",
       alternateSlugs: { vi: "moi-hon" },
+      metadataLocale: "vi",
       author: { name: "An Author", slug: "an-author" },
     });
   });
@@ -287,6 +294,7 @@ describe("getKnowledgeSitemapEntries", () => {
     published_at: "2026-03-01T00:00:00+00:00",
     updated_at: "2026-03-02T00:00:00+00:00",
     alternate_slugs: {},
+    metadata_locale: "vi",
     author: { name: "An Author", slug: null },
   };
 

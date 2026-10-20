@@ -209,8 +209,9 @@ Migration `20261020150000_press_edition_orders.sql`.
   another order's confirmation (`EB043`). `order_items` gets its edition and language from the SKU when
   a writer omits them.
 - SePay is gone from the app: provider, IPN route, hand-off page, env variables, and e2e project.
-  `PAYMENT_PROVIDER=sepay` fails startup. The historical migrations and the database check constraint
-  still name the provider; they are not rewritten, and no payment row can carry it.
+  `PAYMENT_PROVIDER=sepay` fails startup. `commerce_settings.payment_provider` accepts only `manual`
+  and `simulator` (`20261020240000`); a settings row that still names `sepay` stops that migration
+  until an operator sets `manual`. The historical migrations are not rewritten.
 - `lib/commerce/money.ts` is the only place that converts between major text and minor units
   (currency exponent from the currency, exact decimal parsing, safe-integer bound).
 

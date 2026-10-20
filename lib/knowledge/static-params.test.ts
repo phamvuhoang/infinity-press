@@ -17,6 +17,7 @@ function idea(slug: string): KnowledgeIdeaSummary {
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-01T00:00:00+00:00",
     alternateSlugs: {},
+    metadataLocale: "en",
     topics: [],
   };
 }
@@ -30,6 +31,7 @@ function article(slug: string): KnowledgeArticleSummary {
     publishedAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-01T00:00:00+00:00",
     alternateSlugs: {},
+    metadataLocale: "en",
     author: { name: "Mai Tran", slug: null },
   };
 }
@@ -48,6 +50,14 @@ describe("knowledgeStaticParams", () => {
     expect(await knowledgeStaticParams("en")).toEqual({ ideas: ["why-read", "streaks"], articles: ["autumn"] });
     expect(getPublishedIdeas).toHaveBeenCalledWith("en");
     expect(getArticleIndex).toHaveBeenCalledWith("en");
+  });
+
+  // A page shown under another locale's copy (metadata fallback) is that locale's page.
+  it("leaves out an idea or article shown under another locale's copy", async () => {
+    vi.mocked(getPublishedIdeas).mockResolvedValue([idea("why-read"), { ...idea("vietnamese-only"), metadataLocale: "vi" }]);
+    vi.mocked(getArticleIndex).mockResolvedValue([{ ...article("autumn"), metadataLocale: "vi" }]);
+
+    expect(await knowledgeStaticParams("en")).toEqual({ ideas: ["why-read"], articles: [] });
   });
 
   it("returns no slugs during a production build with no server environment, without querying", async () => {

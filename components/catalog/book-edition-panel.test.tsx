@@ -39,6 +39,7 @@ const getFreeAction = vi.fn(async () => undefined);
 const props = {
   bookId: "book-1",
   bookPath: "/en/books/a-book",
+  bookSlug: "a-book",
   locale: "en" as const,
   copy: en.catalog,
   paymentsEnabled: true,
@@ -118,6 +119,17 @@ describe("BookEditionPanel", () => {
   it("explains a fallback edition", () => {
     render(<BookEditionPanel {...props} editions={[english]} fallbackNotice locale="ja" />);
     expect(screen.getByText("There is no 日本語 edition yet. This is the English edition.")).toBeInTheDocument();
+  });
+
+  // The sample is per edition: the link names the edition on screen, so the Japanese sample opens
+  // for the Japanese edition rather than the default's.
+  it("links the sample of the edition on screen, and none where it has no sample", () => {
+    search.value = new URLSearchParams({ edition: "e-ja" });
+    render(<BookEditionPanel {...props} editions={[english, { ...japanese, hasSample: true }]} />);
+    expect(screen.getByRole("link", { name: "Read a sample" })).toHaveAttribute("href", "/en/read-sample/a-book?edition=e-ja");
+    cleanup();
+    render(<BookEditionPanel {...props} editions={[english, japanese]} />);
+    expect(screen.queryByRole("link", { name: "Read a sample" })).not.toBeInTheDocument();
   });
 
   it("shows coming soon while payments are off", () => {

@@ -64,6 +64,7 @@ const related: KnowledgeIdeaSummary = {
   createdAt: "2026-09-01T00:00:00+00:00",
   updatedAt: "2026-09-02T00:00:00+00:00",
   alternateSlugs: {},
+  metadataLocale: "en",
   topics: [],
 };
 
@@ -79,6 +80,7 @@ const idea: KnowledgeIdeaPage = {
   createdAt: "2026-09-01T00:00:00+00:00",
   updatedAt: "2026-09-03T00:00:00+00:00",
   alternateSlugs: { vi: "vi-sao-doc-cham" },
+  metadataLocale: "en",
   blocks: [
     { type: "paragraph", content: [{ text: "Slow reading is a practice." }] },
   ],
@@ -316,6 +318,7 @@ describe("generateMetadata", () => {
     vi.mocked(getIdeaPage).mockResolvedValue({
       ...idea,
       alternateSlugs: {},
+      metadataLocale: "en",
       seoTitle: "Slow reading, explained",
       seoDescription: "What slow reading gives you.",
     });

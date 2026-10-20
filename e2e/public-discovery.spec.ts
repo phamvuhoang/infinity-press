@@ -31,7 +31,8 @@ test("a reader goes from home to a book, signs in, and returns to the same book"
 
   await expect(page).toHaveURL(new RegExp(`/en/books/${slug}$`));
   await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Read a sample" })).toHaveAttribute("href", `/en/read-sample/${slug}`);
+  // The link names the edition on screen, so the sample opened is that edition's.
+  await expect(page.getByRole("link", { name: "Read a sample" })).toHaveAttribute("href", new RegExp(`^/en/read-sample/${slug}\\?edition=[0-9a-f-]{36}$`));
   await expect(page.locator('a[hreflang="vi"]')).toHaveAttribute("href", `/vi/books/${viSlug}`);
 
   await page.getByRole("link", { name: "Get free" }).click();

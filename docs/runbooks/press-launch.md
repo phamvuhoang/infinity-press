@@ -121,7 +121,3 @@ are listed as open at the end; do not claim launch readiness while one remains.
 - Vertical writing is refused at processing time, not supported.
 - A staging pass of the QR transfer and admin confirm flow with a real Press bank account.
 - USD and JPY checkout (Task 12) is not built; those offers cannot be paid until it is.
-- Metadata fallback (requested locale, then platform default, then original language) is applied to
-  books only. Authors, series, topics, ideas, articles and bundles still match their own locale exactly,
-  so a Japanese page for one of them 404s unless it has a Japanese localization. Spec section 5 and A12
-  ask for the same fallback on every entity; this is not done.

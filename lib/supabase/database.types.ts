@@ -4157,9 +4157,27 @@ export type Database = {
           sale_ends_at: string
         }[]
       }
+      catalog_entity_copy: {
+        Args: { p_entity_id?: string; p_kind: string; p_locale: string }
+        Returns: {
+          description: string
+          entity_id: string
+          locale: string
+          name: string
+          quote: string
+          slug: string
+        }[]
+      }
       catalog_entity_page: {
         Args: { p_kind: string; p_locale: string; p_slug: string }
         Returns: Json
+      }
+      catalog_entity_slugs: {
+        Args: { p_locale: string }
+        Returns: {
+          kind: string
+          slug: string
+        }[]
       }
       catalog_has_visible_book: {
         Args: { p_entity_id: string; p_kind: string; p_locale: string }
@@ -4322,6 +4340,10 @@ export type Database = {
         Returns: Json
       }
       currency_is_payable: { Args: { p_currency: string }; Returns: boolean }
+      default_metadata_locale: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       delete_book_review: {
         Args: { p_book_id: string; p_edition_id?: string }
         Returns: undefined
@@ -4381,6 +4403,20 @@ export type Database = {
         Args: { p_author_id: string; p_locale: string }
         Returns: Json
       }
+      knowledge_article_copy: {
+        Args: { p_locale: string }
+        Returns: {
+          article_id: string
+          body_blocks: Json
+          excerpt: string
+          locale: string
+          seo_description: string
+          seo_title: string
+          slug: string
+          title: string
+          updated_at: string
+        }[]
+      }
       knowledge_article_index: {
         Args: { p_locale: string }
         Returns: {
@@ -4388,6 +4424,7 @@ export type Database = {
           article_id: string
           author: Json
           excerpt: string
+          metadata_locale: string
           published_at: string
           slug: string
           title: string
@@ -4428,12 +4465,27 @@ export type Database = {
         }[]
       }
       knowledge_grapheme_estimate: { Args: { p_text: string }; Returns: number }
+      knowledge_idea_copy: {
+        Args: { p_locale: string }
+        Returns: {
+          body_blocks: Json
+          idea_id: string
+          locale: string
+          question: string
+          seo_description: string
+          seo_title: string
+          short_answer: string
+          slug: string
+          updated_at: string
+        }[]
+      }
       knowledge_idea_index: {
         Args: { p_locale: string }
         Returns: {
           alternate_slugs: Json
           created_at: string
           idea_id: string
+          metadata_locale: string
           question: string
           short_answer: string
           slug: string

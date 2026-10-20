@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import sitemap, { revalidate } from "./sitemap";
 import type { CatalogBookCard } from "@/lib/catalog/public-types";
 import { getServerEnv } from "@/lib/config/server-env";
-import { getBookCards } from "@/lib/data/catalog";
+import { getBookCards, listEntitySlugs } from "@/lib/data/catalog";
 import { getKnowledgeSitemapEntries } from "@/lib/data/knowledge";
 import { listPublicBundleSlugs } from "@/lib/data/public-bundles";
 import type { Locale } from "@/lib/i18n/config";
 
 vi.mock("@/lib/config/server-env", () => ({ getServerEnv: vi.fn() }));
-vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn() }));
+vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn(), listEntitySlugs: vi.fn() }));
 vi.mock("@/lib/data/knowledge", () => ({
   getKnowledgeSitemapEntries: vi.fn(),
 }));
@@ -81,6 +81,16 @@ beforeEach(() => {
   vi.mocked(getBookCards).mockImplementation(
     async (locale: Locale) => (cards[locale as keyof typeof cards] ?? []).map((entry) => ({ ...entry, metadataLocale: locale })),
   );
+  // The entity pages a locale owns: here, those its cards reach, as catalog_entity_slugs would list them.
+  vi.mocked(listEntitySlugs).mockImplementation(async (locale: Locale) => {
+    const rows = cards[locale as keyof typeof cards] ?? [];
+    const unique = (slugs: string[]) => [...new Set(slugs)];
+    return {
+      author: unique(rows.flatMap((card) => (card.author.slug ? [card.author.slug] : []))),
+      series: unique(rows.flatMap((card) => (card.series ? [card.series.slug] : []))),
+      topic: unique(rows.flatMap((card) => card.topics.map((topic) => topic.slug))),
+    };
+  });
   vi.mocked(listPublicBundleSlugs).mockResolvedValue([]);
   vi.mocked(getKnowledgeSitemapEntries).mockResolvedValue([]);
 });
@@ -137,6 +147,7 @@ it("never lists search, samples, private, application, or API routes", async () 
 
 it("lists only home, catalog, and knowledge index pages when nothing is published", async () => {
   vi.mocked(getBookCards).mockResolvedValue([]);
+  vi.mocked(listEntitySlugs).mockResolvedValue({ author: [], series: [], topic: [] });
   expect(await urls()).toEqual([
     `${SITE}/vi`,
     `${SITE}/vi/books`,

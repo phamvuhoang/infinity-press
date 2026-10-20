@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
@@ -12,10 +13,13 @@ import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { fillTemplate } from "@/lib/i18n/format";
+import { getCatalogRoutes } from "@/lib/i18n/routes";
 
 type PanelProps = {
   bookId: string;
   bookPath: string;
+  // The work's slug in this locale: the sample link is built from it and the edition on screen.
+  bookSlug: string;
   locale: Locale;
   editions: CatalogEditionOption[];
   copy: Dictionary["catalog"];
@@ -32,8 +36,8 @@ type PanelProps = {
 
 // The price, format and action for ONE edition. Everything here is per edition: the price, the
 // language of the EPUB, whether the viewer owns it, and the order it starts.
-function EditionView({ requested, ...props }: PanelProps & { requested: string | null }) {
-  const { bookId, bookPath, locale, editions, copy, paymentsEnabled, buyAction, getFreeAction, fallbackNotice, selectable } = props;
+function EditionView({ requested, hydrating = false, ...props }: PanelProps & { requested: string | null; hydrating?: boolean }) {
+  const { bookId, bookPath, bookSlug, locale, editions, copy, paymentsEnabled, buyAction, getFreeAction, fallbackNotice, selectable } = props;
   const selection = selectEdition(editions, requested);
 
   if (selection.status === "none") return <p className="text-sm text-ink-soft">{copy.actions.unavailable}</p>;
@@ -86,12 +90,23 @@ function EditionView({ requested, ...props }: PanelProps & { requested: string |
           bookPath={bookPath}
           buyAction={offer ? buyAction.bind(null, edition.editionId, offer.offerId, offer.priceMinor) : async () => undefined}
           copy={copy.actions}
+          disabled={hydrating}
           editionId={edition.editionId}
           getFreeAction={getFreeAction.bind(null, edition.editionId)}
           locale={locale}
           publicAction={publicAction}
         />
       </div>
+      {edition.hasSample ? (
+        <p>
+          <Link
+            className="inline-flex min-h-11 items-center text-forest underline decoration-sand underline-offset-4 hover:text-ink hover:decoration-ink"
+            href={`${getCatalogRoutes(locale).sample(bookSlug)}?${new URLSearchParams({ edition: edition.editionId })}`}
+          >
+            {copy.book.sample}
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -105,8 +120,9 @@ export function BookEditionPanel(props: PanelProps) {
   if (!props.selectable) return <EditionView {...props} requested={null} />;
   return (
     // The server-rendered fallback is the default edition, which is what a crawler and the first
-    // paint see; the browser then applies `?edition=`.
-    <Suspense fallback={<EditionView {...props} requested={null} />}>
+    // paint see; the browser then applies `?edition=`. Until it has, the Buy form is inert: a click
+    // on a `?edition=` URL before hydration must not order the default edition.
+    <Suspense fallback={<EditionView {...props} hydrating requested={null} />}>
       <QueryEditionView {...props} />
     </Suspense>
   );

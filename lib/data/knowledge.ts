@@ -113,6 +113,7 @@ const ideaIndexRowsSchema = z.array(
     updated_at: z.string(),
     alternate_slugs: alternateSlugsSchema,
     topics: topicRefsSchema,
+    metadata_locale: z.string(),
   }),
 );
 
@@ -126,6 +127,7 @@ const articleIndexRowsSchema = z.array(
     updated_at: z.string(),
     alternate_slugs: alternateSlugsSchema,
     author: authorSchema,
+    metadata_locale: z.string(),
   }),
 );
 
@@ -140,6 +142,7 @@ const ideaPageSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   alternateSlugs: alternateSlugsSchema,
+  metadataLocale: z.string(),
   bookIds: idsSchema,
   relatedIdeaIds: idsSchema,
   topics: topicRefsSchema,
@@ -156,6 +159,7 @@ const articlePageSchema = z.object({
   publishedAt: z.string(),
   updatedAt: z.string(),
   alternateSlugs: alternateSlugsSchema,
+  metadataLocale: z.string(),
   author: authorSchema,
   bookIds: idsSchema,
   ideaIds: idsSchema,
@@ -194,6 +198,7 @@ export const getPublishedIdeas = cache(
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       alternateSlugs: row.alternate_slugs,
+      metadataLocale: row.metadata_locale,
       topics: row.topics,
     }));
   },
@@ -256,6 +261,7 @@ export const getArticleIndex = cache(
       publishedAt: row.published_at,
       updatedAt: row.updated_at,
       alternateSlugs: row.alternate_slugs,
+      metadataLocale: row.metadata_locale,
       author: row.author,
     }));
   },
@@ -276,12 +282,14 @@ export async function getKnowledgeSitemapEntries(
   ]);
   const routes = getKnowledgeRoutes(locale);
   const entries = new Map<string, KnowledgeSitemapEntry>();
+  // A page shown under another locale's copy (metadata fallback) is that locale's page, not one of
+  // this locale's: it is not listed, so the sitemap carries no duplicate under /ja.
   for (const { path, lastModified } of [
-    ...ideas.map((idea) => ({
+    ...ideas.filter((idea) => idea.metadataLocale === locale).map((idea) => ({
       path: routes.idea(idea.slug),
       lastModified: idea.updatedAt,
     })),
-    ...articles.map((article) => ({
+    ...articles.filter((article) => article.metadataLocale === locale).map((article) => ({
       path: routes.article(article.slug),
       lastModified: article.updatedAt,
     })),

@@ -31,6 +31,7 @@ function idea(slug: string, question: string): KnowledgeIdeaSummary {
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-02T00:00:00+00:00",
     alternateSlugs: {},
+    metadataLocale: "en",
     topics: [],
   };
 }

@@ -20,6 +20,7 @@ export function ViewerBookAction({
   getFreeAction,
   locale,
   publicAction,
+  disabled = false,
 }: {
   bookId: string;
   // The edition this control is about. Ownership, the reader link and the order are all per edition.
@@ -30,6 +31,7 @@ export function ViewerBookAction({
   getFreeAction: () => Promise<void>;
   locale: Locale;
   publicAction: BookAction;
+  disabled?: boolean;
 }) {
   // Sends the locale it rendered in, so the handler resolves the book in that one locale rather than
   // searching every locale for whichever answers first (Ruling 4) - the page only ever renders in a
@@ -45,6 +47,7 @@ export function ViewerBookAction({
       bookPath={bookPath}
       buyAction={buyAction}
       copy={copy}
+      disabled={disabled}
       getFreeAction={getFreeAction}
       locale={locale}
       readHref={getCatalogRoutes(locale).readEdition(editionId)}

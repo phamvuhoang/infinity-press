@@ -86,9 +86,11 @@ function bundleRow(overrides: Partial<BundleRow> = {}): BundleRow {
 // One recorded chain per table, so each assertion can check both the answer and the filter that
 // produced it.
 function mockClient({
-  localization = { bundle_id: BUNDLE_ID },
+  // The bundle_localizations rows that answer a slug lookup (requested or fallback locale).
+  localization = [{ bundle_id: BUNDLE_ID, locale: "en" }] as { bundle_id: string; locale: string }[] | null,
   bundle = bundleRow() as BundleRow | null,
   localizations = null as { locale: string; slug: string }[] | null,
+  defaultMetadataLocale = "en",
   cover = [] as { storage_key: string; alt_text: string }[],
   // The price is now resolved by catalog_bundle_live_offer, the rule this page shares with
   // create_bundle_order, so it arrives as an RPC row rather than as an embed on the bundle.
@@ -104,13 +106,23 @@ function mockClient({
     const filters: Record<string, unknown> = {};
     calls[table].push(filters);
     const answer =
-      table === "bundles" ? { data: bundle, error } : localizations ? { data: localizations, error } : { data: localization, error };
+      table === "bundles"
+        ? { data: bundle, error }
+        : table === "platform_settings"
+          ? { data: { default_metadata_locale: defaultMetadataLocale }, error: null }
+          : localizations
+            ? { data: localizations, error }
+            : { data: localization, error };
     const builder: Record<string, unknown> = {};
     builder.select = vi.fn((columns: string) => {
       filters.select = columns;
       return builder;
     });
     builder.eq = vi.fn((column: string, value: unknown) => {
+      filters[column] = value;
+      return builder;
+    });
+    builder.in = vi.fn((column: string, value: unknown) => {
       filters[column] = value;
       return builder;
     });
@@ -152,6 +164,7 @@ describe("getPublicBundle", () => {
       bundleId: BUNDLE_ID,
       slug: "starter-bundle",
       alternateSlugs: { vi: "goi-khoi-dau" },
+      metadataLocale: "en",
       title: "Starter Bundle",
       subtitle: "Two books",
       description: "A set.",
@@ -228,13 +241,14 @@ describe("getPublicBundle", () => {
     ]);
   });
 
-  // The same bar bundle_edition_is_sellable applies in the database.
-  it("drops an edition that is not published or has no live publication", async () => {
+  // The same bar edition_is_sellable applies in the database.
+  it("drops an edition that is not published, is blocked, or has no live publication", async () => {
     mockClient({
       bundle: bundleRow({
         members: [
           { edition_id: ED_ONE, position: 1, edition: edition(BOOK_ONE, "en", { status: "draft" }) },
           { edition_id: ED_TWO, position: 2, edition: edition(BOOK_TWO, "en", { active_publication_id: null }) },
+          { edition_id: ED_TWO_JA, position: 3, edition: edition(BOOK_TWO, "ja", { editorial_state: "blocked" }) },
         ],
       }),
     });
@@ -285,7 +299,7 @@ describe("getPublicBundle", () => {
   });
 
   it("returns null for an unknown slug", async () => {
-    mockClient({ localization: null as unknown as { bundle_id: string } });
+    mockClient({ localization: [] });
     await expect(getPublicBundle("en", "no-such-bundle")).resolves.toBeNull();
   });
 
@@ -305,10 +319,28 @@ describe("getPublicBundle", () => {
     await expect(getPublicBundle("en", "starter-bundle")).rejects.toThrow("getPublicBundle failed.");
   });
 
-  it("asks for this locale's localization only", async () => {
-    const { calls } = mockClient({});
+  it("looks the slug up in this locale and the platform default locale only", async () => {
+    const { calls } = mockClient({ localization: [{ bundle_id: BUNDLE_ID, locale: "vi" }] });
     await getPublicBundle("vi", "goi-khoi-dau");
-    expect(calls.bundle_localizations?.[0]).toMatchObject({ locale: "vi", slug: "goi-khoi-dau" });
+    expect(calls.bundle_localizations?.[0]).toMatchObject({ locale: ["vi", "en"], slug: "goi-khoi-dau" });
+  });
+
+  // Metadata fallback (spec section 5): a bundle with no Japanese copy is shown under its English
+  // copy, whole, and says so; the English slug is what reaches it.
+  it("falls back to the platform default locale's copy and reports it", async () => {
+    mockClient({ localization: [{ bundle_id: BUNDLE_ID, locale: "en" }] });
+
+    const bundle = await getPublicBundle("ja", "starter-bundle");
+
+    expect(bundle).toMatchObject({ slug: "starter-bundle", title: "Starter Bundle", metadataLocale: "en", alternateSlugs: { en: "starter-bundle", vi: "goi-khoi-dau" } });
+  });
+
+  // A bundle that HAS its own copy in this locale is reached under that slug only: the fallback slug
+  // is not a second URL for the same page.
+  it("does not serve a bundle under its fallback slug when it is localized in this locale", async () => {
+    mockClient({ localization: [{ bundle_id: BUNDLE_ID, locale: "en" }] });
+
+    await expect(getPublicBundle("vi", "starter-bundle")).resolves.toBeNull();
   });
 });
 
@@ -372,7 +404,7 @@ describe("getPublicBundleById", () => {
   // resolve a bundle whose `members` (and so the owned-of-total denominator) belonged to a different
   // locale than the one the caller actually asked for (Ruling 4).
   it("resolves the bundle by id in the requested locale", async () => {
-    mockClient({});
+    mockClient({ localizations: [{ locale: "en", slug: "starter-bundle" }] });
 
     const bundle = await getPublicBundleById("en", BUNDLE_ID);
 
@@ -380,11 +412,20 @@ describe("getPublicBundleById", () => {
     expect(bundle?.slug).toBe("starter-bundle");
   });
 
-  // Covers both a bundle that does not exist at all and one that exists but is not localized in the
-  // requested locale - getPublicBundleById treats them the same, which is correct: the island only
-  // ever asks in the locale the page rendered, so "not found there" is the whole answer either way.
-  it("returns null when the id has no localization in the requested locale", async () => {
-    mockClient({ localization: null as unknown as { bundle_id: string } });
+  // The island asks in the locale the page rendered; a bundle shown there under the platform
+  // default's copy resolves to that copy, the same way the page did.
+  it("resolves a bundle shown under the fallback copy", async () => {
+    mockClient({ localizations: [{ locale: "en", slug: "starter-bundle" }] });
+
+    const bundle = await getPublicBundleById("ja", BUNDLE_ID);
+
+    expect(bundle).toMatchObject({ slug: "starter-bundle", metadataLocale: "en" });
+  });
+
+  // Covers both a bundle that does not exist at all and one that is localized in neither the
+  // requested nor the fallback locale.
+  it("returns null when the id has no localization this locale can show", async () => {
+    mockClient({ localizations: [] });
 
     await expect(getPublicBundleById("en", BUNDLE_ID)).resolves.toBeNull();
   });

@@ -9,6 +9,7 @@ import { retailers } from "@/lib/analytics/browser";
 import { type BookAction, resolveBookAction } from "@/lib/catalog/book-action";
 import { booksForEntity } from "@/lib/catalog/browse";
 import { coverPublicUrl } from "@/lib/catalog/covers";
+import { selectEdition } from "@/lib/catalog/edition-selection";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import type {
   CatalogBookCard,
@@ -292,6 +293,7 @@ const entityPageSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   alternateSlugs: alternateSlugsSchema,
+  metadataLocale: z.string(),
   quote: z.string().nullable().catch(null),
   imagePath: z.string().nullable().catch(null),
   imageAlt: z.string().nullable().catch(null),
@@ -330,6 +332,21 @@ export const getEntityPage = cache(
         : null,
       books,
     };
+  },
+);
+
+// The author, series and topic slugs that are pages of THIS locale (their own copy, a visible book),
+// for generateStaticParams and the sitemap. An entity shown under another locale's copy is that
+// locale's page and is not listed here.
+export const listEntitySlugs = cache(
+  async (locale: Locale): Promise<Record<CatalogEntityKind, string[]>> => {
+    const { data, error } = await createPublicClient().rpc("catalog_entity_slugs", { p_locale: locale });
+    if (error) throw await failure("listEntitySlugs", error);
+    const slugs: Record<CatalogEntityKind, string[]> = { author: [], series: [], topic: [] };
+    for (const row of (data ?? []) as { kind: string; slug: string }[]) {
+      if (row.kind === "author" || row.kind === "series" || row.kind === "topic") slugs[row.kind].push(row.slug);
+    }
+    return slugs;
   },
 );
 
@@ -401,6 +418,9 @@ export function publicBookAction(
 export async function getSampleReaderBook(
   locale: Locale,
   slug: string,
+  // The edition the reader selected on the book page; null is the default edition. An id that is not
+  // one of the work's readable editions is a 404, never the default's sample.
+  requestedEditionId: string | null = null,
 ): Promise<{
   bookId: string;
   title: string;
@@ -414,23 +434,25 @@ export async function getSampleReaderBook(
   signedIn: boolean;
 } | null> {
   const book = await getBookPage(locale, slug);
-  if (!book || !book.hasSample) return null;
+  if (!book) return null;
+  const selection = selectEdition(book.editions, requestedEditionId);
+  if (selection.status !== "selected" || !selection.edition.hasSample) return null;
+  const edition = selection.edition;
 
-  const publicationId = await resolveSamplePublicationId(book.editionId);
+  const publicationId = await resolveSamplePublicationId(edition.editionId);
   if (!publicationId) return null;
 
   // Reads the optional session, like the book page does: a signed-out visitor is the expected
   // caller here and must not be redirected. It only decides which control the sample ends with.
-  const { action, signedIn } = await getBookActionState(book);
+  const { action, signedIn } = await getBookActionState({ ...book, editionId: edition.editionId, offer: edition.offer });
 
-  const offer = book.editions.find((edition) => edition.editionId === book.editionId)?.offer ?? null;
   return {
     bookId: book.bookId,
     title: book.title,
     slug: book.slug,
     publicationId,
-    editionId: book.editionId,
-    offer: offer ? { offerId: offer.offerId, priceMinor: offer.priceMinor } : null,
+    editionId: edition.editionId,
+    offer: edition.offer ? { offerId: edition.offer.offerId, priceMinor: edition.offer.priceMinor } : null,
     action,
     signedIn,
   };

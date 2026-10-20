@@ -20,6 +20,7 @@ export function BookActionControl({
   copy,
   getFreeAction,
   buyAction,
+  disabled = false,
 }: {
   action: BookAction;
   signedIn: boolean;
@@ -32,6 +33,9 @@ export function BookActionControl({
   // create_edition_order/acquire_free_edition re-check everything.
   getFreeAction: () => Promise<void>;
   buyAction: () => Promise<void>;
+  // The server-rendered book page does not yet know which edition `?edition=` names, so its Buy
+  // form is inert until the browser has applied the query; a click before that must not buy the default.
+  disabled?: boolean;
 }) {
   const routes = getCatalogRoutes(locale);
 
@@ -57,7 +61,7 @@ export function BookActionControl({
       }
       return (
         <form action={action === "get_free" ? getFreeAction : buyAction}>
-          <SubmitButton className="" pendingLabel={copy.pending} size="lg">
+          <SubmitButton className="" disabled={disabled} pendingLabel={copy.pending} size="lg">
             {label}
           </SubmitButton>
         </form>

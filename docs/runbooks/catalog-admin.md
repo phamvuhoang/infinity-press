@@ -173,5 +173,6 @@ original author.
 - A **complimentary grant** is a separate entitlement beside a bought or free one. Revoking the grant
   leaves what the reader bought, and revoking the order leaves the grant. The shelf entry follows
   whichever remains.
-- A language default cannot be an archived or blocked edition, and an archived edition cannot be rolled
+- A language default must be a published, unblocked edition (a draft or archived default would hide the
+  work from that language), and an archived edition cannot be rolled
   back to life.

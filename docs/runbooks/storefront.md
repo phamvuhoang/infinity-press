@@ -24,16 +24,21 @@ the same 404 by design, so from outside a draft book and one with no sample are 
 
 ## When a page shows
 
-- A **book** shows when it is published and has copy in that language.
-- An **author**, **series**, or **topic** shows when it is published, has copy in that language, and
-  has at least one visible book in that language.
-- Anything else returns 404. A page never borrows copy from the other language.
+- A **book** shows when it is published and the catalog rule gives it a readable edition in that
+  language (the language's default edition, else the effective default language's).
+- An **author**, **series**, or **topic** shows when it is published and has at least one visible
+  book in that language. The same rule applies to **ideas**, **articles** and **bundles**.
+- Copy follows the metadata fallback: the page's own locale if it has copy, else the platform
+  default metadata locale (books also fall back to their original language). One whole localization
+  is used, never a mix of fields. A page shown under another locale's copy says so, is reached under
+  that copy's slug, is canonical to that locale's page, and is left out of this locale's sitemap.
+- Anything else returns 404.
 
 ## Common questions
 
 - **"My book shows in Vietnamese but not English."** Add English copy in the book editor.
-- **"The author page is 404."** Publish the author, add copy in that language, and check that one
-  of their books is published in that language.
+- **"The author page is 404."** Publish the author, add copy in that language or the platform
+  default one, and check that one of their books is readable in that language.
 - **"The book says Not available yet."** The book has no active EPUB version, or no active offer.
 - **"A paid book says Coming soon."** Payments are disabled in this environment. This is expected in
   production.
@@ -42,7 +47,7 @@ the same 404 by design, so from outside a draft book and one with no sample are 
   serves it (see *Redirects* below). If the old URL still 404s, check that it is exactly the stored
   source path - redirects match whole paths, not prefixes.
 - **"Search does not find a book."** Search needs at least 2 characters. It ignores accents and
-  case. It only finds published books with copy in the page language.
+  case. It searches the copy the page language shows (own or fallback) of readable works only.
 
 ## Search engines (S5)
 

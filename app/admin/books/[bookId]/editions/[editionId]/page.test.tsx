@@ -90,10 +90,20 @@ it("names the edition by its language and offers its own forms", async () => {
   }
 });
 
-it("lets the admin make a non-default edition the default for its language", async () => {
+it("lets the admin make a published non-default edition the default for its language", async () => {
   vi.mocked(requireAdmin).mockResolvedValue({} as Awaited<ReturnType<typeof requireAdmin>>);
+  vi.mocked(getAdminEdition).mockResolvedValue({ ...edition, status: "published" });
   render(await AdminEditionPage(props));
   expect(screen.getByRole("button", { name: "Make default Japanese edition" })).toBeInTheDocument();
+});
+
+// A draft or archived default would hide the work from its language; admin_set_default_edition
+// refuses it, and the page does not offer it.
+it("offers no default button for an unpublished edition", async () => {
+  vi.mocked(requireAdmin).mockResolvedValue({} as Awaited<ReturnType<typeof requireAdmin>>);
+  render(await AdminEditionPage(props));
+  expect(screen.queryByRole("button", { name: "Make default Japanese edition" })).not.toBeInTheDocument();
+  expect(screen.getByText("Only a published edition can be the default Japanese edition.")).toBeInTheDocument();
 });
 
 it("shows a default edition as such, with no button to make it so", async () => {

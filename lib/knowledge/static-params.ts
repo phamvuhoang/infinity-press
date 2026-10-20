@@ -25,7 +25,8 @@ export const knowledgeStaticParams = cache(async (locale: Locale): Promise<Knowl
 
   const [ideas, articles] = await Promise.all([getPublishedIdeas(locale), getArticleIndex(locale)]);
   return {
-    ideas: [...new Set(ideas.map((idea) => idea.slug))],
-    articles: [...new Set(articles.map((article) => article.slug))],
+    // Own copy only: a page shown under another locale's copy is that locale's page.
+    ideas: [...new Set(ideas.filter((idea) => idea.metadataLocale === locale).map((idea) => idea.slug))],
+    articles: [...new Set(articles.filter((article) => article.metadataLocale === locale).map((article) => article.slug))],
   };
 });

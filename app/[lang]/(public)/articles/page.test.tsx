@@ -31,6 +31,7 @@ function article(slug: string, title: string, publishedAt: string): KnowledgeArt
     publishedAt,
     updatedAt: publishedAt,
     alternateSlugs: {},
+    metadataLocale: "en",
     author: { name: "Mai Tran", slug: "mai-tran" },
   };
 }

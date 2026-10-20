@@ -79,6 +79,7 @@ beforeEach(() => {
       createdAt: "2026-09-01T00:00:00Z",
       updatedAt: "2026-09-02T00:00:00Z",
       alternateSlugs: {},
+      metadataLocale: "en",
       topics: [],
     },
   ]);
@@ -91,6 +92,7 @@ beforeEach(() => {
       publishedAt: "2026-09-01T00:00:00Z",
       updatedAt: "2026-09-02T00:00:00Z",
       alternateSlugs: {},
+      metadataLocale: "en",
       author: { name: "Mai Tran", slug: "mai-tran" },
     } as Awaited<ReturnType<typeof getArticleIndex>>[number],
   ]);

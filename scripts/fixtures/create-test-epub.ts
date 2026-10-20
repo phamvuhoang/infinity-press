@@ -445,10 +445,9 @@ export function japaneseEpub(): Uint8Array {
 }
 
 // A stylesheet that sets vertical writing, which Press does not support at launch (horizontal only).
-export function epubWithVerticalWriting(): Uint8Array {
+// `css` overrides the sheet, so a test can hide the declaration the ways real sheets do.
+export function epubWithVerticalWriting(css = "html { writing-mode: vertical-rl; -epub-writing-mode: vertical-rl; }\n"): Uint8Array {
   return assembleEpub(
-    validEpubEntries().map((entry) =>
-      entry.path === "OEBPS/styles/style.css" ? { ...entry, content: "html { writing-mode: vertical-rl; -epub-writing-mode: vertical-rl; }\n" } : entry,
-    ),
+    validEpubEntries().map((entry) => (entry.path === "OEBPS/styles/style.css" ? { ...entry, content: css } : entry)),
   );
 }

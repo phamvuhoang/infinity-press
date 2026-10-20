@@ -170,7 +170,8 @@ describe("BookPage knowledge backlinks", () => {
       paymentsEnabled: true,
       fallbackNotice: false,
     });
-    expect(screen.getByRole("link", { name: "Read a sample" })).toHaveAttribute("href", "/en/read-sample/harbour-lights");
+    // The sample link now lives in the edition panel, beside the edition it belongs to.
+    expect(viewer.props).toMatchObject({ bookSlug: "harbour-lights" });
     expect(screen.getByRole("heading", { name: "Topics" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Habits" })).toHaveAttribute("href", "/en/topics/habits");
     expect(screen.getByRole("heading", { name: "Questions and answers" })).toBeVisible();

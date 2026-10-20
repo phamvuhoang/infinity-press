@@ -57,6 +57,7 @@ function makeEntity(kind: CatalogEntityPage["kind"], books: CatalogBookCard[]): 
     name: "Habits",
     description: null,
     alternateSlugs: {},
+    metadataLocale: "en",
     quote: null,
     image: null,
     books,

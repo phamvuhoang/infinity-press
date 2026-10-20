@@ -19,7 +19,17 @@ const CSS_MEDIA_TYPE = "text/css";
 // Launch supports horizontal layout only. Vertical writing is detected in the publication's own
 // stylesheets (the standard property and the EPUB-prefixed legacy one) and refused up front, with a
 // message an operator can act on, rather than published into a reader that was never tested for it.
-const VERTICAL_WRITING_PATTERN = /(?:^|[;{\s])(?:-epub-|-webkit-)?writing-mode\s*:\s*(?:vertical-|tb-)/i;
+// The scan runs on the sheet with its comments removed and its CSS escapes decoded, so neither
+// `/* */` around the declaration nor `writing\-mode` hides it; sideways-* is vertical too.
+const VERTICAL_WRITING_PATTERN = /(?:^|[;{\s])(?:-epub-|-webkit-)?writing-mode\s*:\s*(?:vertical-|sideways-|tb-)/i;
+
+function setsVerticalWriting(css: string): boolean {
+  const plain = css
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\\([0-9a-f]{1,6})\s?/gi, (_, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/\\(.)/g, "$1");
+  return VERTICAL_WRITING_PATTERN.test(plain);
+}
 
 // Named supported-profile exclusion (spec 8, alongside sanitize.ts's `<style>`
 // exclusion): `image/svg+xml` is not in the default allowlist. SVG is XML and can carry
@@ -121,7 +131,7 @@ function buildResource(archive: SafeArchive, item: ParsedManifestItem, policy: P
     // XHTML at all.
     const decoded = textDecoder.decode(rawBytes);
     referencedHrefs = scanCss(decoded, { resourceHref: item.href, policy }).referencedHrefs;
-    if (VERTICAL_WRITING_PATTERN.test(decoded)) {
+    if (setsVerticalWriting(decoded)) {
       throw new ProcessingError(
         processingFailure(
           "UNSUPPORTED_LAYOUT",

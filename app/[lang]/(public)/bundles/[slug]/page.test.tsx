@@ -57,6 +57,7 @@ const bundle: PublicBundleDTO = {
   bundleId: BUNDLE_ID,
   slug: "starter-bundle",
   alternateSlugs: { vi: "goi-khoi-dau" },
+  metadataLocale: "en",
   title: "Starter Bundle",
   subtitle: "Two books to begin with",
   description: "A set of two.",

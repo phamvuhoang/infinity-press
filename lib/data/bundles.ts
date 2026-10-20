@@ -140,6 +140,7 @@ type MemberEditionRow = {
   id: string;
   language_code: string;
   status: string;
+  editorial_state: string;
   active_publication_id: string | null;
   book: MemberBookRow | MemberBookRow[] | null;
 };
@@ -169,7 +170,7 @@ const bundleSelect = `
   created_at,
   updated_at,
   localizations:bundle_localizations ( id, locale, slug, title, subtitle, description ),
-  members:bundle_editions ( position, edition:editions ( id, language_code, status, active_publication_id, book:books ( id, canonical_key, status, localizations:book_localizations ( locale, title ) ) ) ),
+  members:bundle_editions ( position, edition:editions ( id, language_code, status, editorial_state, active_publication_id, book:books ( id, canonical_key, status, localizations:book_localizations ( locale, title ) ) ) ),
   offers ( id, market_code, currency, price_minor, active, starts_at, ends_at )
 `;
 
@@ -222,9 +223,13 @@ function sortedMembers(row: BundleRow): AdminBundleMemberDTO[] {
           position: member.position,
           title: `${memberTitle(book)} (${edition.language_code})`,
           canonicalKey: book.canonical_key,
-          // The same rule the database applies (bundle_edition_is_sellable): published, live
+          // The same rule the database applies (edition_is_sellable): published, not blocked, live
           // publication, published work.
-          published: edition.status === "published" && edition.active_publication_id !== null && book.status === "published",
+          published:
+            edition.status === "published" &&
+            edition.editorial_state !== "blocked" &&
+            edition.active_publication_id !== null &&
+            book.status === "published",
         },
       ];
     });

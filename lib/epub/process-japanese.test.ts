@@ -49,4 +49,19 @@ describe("vertical writing", () => {
       message: expect.stringContaining("horizontal"),
     });
   });
+
+  // The declaration is found however a real sheet spells it: after a comment, with a CSS escape in
+  // the property name, or as sideways-*.
+  it.each([
+    ["after a comment", "/* layout */ html { /* vertical */ writing-mode: vertical-rl; }\n"],
+    ["with an escaped property name", "html { writing\\-mode: vertical-rl; }\n"],
+    ["with a hex-escaped property name", "html { \\77 riting-mode: vertical-rl; }\n"],
+    ["as sideways writing", "html { writing-mode: sideways-rl; }\n"],
+  ])("is refused %s", async (_name, css) => {
+    await expect(processEpub(epubWithVerticalWriting(css), policy)).rejects.toMatchObject({ code: "UNSUPPORTED_LAYOUT" });
+  });
+
+  it("accepts a sheet that only mentions vertical writing inside a comment", async () => {
+    await expect(processEpub(epubWithVerticalWriting("/* writing-mode: vertical-rl is not supported */ html { line-height: 1.8; }\n"), policy)).resolves.toBeDefined();
+  });
 });

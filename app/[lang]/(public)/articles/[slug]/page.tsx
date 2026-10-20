@@ -12,10 +12,12 @@ import {
 import { SiteFooter } from "@/components/site-footer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SiteHeader } from "@/components/site-header";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getArticlePage } from "@/lib/data/knowledge";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
+import { fillTemplate } from "@/lib/i18n/format";
 import { formatDate } from "@/lib/i18n/format";
 import {
   getCatalogRoutes,
@@ -54,14 +56,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const article = await getArticlePage(locale, slug);
   if (!article) return {};
+  const alternates = alternatePaths(article.alternateSlugs, (l, s) => getKnowledgeRoutes(l).article(s));
+  // This URL shows another locale's copy: it is that page's duplicate, not a translation.
+  const copyFrom = article.metadataLocale !== locale && isLocale(article.metadataLocale) ? article.metadataLocale : undefined;
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    paths: localePaths(
-      locale,
-      getKnowledgeRoutes(locale).article(article.slug),
-      alternatePaths(article.alternateSlugs, (l, s) => getKnowledgeRoutes(l).article(s)),
-    ),
+    copyFrom,
+    paths: copyFrom ? alternates : localePaths(locale, getKnowledgeRoutes(locale).article(article.slug), alternates),
     title: article.seoTitle ?? article.title,
     description: article.seoDescription ?? article.excerpt,
   });
@@ -131,6 +133,11 @@ export default async function ArticlePage({ params }: Props) {
             <h1 className="font-serif text-4xl leading-[1.08] font-normal tracking-[-0.01em] sm:text-5xl">
               {article.title}
             </h1>
+            {article.metadataLocale !== locale ? (
+              <p className="mt-3 text-xs text-sage-text">
+                {fillTemplate(dictionary.catalog.editions.metadataNote, { language: editionLanguageLabel(article.metadataLocale) ?? article.metadataLocale })}
+              </p>
+            ) : null}
             <p className="mt-4 text-[0.9375rem] text-ink-soft">
               {copy.by}{" "}
               {article.author.slug ? (

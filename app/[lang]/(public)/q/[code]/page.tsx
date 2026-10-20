@@ -117,6 +117,7 @@ export default async function QuoteCardPage({ params }: Props) {
               <BookEditionPanel
                 bookId={book.bookId}
                 bookPath={bookPath}
+                bookSlug={book.slug}
                 buyAction={buyEbookAction.bind(null, locale, book.bookId, book.slug)}
                 copy={copy}
                 editions={editions}
@@ -126,11 +127,6 @@ export default async function QuoteCardPage({ params }: Props) {
                 paymentsEnabled={arePaymentsEnabled(getServerEnv())}
                 selectable={false}
               />
-              {book.hasSample ? (
-                <Link className={`inline-flex min-h-11 items-center ${textLink}`} href={routes.sample(book.slug)}>
-                  {copy.quoteCard.readSample}
-                </Link>
-              ) : null}
             </div>
             <p className="mt-8 text-xs text-sage-text">{copy.quoteCard.sharedFrom}</p>
           </div>

@@ -16,7 +16,9 @@ import { getEntityPage } from "@/lib/data/catalog";
 import { getKnowledgeForTopic } from "@/lib/data/knowledge";
 import { getShelfRecommendations } from "@/lib/data/recommendations";
 import { isLocale } from "@/lib/i18n/config";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { getDictionary } from "@/lib/i18n/dictionary";
+import { fillTemplate } from "@/lib/i18n/format";
 import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { breadcrumbSchema, personSchema } from "@/lib/seo/json-ld";
 import { buildPageMetadata, localePaths, SITE_NAME } from "@/lib/seo/metadata";
@@ -28,14 +30,14 @@ export async function entityMetadata(kind: CatalogEntityKind, params: EntityPara
   if (!isLocale(locale)) return {};
   const entity = await getEntityPage(kind, locale, slug);
   if (!entity) return {};
+  const alternates = alternatePaths(entity.alternateSlugs, (l, s) => getCatalogRoutes(l).entity(kind, s));
+  // This URL shows another locale's copy: it is that page's duplicate, not a translation.
+  const copyFrom = entity.metadataLocale !== locale && isLocale(entity.metadataLocale) ? entity.metadataLocale : undefined;
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    paths: localePaths(
-      locale,
-      getCatalogRoutes(locale).entity(kind, slug),
-      alternatePaths(entity.alternateSlugs, (l, s) => getCatalogRoutes(l).entity(kind, s)),
-    ),
+    copyFrom,
+    paths: copyFrom ? alternates : localePaths(locale, getCatalogRoutes(locale).entity(kind, slug), alternates),
     title: entity.name,
     description: entity.description ?? undefined,
   });
@@ -101,6 +103,11 @@ export async function EntityPage({ kind, params }: { kind: CatalogEntityKind; pa
           <div className="min-w-0">
             <p className="mb-3 text-xs font-medium tracking-[0.1em] text-sage-text uppercase">{copy.entity[kind]}</p>
             <h1 className="font-serif text-4xl leading-[1.08] font-normal sm:text-5xl">{entity.name}</h1>
+            {entity.metadataLocale !== locale ? (
+              <p className="mt-3 text-xs text-sage-text">
+                {fillTemplate(copy.editions.metadataNote, { language: editionLanguageLabel(entity.metadataLocale) ?? entity.metadataLocale })}
+              </p>
+            ) : null}
             {entity.quote ? (
               <blockquote className="mt-6 font-serif text-xl leading-relaxed text-ink sm:text-2xl">
                 &ldquo;{entity.quote}&rdquo;

@@ -183,8 +183,10 @@ select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'bodyBlocks',
 select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'bookIds',
   '["d5710000-0000-0000-0000-000000000002","d5710000-0000-0000-0000-000000000001"]'::jsonb,
   'related books keep their position and drop drafts');
+-- The fixture works have a Vietnamese edition only, so the English catalog (default content language
+-- English) shows none of them: a page never links a work its locale cannot open.
 select is(public.knowledge_idea_page('en', 's12p-small-habits')->'bookIds',
-  '["d5710000-0000-0000-0000-000000000001"]'::jsonb, 'related books drop books not localized in the locale');
+  '[]'::jsonb, 'related books drop works the locale cannot open (no readable edition)');
 select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'relatedIdeaIds',
   '["d5730000-0000-0000-0000-000000000003","d5730000-0000-0000-0000-000000000002"]'::jsonb,
   'related ideas keep their position and drop draft and archived ideas');
@@ -259,8 +261,8 @@ select is(
 select is(
   (select array_agg(x.kind || ':' || x.slug order by x.n)
    from public.knowledge_for_book('en', 'd5710000-0000-0000-0000-000000000001') with ordinality x(kind, slug, title, excerpt, published_at, n)),
-  array['idea:s12p-small-habits', 'idea:s12p-how-to-read', 'article:s12p-deep-reading'],
-  'book backlinks follow the locale');
+  null,
+  'book backlinks are gated on the work being open in the locale (no English edition: none)');
 select is(
   (select row(title, excerpt, published_at)::text from public.knowledge_for_book('vi', 'd5710000-0000-0000-0000-000000000001') where slug = 's12p-thoi-quen'),
   row('Thói quen nhỏ S12P có quan trọng không?', 'Có, lặp lại mỗi ngày tạo nên khác biệt.', null::timestamptz)::text,
