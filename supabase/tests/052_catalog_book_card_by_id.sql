@@ -24,6 +24,23 @@ insert into public.skus (id, edition_id, sku_code) values
 insert into public.offers (sku_id, market_code, currency, price_minor) values
   ('e7000000-0000-0000-0000-000000000001', 'VN', 'VND', 149000);
 
+
+-- Press: a work is listed only when it has a readable edition, so each published work gets one in its
+-- original language with a live publication.
+insert into public.editions (book_id, language_code)
+select b.id, b.original_language from public.books b
+where b.status = 'published' and not exists (select 1 from public.editions e where e.book_id = b.id);
+insert into public.ebook_assets (edition_id, source_storage_key, version, status)
+select e.id, 'fx/' || e.id || '.epub', 1, 'published'
+from public.editions e join public.books b on b.id = e.book_id
+where b.status = 'published' and e.active_publication_id is null;
+insert into public.ebook_publications (ebook_asset_id, version, manifest_key, status, epub_language)
+select a.id, 1, 'fx/' || a.id || '.json', 'published', e.language_code
+from public.ebook_assets a join public.editions e on e.id = a.edition_id where a.source_storage_key like 'fx/%';
+update public.editions e set status = 'published', active_publication_id = p.id
+from public.ebook_publications p join public.ebook_assets a on a.id = p.ebook_asset_id
+where a.edition_id = e.id and a.source_storage_key like 'fx/%';
+
 -- Same shape catalog_book_cards returns, one row filtered by id: id, slug, title, subtitle,
 -- short_description, author_name, author_slug, cover_path, cover_alt, price_minor, currency,
 -- has_active_publication, has_sample, series_slug, series_name, series_position, topics,
@@ -55,7 +72,7 @@ select is(
 select is(
   (select count(*)::bigint from public.catalog_book_card_by_id('en', 'e3000000-0000-0000-0000-000000000001')),
   0::bigint,
-  'a book not localized in the requested locale is not returned'
+  'a book with no edition in the requested or the default language is not returned'
 );
 
 select is(

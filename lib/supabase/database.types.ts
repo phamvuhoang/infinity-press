@@ -3908,10 +3908,47 @@ export type Database = {
           cover_path: string
           created_at: string
           currency: string
+          edition_id: string
           featured: boolean
           has_active_publication: boolean
           has_sample: boolean
+          is_language_fallback: boolean
+          language_code: string
           list_price_minor: number
+          metadata_locale: string
+          offer_id: string
+          price_minor: number
+          sale_ends_at: string
+          series_name: string
+          series_position: number
+          series_slug: string
+          shelf_position: number
+          short_description: string
+          slug: string
+          subtitle: string
+          title: string
+          topics: Json
+        }[]
+      }
+      catalog_book_card_rows: {
+        Args: { p_book_id?: string; p_locale: string }
+        Returns: {
+          author_name: string
+          author_slug: string
+          book_id: string
+          cover_alt: string
+          cover_path: string
+          created_at: string
+          currency: string
+          edition_id: string
+          featured: boolean
+          has_active_publication: boolean
+          has_sample: boolean
+          is_language_fallback: boolean
+          language_code: string
+          list_price_minor: number
+          metadata_locale: string
+          offer_id: string
           price_minor: number
           sale_ends_at: string
           series_name: string
@@ -3935,10 +3972,15 @@ export type Database = {
           cover_path: string
           created_at: string
           currency: string
+          edition_id: string
           featured: boolean
           has_active_publication: boolean
           has_sample: boolean
+          is_language_fallback: boolean
+          language_code: string
           list_price_minor: number
+          metadata_locale: string
+          offer_id: string
           price_minor: number
           sale_ends_at: string
           series_name: string
@@ -3951,6 +3993,35 @@ export type Database = {
           title: string
           topics: Json
         }[]
+      }
+      catalog_book_editions: {
+        Args: { p_book_id: string; p_locale: string }
+        Returns: Json
+      }
+      catalog_book_metadata: {
+        Args: { p_book_id: string; p_locale: string }
+        Returns: {
+          audience: string | null
+          book_id: string
+          description: string | null
+          faq: NonNullable<Json>
+          id: string
+          key_ideas: NonNullable<Json>
+          locale: string
+          seo_description: string | null
+          seo_title: string | null
+          short_description: string | null
+          slug: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "book_localizations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       catalog_book_page: {
         Args: { p_locale: string; p_slug: string }
@@ -3976,6 +4047,16 @@ export type Database = {
           price_minor: number
         }[]
       }
+      catalog_edition_offer: {
+        Args: { p_edition_id: string }
+        Returns: {
+          currency: string
+          list_price_minor: number
+          offer_id: string
+          price_minor: number
+          sale_ends_at: string
+        }[]
+      }
       catalog_entity_page: {
         Args: { p_kind: string; p_locale: string; p_slug: string }
         Returns: Json
@@ -3998,6 +4079,23 @@ export type Database = {
         Returns: number
       }
       catalog_normalize: { Args: { p_value: string }; Returns: string }
+      catalog_resolve_edition: {
+        Args: { p_book_id: string; p_edition_id?: string; p_language: string }
+        Returns: {
+          edition_id: string
+          is_fallback: boolean
+          language_code: string
+        }[]
+      }
+      catalog_resolved_editions: {
+        Args: { p_book_id?: string; p_language: string }
+        Returns: {
+          book_id: string
+          edition_id: string
+          is_fallback: boolean
+          language_code: string
+        }[]
+      }
       catalog_shared_quote: { Args: { p_code: string }; Returns: Json }
       claim_gift: {
         Args: { p_token: string }

@@ -456,8 +456,8 @@ select results_eq(
 select results_eq(
   $$select book_id from public.recommend_books(
       array['51000000-0000-4000-8000-000000000001']::uuid[], array[]::uuid[], 'vi', 6)$$,
-  $$values ('51000000-0000-4000-8000-000000000006'::uuid)$$,
-  'the locale filter selects the book localized for the requested locale, not a fixed one');
+  $$values ('51000000-0000-4000-8000-000000000002'::uuid), ('51000000-0000-4000-8000-000000000006'::uuid)$$,
+  'a locale never hides a readable work: the Vietnamese shelf also carries the English-only book, under its English copy');
 
 select is(
   (select count(*)::int from public.recommend_books(

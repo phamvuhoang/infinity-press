@@ -58,9 +58,10 @@ select throws_ok(
   '23514', null, 'a publication of another book is refused too');
 
 -- (8)-(11) One explicit default edition per book and language, and it must match both.
-select lives_ok(
-  $$insert into public.book_language_editions (book_id, language_code, edition_id) values ('e3300000-0000-0000-0000-000000000001', 'en', 'e3400000-0000-0000-0000-000000000001')$$,
-  'a default edition is recorded for a book and language');
+-- Publishing the first edition of a language records it as that language's default (trigger), and an
+-- admin may later point the default at another edition by upsert.
+select is((select edition_id from public.book_language_editions where book_id = 'e3300000-0000-0000-0000-000000000001' and language_code = 'en'), 'e3400000-0000-0000-0000-000000000001'::uuid, 'the first published edition of a language becomes its default');
+
 select throws_ok(
   $$insert into public.book_language_editions (book_id, language_code, edition_id) values ('e3300000-0000-0000-0000-000000000001', 'en', 'e3400000-0000-0000-0000-000000000001')$$,
   '23505', null, 'a book and language have one default edition');

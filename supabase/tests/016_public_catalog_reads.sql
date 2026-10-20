@@ -1,5 +1,5 @@
 begin;
-select plan(38);
+select plan(41);
 
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values ('00000000-0000-0000-0000-000000000000', 'd1000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 's2-admin@example.test', '', now(), '{}'::jsonb, '{}'::jsonb, now(), now());
@@ -14,19 +14,23 @@ insert into public.author_localizations (author_id, locale, slug, name, descript
   ('d2000000-0000-0000-0000-000000000001', 'en', 's2-author-en', 'S2 Author', 'Author bio'),
   ('d2000000-0000-0000-0000-000000000002', 'vi', 's2-tac-gia-nhap', 'Tác giả nháp', null);
 
-insert into public.books (id, canonical_key, original_language, primary_author_id, status, created_at) values
-  ('d3000000-0000-0000-0000-000000000001', 's2-free', 'vi', 'd2000000-0000-0000-0000-000000000001', 'published', '2026-09-01'),
-  ('d3000000-0000-0000-0000-000000000002', 's2-paid', 'vi', 'd2000000-0000-0000-0000-000000000001', 'published', '2026-09-02'),
-  ('d3000000-0000-0000-0000-000000000003', 's2-draft', 'vi', 'd2000000-0000-0000-0000-000000000002', 'draft', '2026-09-03');
+insert into public.books (id, canonical_key, original_language, primary_author_id, status, created_at, default_content_language) values
+  ('d3000000-0000-0000-0000-000000000001', 's2-free', 'vi', 'd2000000-0000-0000-0000-000000000001', 'published', '2026-09-01', 'vi'),
+  ('d3000000-0000-0000-0000-000000000002', 's2-paid', 'vi', 'd2000000-0000-0000-0000-000000000001', 'published', '2026-09-02', 'vi'),
+  ('d3000000-0000-0000-0000-000000000003', 's2-draft', 'vi', 'd2000000-0000-0000-0000-000000000002', 'draft', '2026-09-03', 'vi'),
+  -- Published, but nothing readable yet: it is not listed in any language (Press catalog rule 3).
+  ('d3000000-0000-0000-0000-000000000004', 's2-unready', 'vi', 'd2000000-0000-0000-0000-000000000001', 'published', '2026-09-04', 'vi');
 insert into public.book_localizations (book_id, locale, slug, title, short_description, description, audience, key_ideas) values
   ('d3000000-0000-0000-0000-000000000001', 'vi', 's2-sach-mien-phi', 'Sách miễn phí S2', 'Ngắn', 'Dài', 'Người mới', '[{"title":"Ý chính","summary":"Tóm tắt"}]'),
   ('d3000000-0000-0000-0000-000000000001', 'en', 's2-free-book', 'S2 Free Book', 'Short', 'Long', null, '[]'),
   ('d3000000-0000-0000-0000-000000000002', 'vi', 's2-sach-tra-phi', 'Sách trả phí S2', null, 'Dài', null, '[]'),
-  ('d3000000-0000-0000-0000-000000000003', 'vi', 's2-sach-nhap', 'Sách nháp S2', null, 'Dài', null, '[]');
+  ('d3000000-0000-0000-0000-000000000003', 'vi', 's2-sach-nhap', 'Sách nháp S2', null, 'Dài', null, '[]'),
+  ('d3000000-0000-0000-0000-000000000004', 'vi', 's2-sach-chua-san-sang', 'Sách chưa sẵn sàng S2', null, 'Dài', null, '[]');
 
 insert into public.editions (id, book_id, language_code) values
   ('d6000000-0000-0000-0000-000000000001', 'd3000000-0000-0000-0000-000000000001', 'vi'),
-  ('d6000000-0000-0000-0000-000000000002', 'd3000000-0000-0000-0000-000000000002', 'vi');
+  ('d6000000-0000-0000-0000-000000000002', 'd3000000-0000-0000-0000-000000000002', 'vi'),
+  ('d6000000-0000-0000-0000-000000000004', 'd3000000-0000-0000-0000-000000000004', 'vi');
 insert into public.skus (id, edition_id, sku_code) values
   ('d7000000-0000-0000-0000-000000000001', 'd6000000-0000-0000-0000-000000000001', 's2-free-ebook'),
   ('d7000000-0000-0000-0000-000000000002', 'd6000000-0000-0000-0000-000000000002', 's2-paid-ebook');
@@ -49,6 +53,13 @@ insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key
 values ('d9000000-0000-0000-0000-000000000002', 'd8000000-0000-0000-0000-000000000002', 1, 's2/paid-manifest.json', 'published');
 insert into public.book_samples (publication_id, allowed_hrefs)
 values ('d9000000-0000-0000-0000-000000000002', '["OEBPS/text/chapter1.xhtml"]');
+-- The edition's live publication is a later one with no sample of its own.
+insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
+values ('d8000000-0000-0000-0000-000000000003', 'd6000000-0000-0000-0000-000000000002', 's2/paid-source-2.epub', 2, 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
+values ('d9000000-0000-0000-0000-000000000003', 'd8000000-0000-0000-0000-000000000003', 2, 's2/paid-manifest-2.json', 'published');
+update public.books set active_publication_id = 'd9000000-0000-0000-0000-000000000003'
+where id = 'd3000000-0000-0000-0000-000000000002';
 insert into public.media_assets (owner_type, owner_id, kind, storage_key, alt_text)
 values ('book', 'd3000000-0000-0000-0000-000000000001', 'cover',
         'books/d3000000-0000-0000-0000-000000000001/dddddddd-dddd-dddd-dddd-dddddddddddd.png', 'Bìa sách S2');
@@ -69,16 +80,19 @@ insert into public.book_series (book_id, series_id, position) values
 insert into public.topics (id, canonical_slug, name, status) values
   ('d5000000-0000-0000-0000-000000000001', 's2-topic', 'S2 Topic', 'published'),
   ('d5000000-0000-0000-0000-000000000002', 's2-draft-topic', 'S2 Draft Topic', 'draft'),
-  ('d5000000-0000-0000-0000-000000000003', 's2-vi-only-topic', 'S2 Vi-only Topic', 'published');
+  ('d5000000-0000-0000-0000-000000000003', 's2-vi-only-topic', 'S2 Vi-only Topic', 'published'),
+  ('d5000000-0000-0000-0000-000000000004', 's2-unready-topic', 'S2 Unready Topic', 'published');
 insert into public.topic_localizations (topic_id, locale, slug, name) values
   ('d5000000-0000-0000-0000-000000000001', 'vi', 's2-chu-de', 'Chủ đề S2'),
   ('d5000000-0000-0000-0000-000000000002', 'vi', 's2-chu-de-nhap', 'Chủ đề nháp'),
   ('d5000000-0000-0000-0000-000000000003', 'vi', 's2-chu-de-tieng-viet', 'Chủ đề tiếng Việt S2'),
-  ('d5000000-0000-0000-0000-000000000003', 'en', 's2-vi-only-topic-en', 'S2 Vi-only Topic');
+  ('d5000000-0000-0000-0000-000000000003', 'en', 's2-vi-only-topic-en', 'S2 Vi-only Topic'),
+  ('d5000000-0000-0000-0000-000000000004', 'vi', 's2-chu-de-chua-san-sang', 'Chủ đề chưa sẵn sàng');
 insert into public.book_topics (book_id, topic_id) values
   ('d3000000-0000-0000-0000-000000000001', 'd5000000-0000-0000-0000-000000000001'),
   ('d3000000-0000-0000-0000-000000000001', 'd5000000-0000-0000-0000-000000000002'),
-  ('d3000000-0000-0000-0000-000000000002', 'd5000000-0000-0000-0000-000000000003');
+  ('d3000000-0000-0000-0000-000000000002', 'd5000000-0000-0000-0000-000000000003'),
+  ('d3000000-0000-0000-0000-000000000004', 'd5000000-0000-0000-0000-000000000004');
 
 delete from public.merchandising_slots;
 insert into public.merchandising_slots (slot_key, book_id, position) values
@@ -97,11 +111,14 @@ set local role anon;
 -- (6)-(8) Only published, localized books.
 select is((select count(*)::bigint from public.catalog_book_cards('vi') where book_id in ('d3000000-0000-0000-0000-000000000001', 'd3000000-0000-0000-0000-000000000002')), 2::bigint, 'vi lists both published books');
 select is((select count(*)::bigint from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000003'), 0::bigint, 'a draft book is not listed');
-select is((select count(*)::bigint from public.catalog_book_cards('en') where book_id in ('d3000000-0000-0000-0000-000000000001', 'd3000000-0000-0000-0000-000000000002')), 1::bigint, 'en lists only the translated book');
+select is((select count(*)::bigint from public.catalog_book_cards('en') where book_id in ('d3000000-0000-0000-0000-000000000001', 'd3000000-0000-0000-0000-000000000002')), 2::bigint, 'en lists both works: their effective default edition is Vietnamese');
+select is((select language_code || ':' || is_language_fallback || ':' || metadata_locale from public.catalog_book_cards('en') where book_id = 'd3000000-0000-0000-0000-000000000001'), 'vi:true:en', 'the translated work shows its English copy and says the EPUB is Vietnamese');
+select is((select language_code || ':' || is_language_fallback || ':' || metadata_locale from public.catalog_book_cards('en') where book_id = 'd3000000-0000-0000-0000-000000000002'), 'vi:true:vi', 'the untranslated one falls back to its original copy as a whole');
+select is((select count(*)::bigint from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000004'), 0::bigint, 'a published work with nothing readable is not listed');
 
 -- (9)-(17) Card fields.
 select is((select has_sample from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000001'), true, 'the free book has a sample');
-select is((select has_active_publication from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000002'), false, 'the paid book has no active publication');
+select is((select has_active_publication from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000002'), true, 'every listed book has a readable edition');
 select is((select cover_path from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000001'), 'books/d3000000-0000-0000-0000-000000000001/dddddddd-dddd-dddd-dddd-dddddddddddd.png', 'the cover path is returned');
 select is((select topics from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000001'), '[{"slug": "s2-chu-de", "name": "Chủ đề S2"}]'::jsonb, 'draft topics are hidden');
 select is((select series_slug from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000001'), 's2-bo-sach', 'the series slug is returned');
@@ -128,10 +145,10 @@ select is(public.catalog_entity_page('author', 'vi', 's2-tac-gia-nhap'), null::j
 select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-nhap'), null::jsonb, 'a draft topic page is null');
 select is(public.catalog_entity_page('series', 'vi', 's2-bo-sach-nhap'), null::jsonb, 'a draft series page is null');
 select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-tieng-viet') ->> 'name', 'Chủ đề tiếng Việt S2', 'a topic with a vi book resolves in vi');
-select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-tieng-viet') -> 'alternateSlugs', '{}'::jsonb, 'no alternate slug when the other locale has no visible book');
-select is(public.catalog_entity_page('topic', 'en', 's2-vi-only-topic-en'), null::jsonb, 'a published topic with no visible book in the locale is null');
+select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-tieng-viet') -> 'alternateSlugs', '{"en": "s2-vi-only-topic-en"}'::jsonb, 'the English page exists too, because the topic''s work is shown there in its Vietnamese edition');
+select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-chua-san-sang'), null::jsonb, 'a published topic whose only work has nothing readable is null');
 select is(public.catalog_entity_page('publisher', 'vi', 's2-tac-gia'), null::jsonb, 'an unknown kind is null');
-select is((select count(*)::bigint from public.catalog_book_cards('ja')), 0::bigint, 'an unsupported locale returns nothing');
+select is((select count(*)::bigint from public.catalog_book_cards('fr')), 0::bigint, 'an unsupported locale returns nothing');
 
 reset role;
 

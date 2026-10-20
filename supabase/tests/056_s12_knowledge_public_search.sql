@@ -32,6 +32,23 @@ insert into public.book_localizations (book_id, locale, slug, title) values
   ('d5710000-0000-0000-0000-000000000002', 'vi', 's12p-sach-hai', 'Sách Hai S12P'),
   ('d5710000-0000-0000-0000-000000000003', 'vi', 's12p-sach-nhap', 'Sách Nháp S12P');
 
+
+-- Press: a work is listed only when it has a readable edition, so each published work gets one in its
+-- original language with a live publication.
+insert into public.editions (book_id, language_code)
+select b.id, b.original_language from public.books b
+where b.status = 'published' and not exists (select 1 from public.editions e where e.book_id = b.id);
+insert into public.ebook_assets (edition_id, source_storage_key, version, status)
+select e.id, 'fx/' || e.id || '.epub', 1, 'published'
+from public.editions e join public.books b on b.id = e.book_id
+where b.status = 'published' and e.active_publication_id is null;
+insert into public.ebook_publications (ebook_asset_id, version, manifest_key, status, epub_language)
+select a.id, 1, 'fx/' || a.id || '.json', 'published', e.language_code
+from public.ebook_assets a join public.editions e on e.id = a.edition_id where a.source_storage_key like 'fx/%';
+update public.editions e set status = 'published', active_publication_id = p.id
+from public.ebook_publications p join public.ebook_assets a on a.id = p.ebook_asset_id
+where a.edition_id = e.id and a.source_storage_key like 'fx/%';
+
 -- t1 is visible in both locales, t2 in vi only, t3 is a draft, t4 is published without a book.
 insert into public.topics (id, canonical_slug, name, status) values
   ('d5720000-0000-0000-0000-000000000001', 's12p-topic-1', 'Tâm lý S12P', 'published'),
