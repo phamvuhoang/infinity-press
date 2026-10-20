@@ -1,3 +1,4 @@
+import { soleEditionId } from "./editions";
 import { createServiceRoleClient } from "./supabase";
 
 // Seeds a complete catalog book for public-page tests. Service role only; local stack only.
@@ -187,6 +188,8 @@ export async function setHomeFeatured(bookId: string): Promise<void> {
 export async function seedBundle(options: {
   suffix: string;
   bookIds: string[];
+  // Name the editions directly for a bundle that holds several editions of one work.
+  editionIds?: string[];
   localizations: Partial<Record<Locale, { slug: string; title: string }>>;
   // create_bundle_order refuses an offer of 0, so a bundle fixture is always priced.
   priceMinor: number;
@@ -209,12 +212,14 @@ export async function seedBundle(options: {
       })),
     ),
   );
-  // position is 1-based and unique per bundle; the order here is the order the storefront, the
-  // checkout list and the order items all use.
+  // A bundle holds editions. Each seeded book has exactly one, so members are named by book here and
+  // resolved to that edition; position is 1-based and unique per bundle, and the order here is the
+  // order the storefront, the checkout list and the order items all use.
+  const editionIds = options.editionIds ?? (await Promise.all(bookIds.map(soleEditionId)));
   check(
     await service
-      .from("bundle_books")
-      .insert(bookIds.map((bookId, index) => ({ bundle_id: bundle.id, book_id: bookId, position: index + 1 }))),
+      .from("bundle_editions")
+      .insert(editionIds.map((editionId, index) => ({ bundle_id: bundle.id, edition_id: editionId, position: index + 1 }))),
   );
   check(
     await service

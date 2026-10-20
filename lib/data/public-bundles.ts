@@ -9,7 +9,8 @@ import { coverPublicUrl } from "@/lib/catalog/covers";
 import type { CatalogBookCard } from "@/lib/catalog/public-types";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
-import { getActiveEntitlementBookIds, getBookCards } from "@/lib/data/catalog";
+import { getActiveEntitlementEditionIds, getBookCards } from "@/lib/data/catalog";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getRequestId } from "@/lib/observability/request-id";
@@ -25,7 +26,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 //
 // getPublicBundle itself never reads the session, so the bundle page can be prerendered. Ownership
 // is the one per-reader fact this module has, and it lives in getBundleOwnership below, which comes
-// from the session client through getActiveEntitlementBookIds, never from a policy an admin could
+// from the session client through getActiveEntitlementEditionIds, never from a policy an admin could
 // see past.
 
 const slugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -43,10 +44,13 @@ export type PublicBundleDTO = {
   // Only a live offer of a published bundle reaches this type - the read policy enforces the window
   // and the `active` flag, so there is no inactive offer to represent.
   offer: { priceMinor: number; currency: string } | null;
-  // The members the storefront can actually show, in bundle_books.position order. A member that is
-  // not a published, locale-localized book is absent, not marked.
-  members: CatalogBookCard[];
+  // The EDITIONS the storefront can actually show, in bundle_editions.position order. A member that
+  // is not a published edition of a locale-localized book is absent, not marked. Each carries its
+  // edition and language: English and Japanese of one work are two members.
+  members: BundleMemberCard[];
 };
+
+export type BundleMemberCard = CatalogBookCard & { editionId: string; languageCode: string; languageLabel: string };
 
 async function currentRequestId(): Promise<string | null> {
   try {
@@ -71,13 +75,19 @@ async function failure(operation: string, cause: unknown): Promise<Error> {
 type BundleRow = {
   id: string;
   localizations: { locale: string; slug: string; title: string; subtitle: string | null; description: string | null }[];
-  members: { book_id: string; position: number }[];
+  members: {
+    edition_id: string;
+    position: number;
+    edition: BundleEditionRow | BundleEditionRow[] | null;
+  }[];
 };
+
+type BundleEditionRow = { language_code: string; book_id: string; status: string; active_publication_id: string | null };
 
 const bundleSelect = `
   id,
   localizations:bundle_localizations ( locale, slug, title, subtitle, description ),
-  members:bundle_books ( book_id, position )
+  members:bundle_editions ( edition_id, position, edition:editions ( language_code, book_id, status, active_publication_id ) )
 `;
 
 // The RPC applies the rule and returns at most one row; this only shapes it.
@@ -134,9 +144,20 @@ export const getPublicBundle = cache(async (locale: Locale, slug: string): Promi
   const byBookId = new Map(cards.map((card) => [card.bookId, card]));
   const members = [...bundle.members]
     .sort((a, b) => a.position - b.position)
-    .flatMap((member) => {
-      const card = byBookId.get(member.book_id);
-      return card ? [card] : [];
+    .flatMap((member): BundleMemberCard[] => {
+      const edition = Array.isArray(member.edition) ? (member.edition[0] ?? null) : member.edition;
+      // The same bar bundle_edition_is_sellable applies: published, with a live publication.
+      if (!edition || edition.status !== "published" || edition.active_publication_id === null) return [];
+      const card = byBookId.get(edition.book_id);
+      if (!card) return [];
+      return [
+        {
+          ...card,
+          editionId: member.edition_id,
+          languageCode: edition.language_code,
+          languageLabel: editionLanguageLabel(edition.language_code) ?? edition.language_code,
+        },
+      ];
     });
 
   const cover = (coverRows ?? [])[0];
@@ -157,12 +178,13 @@ export const getPublicBundle = cache(async (locale: Locale, slug: string): Promi
 // How many of a bundle's visible members the current viewer already holds. Zero when signed out.
 // Split out of getPublicBundle so that read stays session-free and the bundle page can be
 // prerendered; this one is called from the route handler the page's island fetches.
-export async function getBundleOwnership(members: CatalogBookCard[]): Promise<number> {
+export async function getBundleOwnership(members: Pick<BundleMemberCard, "editionId">[]): Promise<number> {
   const profile = await getCurrentProfile();
   if (!profile) return 0;
 
-  const owned = await getActiveEntitlementBookIds(profile.id);
-  return members.filter((member) => owned.has(member.bookId)).length;
+  // Per edition: holding the English edition says nothing about the Japanese one.
+  const owned = await getActiveEntitlementEditionIds(profile.id);
+  return members.filter((member) => owned.has(member.editionId)).length;
 }
 
 // The bundle counterpart of getBookActionState. It takes the counts the caller already resolved

@@ -58,6 +58,7 @@ insert into public.skus (id, edition_id, sku_code)
 select ('c5000000-0000-0000-0000-00000000000' || n)::uuid, ('c4000000-0000-0000-0000-00000000000' || n)::uuid, 'S9-BO-SKU-' || n
 from generate_series(1, 5) as n;
 
+
 -- Book 5's own publication and paid offer: everything create_ebook_order needs.
 insert into public.offers (id, sku_id, market_code, currency, price_minor)
 values ('c6000000-0000-0000-0000-000000000009', 'c5000000-0000-0000-0000-000000000005', 'VN', 'VND', 99000);
@@ -68,6 +69,19 @@ insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key
 values ('c9000000-0000-0000-0000-000000000005', 'c8000000-0000-0000-0000-000000000005', 1, 's9-bo/5/manifest.json', 'published');
 update public.books set active_publication_id = 'c9000000-0000-0000-0000-000000000005'
 where id = 'c2000000-0000-0000-0000-000000000005';
+
+-- Press: a bundle member is an EDITION that can be sold now, so each fixture edition of a published
+-- work gets a live publication.
+insert into public.ebook_assets (edition_id, source_storage_key, version, status)
+select e.id, 'fx/' || e.id || '.epub', 1, 'published'
+from public.editions e join public.books b on b.id = e.book_id
+where b.status = 'published' and e.active_publication_id is null;
+insert into public.ebook_publications (ebook_asset_id, version, manifest_key, status, epub_language)
+select a.id, 1, 'fx/' || a.id || '.json', 'published', 'vi' from public.ebook_assets a where a.source_storage_key like 'fx/%';
+update public.editions e set status = 'published', active_publication_id = p.id
+from public.ebook_publications p join public.ebook_assets a on a.id = p.ebook_asset_id
+where a.edition_id = e.id and a.source_storage_key like 'fx/%';
+
 
 -- Bundles: 1 sells, 2 is a draft, 3 has only an inactive offer, 4 has no published member, 5 is
 -- the price-change bundle and is localized in English only.
@@ -86,14 +100,14 @@ insert into public.bundle_localizations (bundle_id, locale, slug, title) values
   ('c7000000-0000-0000-0000-000000000004', 'vi', 's9-bo-goi-rong', 'Gói rỗng S9'),
   ('c7000000-0000-0000-0000-000000000005', 'en', 's9-bo-english-bundle', 'S9 English Bundle');
 
-insert into public.bundle_books (bundle_id, book_id, position) values
-  ('c7000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000001', 1),
-  ('c7000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000002', 2),
-  ('c7000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000004', 3),
-  ('c7000000-0000-0000-0000-000000000002', 'c2000000-0000-0000-0000-000000000001', 1),
-  ('c7000000-0000-0000-0000-000000000003', 'c2000000-0000-0000-0000-000000000001', 1),
-  ('c7000000-0000-0000-0000-000000000004', 'c2000000-0000-0000-0000-000000000004', 1),
-  ('c7000000-0000-0000-0000-000000000005', 'c2000000-0000-0000-0000-000000000003', 1);
+insert into public.bundle_editions (bundle_id, edition_id, position) values
+  ('c7000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000001', 1),
+  ('c7000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000002', 2),
+  ('c7000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000004', 3),
+  ('c7000000-0000-0000-0000-000000000002', 'c4000000-0000-0000-0000-000000000001', 1),
+  ('c7000000-0000-0000-0000-000000000003', 'c4000000-0000-0000-0000-000000000001', 1),
+  ('c7000000-0000-0000-0000-000000000004', 'c4000000-0000-0000-0000-000000000004', 1),
+  ('c7000000-0000-0000-0000-000000000005', 'c4000000-0000-0000-0000-000000000003', 1);
 
 insert into public.offers (id, bundle_id, market_code, currency, price_minor, active) values
   ('c6000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000001', 'VN', 'VND', 199000, true),

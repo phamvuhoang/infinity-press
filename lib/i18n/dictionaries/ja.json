@@ -184,15 +184,16 @@
     },
     "bundle": {
       "eyebrow": "セット",
-      "itemCountOne": "{count} 作品",
-      "itemCountOther": "{count} 作品",
+      "itemCountOne": "{count}点",
+      "itemCountOther": "{count}点",
       "includes": "セットの内容",
-      "priceNote": "セット全体でひとつの価格です。すでに一部をお持ちでも価格は変わりません。",
-      "ownedSome": "このセットの {total} 作品のうち {owned} 作品をすでにお持ちです。",
-      "ownedAll": "このセットのすべての作品をすでにお持ちです。",
+      "priceNote": "セット全体で一つの価格です。すでに一部の版をお持ちでも価格は変わりません。",
+      "ownedSome": "このセットの{total}点のうち{owned}点をすでにお持ちです。",
+      "ownedAll": "このセットのすべての版をすでにお持ちです。",
       "buy": "セットを購入",
       "library": "ライブラリへ",
-      "empty": "このセットには、現在表示できる作品がありません。"
+      "empty": "現在、表示できる版がありません。",
+      "languages": "このセットに含まれる言語：{languages}"
     },
     "actions": {
       "read": "今すぐ読む",

@@ -8,17 +8,17 @@ import type { AdminBundleMemberDTO } from "@/lib/data/bundles";
 afterEach(cleanup);
 
 const members: AdminBundleMemberDTO[] = [
-  { bookId: "book-a", position: 1, title: "Cuốn một", canonicalKey: "first", published: true },
-  { bookId: "book-b", position: 2, title: "Cuốn hai", canonicalKey: "second", published: false },
-  { bookId: "book-c", position: 3, title: "Cuốn ba", canonicalKey: "third", published: true },
+  { editionId: "book-a", bookId: "book-a", languageCode: "en", position: 1, title: "Cuốn một", canonicalKey: "first", published: true },
+  { editionId: "book-b", bookId: "book-b", languageCode: "en", position: 2, title: "Cuốn hai", canonicalKey: "second", published: false },
+  { editionId: "book-c", bookId: "book-c", languageCode: "en", position: 3, title: "Cuốn ba", canonicalKey: "third", published: true },
 ];
 
-const books = members.map((member) => ({ id: member.bookId, title: member.title, published: member.published }));
+const books = members.map((member) => ({ id: member.editionId, title: member.title, published: member.published }));
 
 const noop = async (): Promise<AdminFormState> => ({ fieldErrors: {}, formError: null, savedAt: null });
 
 function postedOrder(container: HTMLElement) {
-  return [...container.querySelectorAll<HTMLInputElement>("input[type='hidden'][name='bookIds']")].map((input) => input.value);
+  return [...container.querySelectorAll<HTMLInputElement>("input[type='hidden'][name='editionIds']")].map((input) => input.value);
 }
 
 it("moves a member and posts the whole reordered list", () => {
@@ -79,7 +79,7 @@ it("announces a removal and drops the book from the posted list", async () => {
 
 it("associates the server's membership error with the list", async () => {
   const reject = async (): Promise<AdminFormState> => ({
-    fieldErrors: { bookIds: "Each book can appear once." },
+    fieldErrors: { editionIds: "Each edition can appear once." },
     formError: null,
     savedAt: null,
   });
@@ -87,6 +87,6 @@ it("associates the server's membership error with the list", async () => {
 
   fireEvent.submit(screen.getByRole("button", { name: "Save members" }).closest("form")!);
 
-  await screen.findByText("Each book can appear once.");
-  expect(screen.getByRole("list")).toHaveAccessibleDescription("Each book can appear once.");
+  await screen.findByText("Each edition can appear once.");
+  expect(screen.getByRole("list")).toHaveAccessibleDescription("Each edition can appear once.");
 });

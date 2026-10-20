@@ -184,11 +184,11 @@ describe("bundle schemas", () => {
     expect(bundleLocalizationSchema.safeParse({ ...base, title: "", subtitle: null, description: null }).success).toBe(false);
   });
 
-  it("takes the member order from the submitted list and refuses a repeated book", () => {
-    expect(bundleMembersSchema.parse({ bookIds: [otherBookId, bookId] }).bookIds).toEqual([otherBookId, bookId]);
-    expect(bundleMembersSchema.safeParse({ bookIds: [bookId, bookId] }).success).toBe(false);
-    expect(bundleMembersSchema.safeParse({ bookIds: [] }).success).toBe(false);
-    expect(bundleMembersSchema.safeParse({ bookIds: ["not-a-uuid"] }).success).toBe(false);
+  it("takes the member order from the submitted list and refuses a repeated edition", () => {
+    expect(bundleMembersSchema.parse({ editionIds: [otherBookId, bookId] }).editionIds).toEqual([otherBookId, bookId]);
+    expect(bundleMembersSchema.safeParse({ editionIds: [bookId, bookId] }).success).toBe(false);
+    expect(bundleMembersSchema.safeParse({ editionIds: [] }).success).toBe(false);
+    expect(bundleMembersSchema.safeParse({ editionIds: ["not-a-uuid"] }).success).toBe(false);
   });
 
   it("prices a bundle through the same offer shape a sku offer uses", () => {

@@ -29,6 +29,21 @@ insert into public.books (id, canonical_key, original_language, primary_author_i
   ('c2000000-0000-0000-0000-000000000002', 's9-rpc-book-2', 'vi', 'c3000000-0000-0000-0000-000000000001', 'published'),
   ('c2000000-0000-0000-0000-000000000003', 's9-rpc-book-3', 'vi', 'c3000000-0000-0000-0000-000000000001', 'draft');
 
+-- A bundle member is an edition. Editions 1 and 2 can be sold now (published, live publication);
+-- edition 3 belongs to the draft book, which is the warning case.
+insert into public.editions (id, book_id, language_code) values
+  ('c4000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000001', 'vi'),
+  ('c4000000-0000-0000-0000-000000000002', 'c2000000-0000-0000-0000-000000000002', 'vi'),
+  ('c4000000-0000-0000-0000-000000000003', 'c2000000-0000-0000-0000-000000000003', 'vi');
+insert into public.ebook_assets (id, edition_id, source_storage_key, version, status) values
+  ('c8000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000001', 'rpc/1.epub', 1, 'published'),
+  ('c8000000-0000-0000-0000-000000000002', 'c4000000-0000-0000-0000-000000000002', 'rpc/2.epub', 1, 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language) values
+  ('c9000000-0000-0000-0000-000000000001', 'c8000000-0000-0000-0000-000000000001', 1, 'rpc/1.json', 'published', 'vi'),
+  ('c9000000-0000-0000-0000-000000000002', 'c8000000-0000-0000-0000-000000000002', 1, 'rpc/2.json', 'published', 'vi');
+update public.editions set status = 'published', active_publication_id = 'c9000000-0000-0000-0000-000000000001' where id = 'c4000000-0000-0000-0000-000000000001';
+update public.editions set status = 'published', active_publication_id = 'c9000000-0000-0000-0000-000000000002' where id = 'c4000000-0000-0000-0000-000000000002';
+
 -- A bundle created directly, so the non-admin refusals below have a real id to call against
 -- without any of them having had to succeed first.
 insert into public.bundles (id, status) values ('c7000000-0000-0000-0000-000000000001', 'draft');
@@ -89,7 +104,7 @@ select throws_ok(
   $$select public.admin_save_bundle_localization('c7000000-0000-0000-0000-000000000001', 'vi', 'sneaky', 'Sneaky', null, null)$$,
   '42501', null, 'a reader cannot localize a bundle');
 select throws_ok(
-  $$select public.admin_set_bundle_members('c7000000-0000-0000-0000-000000000001', array['c2000000-0000-0000-0000-000000000001']::uuid[])$$,
+  $$select public.admin_set_bundle_members('c7000000-0000-0000-0000-000000000001', array['c4000000-0000-0000-0000-000000000001']::uuid[])$$,
   '42501', null, 'a reader cannot set bundle members');
 select throws_ok(
   $$select public.admin_set_bundle_offer('c7000000-0000-0000-0000-000000000001', 'VN', 'VND', 1, true)$$,
@@ -136,20 +151,20 @@ select throws_ok(
 
 -- Members ---------------------------------------------------------------------------------------
 select throws_ok(
-  format($$select public.admin_set_bundle_members(%L, array['c2000000-0000-0000-0000-000000000001','c2000000-0000-0000-0000-000000000001']::uuid[])$$,
+  format($$select public.admin_set_bundle_members(%L, array['c4000000-0000-0000-0000-000000000001','c4000000-0000-0000-0000-000000000001']::uuid[])$$,
          (select id from t_bundles where label = 'main')),
-  '22023', null, 'the same book cannot be listed twice');
+  '22023', null, 'the same edition cannot be listed twice');
 select throws_ok(
   format($$select public.admin_set_bundle_members(%L, '{}'::uuid[])$$, (select id from t_bundles where label = 'main')),
   '22023', null, 'a bundle cannot be emptied of members');
 select throws_ok(
-  format($$select public.admin_set_bundle_members(%L, array['c2000000-0000-0000-0000-0000000000ee']::uuid[])$$,
+  format($$select public.admin_set_bundle_members(%L, array['c4000000-0000-0000-0000-0000000000ee']::uuid[])$$,
          (select id from t_bundles where label = 'main')),
-  'P0002', null, 'a book that does not exist cannot be a member');
+  'P0002', null, 'an edition that does not exist cannot be a member');
 
 select public.admin_set_bundle_members(
   (select id from t_bundles where label = 'main'),
-  array['c2000000-0000-0000-0000-000000000002', 'c2000000-0000-0000-0000-000000000001']::uuid[]);
+  array['c4000000-0000-0000-0000-000000000002', 'c4000000-0000-0000-0000-000000000001']::uuid[]);
 select results_eq(
   format($$select book_id, position from public.bundle_books where bundle_id = %L order by position$$,
          (select id from t_bundles where label = 'main')),
@@ -159,8 +174,8 @@ select results_eq(
 -- Reordering is the same call with the list rearranged, and a third member appended.
 select public.admin_set_bundle_members(
   (select id from t_bundles where label = 'main'),
-  array['c2000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000003',
-        'c2000000-0000-0000-0000-000000000002']::uuid[]);
+  array['c4000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000003',
+        'c4000000-0000-0000-0000-000000000002']::uuid[]);
 select results_eq(
   format($$select book_id, position from public.bundle_books where bundle_id = %L order by position$$,
          (select id from t_bundles where label = 'main')),

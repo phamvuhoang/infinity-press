@@ -19,7 +19,7 @@ beforeEach(() => {
       title: "The Golden Book",
       authorName: "Jane Austen",
       status: "draft",
-      hasActivePublication: false,
+      hasActivePublication: false, editions: [],
       readinessIssues: ["missing_cover", "missing_publication"],
     },
   ]);

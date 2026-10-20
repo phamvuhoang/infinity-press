@@ -77,7 +77,7 @@ export async function setBundleMembersAction(
   formData: FormData,
 ): Promise<AdminFormState> {
   await requireAdmin({ next: `/admin/bundles/${bundleId}` });
-  const parsed = bundleMembersSchema.safeParse({ bookIds: readList(formData, "bookIds") });
+  const parsed = bundleMembersSchema.safeParse({ editionIds: readList(formData, "editionIds") });
   if (!parsed.success) return invalid(parsed.error);
 
   try {

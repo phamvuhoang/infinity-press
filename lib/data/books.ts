@@ -172,6 +172,8 @@ export type AdminBookListItemDTO = {
   authorName: string;
   status: AdminBookDTO["status"];
   hasActivePublication: boolean;
+  // Every edition of the work, for pickers that choose editions (bundle members).
+  editions: AdminEditionSummaryDTO[];
   readinessIssues: ReadinessIssueCode[];
 };
 
@@ -379,6 +381,7 @@ export async function listAdminBooks(search?: string): Promise<AdminBookListItem
       authorName: book.authorName,
       status: book.status,
       hasActivePublication: book.editions.some((edition) => edition.activePublicationId !== null),
+      editions: book.editions,
       readinessIssues: book.readinessIssues,
     }));
 }

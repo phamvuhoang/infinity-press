@@ -64,8 +64,8 @@ function bundleRow(overrides: Record<string, unknown> = {}) {
     ],
     // Deliberately out of position order: the DTO must sort, not echo the database's row order.
     members: [
-      { position: 2, book: { id: bookB, canonical_key: "second", status: "draft", localizations: [{ locale: "vi", title: "Cuốn hai" }] } },
-      { position: 1, book: { id: bookA, canonical_key: "first", status: "published", localizations: [{ locale: "vi", title: "Cuốn một" }] } },
+      { position: 2, edition: { id: bookB, language_code: "vi", status: "draft", active_publication_id: null, book: { id: bookB, canonical_key: "second", status: "draft", localizations: [{ locale: "vi", title: "Cuốn hai" }] } } },
+      { position: 1, edition: { id: bookA, language_code: "vi", status: "published", active_publication_id: "pub-a", book: { id: bookA, canonical_key: "first", status: "published", localizations: [{ locale: "vi", title: "Cuốn một" }] } } },
     ],
     offers: [
       { id: "offer-vn", market_code: "VN", currency: "VND", price_minor: 150000, active: true, starts_at: null, ends_at: null },
@@ -94,7 +94,7 @@ describe("authorization precedes client creation", () => {
       "saveBundleLocalization",
       () => saveBundleLocalization(bundleId, { locale: "vi", slug: "bo", title: "Bộ", subtitle: null, description: null }),
     ],
-    ["setBundleMembers", () => setBundleMembers(bundleId, { bookIds: [bookA, bookB] })],
+    ["setBundleMembers", () => setBundleMembers(bundleId, { editionIds: [bookA, bookB] })],
     ["setBundleOffer", () => setBundleOffer(bundleId, { marketCode: "VN", currency: "VND", priceMinor: 1, active: true })],
     ["publishBundle", () => publishBundle(bundleId)],
     ["unpublishBundle", () => unpublishBundle(bundleId)],
@@ -127,7 +127,7 @@ describe("getAdminBundle", () => {
 
     expect(bundle.members.map((member) => member.bookId)).toEqual([bookA, bookB]);
     expect(bundle.members.map((member) => member.published)).toEqual([true, false]);
-    expect(bundle.members[0].title).toBe("Cuốn một");
+    expect(bundle.members[0].title).toBe("Cuốn một (vi)");
   });
 
   it("orders the localizations vi then en", async () => {
@@ -281,14 +281,14 @@ describe("getAdminBundle", () => {
 
   it("accepts a to-one member embed returned as a single object", async () => {
     const row = bundleRow({
-      members: [{ position: 1, book: { id: bookA, canonical_key: "first", status: "published", localizations: [] } }],
+      members: [{ position: 1, edition: { id: bookA, language_code: "vi", status: "published", active_publication_id: "pub-a", book: { id: bookA, canonical_key: "first", status: "published", localizations: [] } } }],
     });
     const fake = fakeClient({ tables: { bundles: { data: row, error: null } } });
     vi.mocked(createClient).mockResolvedValue(fake.client);
 
     const bundle = await getAdminBundle(bundleId);
 
-    expect(bundle.members[0].title).toBe("first");
+    expect(bundle.members[0].title).toBe("first (vi)");
   });
 
   // A stale admin link is a 404 page, not a 500 - the same treatment getAdminBook gives a book.
@@ -391,9 +391,9 @@ describe("mutations", () => {
     const fake = fakeClient({ rpc: { data: null, error: null } });
     vi.mocked(createClient).mockResolvedValue(fake.client);
 
-    await setBundleMembers(bundleId, { bookIds: [bookB, bookA] });
+    await setBundleMembers(bundleId, { editionIds: [bookB, bookA] });
 
-    expect(fake.rpc).toHaveBeenCalledWith("admin_set_bundle_members", { p_bundle_id: bundleId, p_book_ids: [bookB, bookA] });
+    expect(fake.rpc).toHaveBeenCalledWith("admin_set_bundle_members", { p_bundle_id: bundleId, p_edition_ids: [bookB, bookA] });
   });
 
   it("sets the offer through the audited RPC", async () => {
@@ -415,14 +415,14 @@ describe("mutations", () => {
     const fake = fakeClient({ rpc: { data: null, error: { code: "P0002", message: "admin_set_bundle_members: bundle x does not exist" } } });
     vi.mocked(createClient).mockResolvedValue(fake.client);
 
-    await expect(setBundleMembers(bundleId, { bookIds: [bookA] })).rejects.toBeInstanceOf(BundleNotFoundError);
+    await expect(setBundleMembers(bundleId, { editionIds: [bookA] })).rejects.toBeInstanceOf(BundleNotFoundError);
   });
 
   it("never leaks raw database text from an unexpected failure", async () => {
-    const fake = fakeClient({ rpc: { data: null, error: { code: "42P01", message: "relation bundle_books does not exist" } } });
+    const fake = fakeClient({ rpc: { data: null, error: { code: "42P01", message: "relation bundle_editions does not exist" } } });
     vi.mocked(createClient).mockResolvedValue(fake.client);
 
-    await expect(setBundleMembers(bundleId, { bookIds: [bookA] })).rejects.toThrow("setBundleMembers failed.");
+    await expect(setBundleMembers(bundleId, { editionIds: [bookA] })).rejects.toThrow("setBundleMembers failed.");
   });
 
   it("maps EB026 to BundleNotReadyError carrying the issue codes", async () => {

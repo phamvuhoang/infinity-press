@@ -22,7 +22,7 @@ const sections: { id: BundleEditorSection; label: string }[] = [
   { id: "details", label: "Details" },
   { id: "localizations", label: "Localizations" },
   { id: "cover", label: "Cover" },
-  { id: "members", label: "Books" },
+  { id: "members", label: "Editions" },
   { id: "offer", label: "Price" },
   { id: "publish", label: "Publish" },
 ];
@@ -32,13 +32,21 @@ export default async function AdminBundlePage({ params }: { params: Promise<{ bu
   await requireAdmin({ next: `/admin/bundles/${bundleId}` });
 
   const [bundle, books] = await Promise.all([getAdminBundle(bundleId), listAdminBooks()]);
-  const bookOptions = books.map((book) => ({ id: book.id, title: book.title, published: book.status === "published" }));
+  // One option per EDITION, labelled with its language: a bundle sells editions, and an English +
+  // Japanese bundle of one work is a deliberate product.
+  const editionOptions = books.flatMap((book) =>
+    book.editions.map((edition) => ({
+      id: edition.id,
+      title: `${book.title} (${edition.languageCode})`,
+      published: edition.status === "published" && edition.activePublicationId !== null && book.status === "published",
+    })),
+  );
 
   return (
     <div className="min-w-0 max-w-[48rem] [overflow-wrap:anywhere]">
       <AdminPageHeader eyebrow="Bundle" title={bundle.localizations[0]?.title ?? bundle.id}>
         <p>
-          {bundle.members.length} {bundle.members.length === 1 ? "book" : "books"} &middot; {bundle.status}
+          {bundle.members.length} {bundle.members.length === 1 ? "edition" : "editions"} &middot; {bundle.status}
         </p>
         {bundle.offers.map((offer) => (
           <p key={offer.id}>
@@ -88,10 +96,10 @@ export default async function AdminBundlePage({ params }: { params: Promise<{ bu
           />
         </AdminSection>
 
-        <AdminSection id="members" title="Books">
+        <AdminSection id="members" title="Editions">
           <BundleMembersForm
             action={setBundleMembersAction.bind(null, bundle.id)}
-            books={bookOptions}
+            books={editionOptions}
             members={bundle.members}
           />
         </AdminSection>

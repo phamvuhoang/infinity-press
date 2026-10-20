@@ -184,15 +184,16 @@
     },
     "bundle": {
       "eyebrow": "Gói sách",
-      "itemCountOne": "{count} cuốn sách",
-      "itemCountOther": "{count} cuốn sách",
+      "itemCountOne": "{count} ấn bản",
+      "itemCountOther": "{count} ấn bản",
       "includes": "Trong gói này",
-      "priceNote": "Một mức giá cho cả gói. Giá không đổi nếu bạn đã có sẵn một vài cuốn.",
-      "ownedSome": "Bạn đã có {owned} trong {total} cuốn của gói này.",
-      "ownedAll": "Bạn đã có tất cả sách trong gói này.",
+      "priceNote": "Một mức giá cho cả bộ. Giá không đổi nếu bạn đã sở hữu một vài ấn bản trong bộ.",
+      "ownedSome": "Bạn đã sở hữu {owned} trong {total} ấn bản của bộ này.",
+      "ownedAll": "Bạn đã sở hữu mọi ấn bản trong bộ này.",
       "buy": "Mua gói sách",
       "library": "Tới thư viện của bạn",
-      "empty": "Gói này hiện chưa có sách nào để hiển thị."
+      "empty": "Hiện bộ này chưa có ấn bản nào để hiển thị.",
+      "languages": "Ngôn ngữ trong bộ này: {languages}."
     },
     "actions": {
       "read": "Đọc ngay",

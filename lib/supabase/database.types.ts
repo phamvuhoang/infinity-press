@@ -3748,7 +3748,7 @@ export type Database = {
         Returns: string
       }
       admin_set_bundle_members: {
-        Args: { p_book_ids: string[]; p_bundle_id: string }
+        Args: { p_bundle_id: string; p_edition_ids: string[] }
         Returns: undefined
       }
       admin_set_bundle_offer: {
@@ -3866,6 +3866,10 @@ export type Database = {
         Args: { r: Database["public"]["Tables"]["book_reviews"]["Row"] }
         Returns: Json
       }
+      bundle_edition_is_sellable: {
+        Args: { p_edition_id: string }
+        Returns: boolean
+      }
       bundle_live_offer: {
         Args: { p_bundle_id: string }
         Returns: {
@@ -3879,6 +3883,8 @@ export type Database = {
         Args: { p_bundle_id: string }
         Returns: {
           book_id: string
+          edition_id: string
+          language_code: string
           line_position: number
           sku_id: string
           title_snapshot: string
@@ -4521,6 +4527,8 @@ export type Database = {
         book_id: string | null
         sku_id: string | null
         title_snapshot: string | null
+        edition_id: string | null
+        language_code: string | null
       }
     }
   }

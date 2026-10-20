@@ -11,6 +11,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { formatPrice } from "@/lib/catalog/price";
+import { fillTemplate } from "@/lib/i18n/format";
 import { catalogStaticParams } from "@/lib/catalog/static-params";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
@@ -158,6 +159,11 @@ export default async function BundlePage({ params }: Props) {
           <h2 className={sectionTitle} id="bundle-members">
             {copy.bundle.includes}
           </h2>
+          {new Set(bundle.members.map((member) => member.languageCode)).size > 1 ? (
+            <p className="mb-6 text-sm text-sage-text">
+              {fillTemplate(copy.bundle.languages, { languages: [...new Set(bundle.members.map((member) => member.languageLabel))].join(", ") })}
+            </p>
+          ) : null}
           {bundle.members.length > 0 ? (
             <BookGrid books={bundle.members} copy={copy.book} locale={locale} />
           ) : (

@@ -354,8 +354,11 @@ describe("serializeJsonLd", () => {
   });
 });
 
-function bundleMemberCard(slug: string, title: string): CatalogBookCard {
+function bundleMemberCard(slug: string, title: string): PublicBundleDTO["members"][number] {
   return {
+    editionId: `edition-${slug}`,
+    languageCode: "en",
+    languageLabel: "English",
     bookId: `book-${slug}`,
     slug,
     title,

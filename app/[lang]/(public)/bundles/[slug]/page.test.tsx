@@ -62,7 +62,10 @@ const bundle: PublicBundleDTO = {
   description: "A set of two.",
   cover: null,
   offer: { priceMinor: 199000, currency: "VND" },
-  members: [card("book-1", "book-one", "Book One"), card("book-2", "book-two", "Book Two")],
+  members: [
+    { ...card("book-1", "book-one", "Book One"), editionId: "edition-1", languageCode: "en", languageLabel: "English" },
+    { ...card("book-2", "book-two", "Book Two"), editionId: "edition-2", languageCode: "en", languageLabel: "English" },
+  ],
 };
 
 const params = Promise.resolve({ lang: "en", slug: "starter-bundle" });
@@ -139,7 +142,7 @@ describe("BundlePage", () => {
     render(await BundlePage({ params }));
 
     expect(screen.getByRole("heading", { level: 1, name: "Starter Bundle" })).toBeInTheDocument();
-    expect(screen.getByText("This bundle has no books to show right now.")).toBeInTheDocument();
+    expect(screen.getByText("This bundle has no editions to show right now.")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "In this bundle" })).queryAllByRole("link")).toHaveLength(0);
     expect(screen.queryByText(/₫/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Buy bundle" })).not.toBeInTheDocument();

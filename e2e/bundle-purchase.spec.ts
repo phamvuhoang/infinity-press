@@ -63,7 +63,7 @@ test("a reader buys a two-book bundle, transfers, and an admin confirms", async 
   // Checkout names the bundle, not one of its books, and lists what the bundle covers.
   await expect(page.getByRole("heading", { level: 1, name: "Review your order" })).toBeVisible();
   await expect(page.getByText(bundleTitle)).toBeVisible();
-  await expect(page.getByText("2 books")).toBeVisible();
+  await expect(page.getByText("2 editions")).toBeVisible();
   const included = page.getByRole("list", { name: "In this bundle" });
   await expect(included.getByText(first.title)).toBeVisible();
   await expect(included.getByText(second.title)).toBeVisible();

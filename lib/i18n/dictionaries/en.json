@@ -184,15 +184,16 @@
     },
     "bundle": {
       "eyebrow": "Bundle",
-      "itemCountOne": "{count} book",
-      "itemCountOther": "{count} books",
+      "itemCountOne": "{count} edition",
+      "itemCountOther": "{count} editions",
       "includes": "In this bundle",
-      "priceNote": "One price for the whole bundle. It does not change if you already own some of these books.",
-      "ownedSome": "You already own {owned} of {total} books in this bundle.",
-      "ownedAll": "You already own every book in this bundle.",
+      "priceNote": "One price for the whole bundle. It does not change if you already own some of these editions.",
+      "ownedSome": "You already own {owned} of {total} editions in this bundle.",
+      "ownedAll": "You already own every edition in this bundle.",
       "buy": "Buy bundle",
       "library": "Go to your library",
-      "empty": "This bundle has no books to show right now."
+      "empty": "This bundle has no editions to show right now.",
+      "languages": "Languages in this bundle: {languages}."
     },
     "actions": {
       "read": "Read now",

@@ -84,8 +84,8 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(requireAdmin).mockResolvedValue({} as Awaited<ReturnType<typeof requireAdmin>>);
   vi.mocked(listAdminBooks).mockResolvedValue([
-    { id: bookA, canonicalKey: "a", title: "Sách một", authorName: "A", status: "published", hasActivePublication: true, readinessIssues: [] },
-    { id: bookB, canonicalKey: "b", title: "Sách hai", authorName: "B", status: "draft", hasActivePublication: false, readinessIssues: [] },
+    { id: bookA, canonicalKey: "a", title: "Sách một", authorName: "A", status: "published", hasActivePublication: true, editions: [], readinessIssues: [] },
+    { id: bookB, canonicalKey: "b", title: "Sách hai", authorName: "B", status: "draft", hasActivePublication: false, editions: [], readinessIssues: [] },
   ]);
   vi.mocked(listCatalogEntityOptions).mockImplementation(async (type) =>
     type === "author"

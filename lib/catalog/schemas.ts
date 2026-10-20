@@ -349,11 +349,11 @@ export const bundleLocalizationSchema = z.object({
 // again rather than sending per-row positions that could disagree with each other.
 export const bundleMembersSchema = z
   .object({
-    bookIds: z.array(z.uuid()).min(1, "Add at least one book."),
+    editionIds: z.array(z.uuid()).min(1, "Add at least one edition."),
   })
-  .refine((value) => new Set(value.bookIds).size === value.bookIds.length, {
-    message: "Each book can appear once.",
-    path: ["bookIds"],
+  .refine((value) => new Set(value.editionIds).size === value.editionIds.length, {
+    message: "Each edition can appear once.",
+    path: ["editionIds"],
   });
 
 // A bundle is priced through the same offers row shape as a sku (spec 6.1), so the offer form is

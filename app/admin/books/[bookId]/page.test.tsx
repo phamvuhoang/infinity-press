@@ -43,9 +43,9 @@ beforeEach(() => {
   vi.mocked(listCatalogEntityOptions).mockImplementation(async (kind) => [{ id: `${kind}-id`, name: `${kind} option`, canonicalSlug: `${kind}-option` }]);
   vi.mocked(listContentLanguages).mockResolvedValue([{ code: "en", name: "English" }, { code: "ja", name: "Japanese" }, { code: "vi", name: "Vietnamese" }]);
   vi.mocked(listAdminBooks).mockResolvedValue([
-    { id: book.id, canonicalKey: "golden", title: "Golden", authorName: "Author", status: "draft", hasActivePublication: false, readinessIssues: [] },
-    { id: "3a1b2c3d-0000-4000-8000-000000000002", canonicalKey: "quiet", title: "Quiet", authorName: "Linh Tran", status: "published", hasActivePublication: true, readinessIssues: [] },
-    { id: "3a1b2c3d-0000-4000-8000-000000000003", canonicalKey: "rivers", title: "Rivers", authorName: "Minh Le", status: "draft", hasActivePublication: false, readinessIssues: [] },
+    { id: book.id, canonicalKey: "golden", title: "Golden", authorName: "Author", status: "draft", hasActivePublication: false, editions: [], readinessIssues: [] },
+    { id: "3a1b2c3d-0000-4000-8000-000000000002", canonicalKey: "quiet", title: "Quiet", authorName: "Linh Tran", status: "published", hasActivePublication: true, editions: [], readinessIssues: [] },
+    { id: "3a1b2c3d-0000-4000-8000-000000000003", canonicalKey: "rivers", title: "Rivers", authorName: "Minh Le", status: "draft", hasActivePublication: false, editions: [], readinessIssues: [] },
   ]);
 });
 it("renders every anchored work-level section and no per-edition controls", async () => {

@@ -98,7 +98,7 @@ describe("saveBundleLocalizationAction", () => {
 describe("setBundleMembersAction", () => {
   function members(ids: string[]): FormData {
     const data = new FormData();
-    for (const id of ids) data.append("bookIds", id);
+    for (const id of ids) data.append("editionIds", id);
     return data;
   }
 
@@ -113,22 +113,22 @@ describe("setBundleMembersAction", () => {
   it("submits the complete ordered list in the order the form posted it", async () => {
     const result = await setBundleMembersAction(bundleId, initialAdminFormState, members([bookB, bookA]));
 
-    expect(setBundleMembers).toHaveBeenCalledWith(bundleId, { bookIds: [bookB, bookA] });
+    expect(setBundleMembers).toHaveBeenCalledWith(bundleId, { editionIds: [bookB, bookA] });
     expect(result.savedAt).toEqual(expect.any(Number));
     expect(revalidatePath).toHaveBeenCalledWith(editorPath);
   });
 
-  it("refuses an empty membership on the bookIds field", async () => {
+  it("refuses an empty membership on the editionIds field", async () => {
     const result = await setBundleMembersAction(bundleId, initialAdminFormState, members([]));
 
-    expect(result.fieldErrors.bookIds).toBe("Add at least one book.");
+    expect(result.fieldErrors.editionIds).toBe("Add at least one edition.");
     expect(setBundleMembers).not.toHaveBeenCalled();
   });
 
-  it("refuses a repeated book on the bookIds field", async () => {
+  it("refuses a repeated edition on the editionIds field", async () => {
     const result = await setBundleMembersAction(bundleId, initialAdminFormState, members([bookA, bookA]));
 
-    expect(result.fieldErrors.bookIds).toBe("Each book can appear once.");
+    expect(result.fieldErrors.editionIds).toBe("Each edition can appear once.");
     expect(setBundleMembers).not.toHaveBeenCalled();
   });
 });
