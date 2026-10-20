@@ -417,7 +417,7 @@ describe("read boundaries", () => {
     const fake = fakeSupabaseClient({ tables: { books: { data: [row], error: null } } });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
     expect(await listAdminBooks("  GOLDEN  ")).toEqual([{
-      id: bookId, canonicalKey: "the-golden-book", title: "the-golden-book", authorName: "", status: "draft", hasActivePublication: false,
+      id: bookId, canonicalKey: "the-golden-book", title: "the-golden-book", authorName: "", status: "draft", hasActivePublication: false, editions: [],
       readinessIssues: ["missing_localization", "missing_author", "missing_cover", "missing_publication"],
     }]);
     expect(await listAdminBooks("no match")).toEqual([]);

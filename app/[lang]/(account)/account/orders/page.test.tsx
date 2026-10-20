@@ -73,11 +73,11 @@ describe("OrdersPage", () => {
       "href",
       `/en/account/orders/${BUNDLE_ORDER_ID}`,
     );
-    expect(screen.getByText("3 books")).toBeInTheDocument();
+    expect(screen.getByText("3 editions")).toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: "A Book" })).toHaveAttribute("href", `/en/account/orders/${ORDER_ID}`);
     // One count line on the page, for the one bundle order: a single-book row gains nothing.
-    expect(screen.getAllByText(/^\d+ books?$/)).toHaveLength(1);
+    expect(screen.getAllByText(/^\d+ editions?$/)).toHaveLength(1);
   });
 
   it("keeps each order's own total rather than one row's", async () => {

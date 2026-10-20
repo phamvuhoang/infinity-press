@@ -4125,7 +4125,10 @@ export type Database = {
         Returns: Json
       }
       currency_is_payable: { Args: { p_currency: string }; Returns: boolean }
-      delete_book_review: { Args: { p_book_id: string }; Returns: undefined }
+      delete_book_review: {
+        Args: { p_book_id: string; p_edition_id?: string }
+        Returns: undefined
+      }
       fail_notification_outbox: {
         Args: { p_error_code: string; p_id: string; p_lease_token: string }
         Returns: boolean
@@ -4143,7 +4146,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_my_book_review: { Args: { p_book_id: string }; Returns: Json }
+      get_my_book_review: {
+        Args: { p_book_id: string; p_edition_id?: string }
+        Returns: Json
+      }
       get_my_order_gift: {
         Args: { p_order_id: string }
         Returns: {
@@ -4283,6 +4289,10 @@ export type Database = {
       }
       press_move_edition_pointer: {
         Args: { p_edition_id: string; p_publication_id: string }
+        Returns: string
+      }
+      press_review_edition: {
+        Args: { p_book_id: string; p_edition_id: string; p_profile_id: string }
         Returns: string
       }
       publication_readiness_issues: {
@@ -4476,6 +4486,7 @@ export type Database = {
         Args: {
           p_body: string
           p_book_id: string
+          p_edition_id?: string
           p_locale: string
           p_rating: number
         }

@@ -110,7 +110,7 @@ describe("CheckoutStatusPage", () => {
     render(await CheckoutStatusPage({ params }));
 
     expect(screen.getByText("The Starter Bundle")).toBeInTheDocument();
-    expect(screen.getByText("3 books")).toBeInTheDocument();
+    expect(screen.getByText("3 editions")).toBeInTheDocument();
     expect(screen.queryByText("First")).not.toBeInTheDocument();
   });
 
@@ -150,7 +150,7 @@ describe("CheckoutStatusPage", () => {
       "href",
       "/en/read/30000000-0000-4000-8000-000000000001",
     );
-    expect(screen.queryByText("3 books")).not.toBeInTheDocument();
+    expect(screen.queryByText("3 editions")).not.toBeInTheDocument();
     expect(screen.getByText("Your ebook is ready in your library.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go to your library" })).toBeInTheDocument();
   });

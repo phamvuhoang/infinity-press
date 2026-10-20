@@ -39,7 +39,8 @@ export async function seedCatalogBook(options: {
   const author = check(
     await service
       .from("authors")
-      .insert({ canonical_slug: `e2e-author-${suffix}`, display_name: `E2E Author ${suffix}`, status: "published" })
+      // Fixture authors take reader questions: Press defaults the switch off, and the question specs need it on.
+      .insert({ canonical_slug: `e2e-author-${suffix}`, display_name: `E2E Author ${suffix}`, status: "published", accepts_questions: true })
       .select("id")
       .single(),
   );

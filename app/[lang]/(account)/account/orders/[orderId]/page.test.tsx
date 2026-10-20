@@ -102,7 +102,7 @@ describe("OrderPage", () => {
     render(await OrderPage({ params }));
 
     expect(screen.getByRole("heading", { level: 1, name: "The Starter Bundle" })).toBeInTheDocument();
-    expect(screen.getByText("3 books")).toBeInTheDocument();
+    expect(screen.getByText("3 editions")).toBeInTheDocument();
   });
 
   it("sends a completed bundle order to the library, and a completed single book to the reader", async () => {
@@ -127,7 +127,7 @@ describe("OrderPage", () => {
       "href",
       "/en/read/30000000-0000-4000-8000-000000000001",
     );
-    expect(screen.queryByText("3 books")).not.toBeInTheDocument();
+    expect(screen.queryByText("3 editions")).not.toBeInTheDocument();
   });
 
   it("renders the admin's decline reason", async () => {

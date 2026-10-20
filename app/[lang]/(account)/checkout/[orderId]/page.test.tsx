@@ -158,7 +158,7 @@ describe("CheckoutPage", () => {
     render(await CheckoutPage({ params }));
 
     expect(screen.getByRole("button", { name: "Pay" })).toBeInTheDocument();
-    expect(screen.getByText("You already own 1 of 3 books in this bundle.")).toBeInTheDocument();
+    expect(screen.getByText("You already own 1 of 3 editions in this bundle.")).toBeInTheDocument();
   });
 
   // And owning ALL of it replaces Pay with the library, rather than "Read now" for one arbitrary

@@ -13,8 +13,9 @@ values
 insert into public.user_roles (profile_id, role)
 select id, 'admin' from public.profiles where auth_user_id = 'e1300000-0000-0000-0000-000000000023';
 
-insert into public.authors (id, canonical_slug, display_name, status)
-values ('e1330000-0000-0000-0000-000000000021', 's13-q-author', 'S13 Q Author', 'published');
+-- Press: questions are off by default; this file is about the questions path, so the author takes them.
+insert into public.authors (id, canonical_slug, display_name, status, accepts_questions)
+values ('e1330000-0000-0000-0000-000000000021', 's13-q-author', 'S13 Q Author', 'published', true);
 insert into public.books (id, canonical_key, original_language, primary_author_id, status) values
   ('e1320000-0000-0000-0000-000000000021', 's13-q-book', 'vi', 'e1330000-0000-0000-0000-000000000021', 'published'),
   ('e1320000-0000-0000-0000-000000000022', 's13-q-book-draft', 'vi', 'e1330000-0000-0000-0000-000000000021', 'draft');
