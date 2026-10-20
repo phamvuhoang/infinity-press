@@ -115,20 +115,20 @@ select is((select has_sample from public.catalog_book_cards('vi') where book_id 
 select is((select series_slug from public.catalog_book_cards('vi') where book_id = 'd3000000-0000-0000-0000-000000000002'), null, 'a draft series is not on the card');
 
 -- (20)-(23) Book page.
-select is(public.catalog_book_page('vi', 's2-sach-mien-phi') ->> 'alternateSlug', 's2-free-book', 'the book page names the other locale slug');
-select is(public.catalog_book_page('vi', 's2-sach-tra-phi') ->> 'alternateSlug', null, 'no alternate slug without a translation');
+select is(public.catalog_book_page('vi', 's2-sach-mien-phi') -> 'alternateSlugs' ->> 'en', 's2-free-book', 'the book page names the other locale slug');
+select is(public.catalog_book_page('vi', 's2-sach-tra-phi') -> 'alternateSlugs', '{}'::jsonb, 'no alternate slug without a translation');
 select is(public.catalog_book_page('vi', 's2-sach-nhap'), null::jsonb, 'a draft book page is null');
 select is(public.catalog_book_page('vi', 's2-free-book'), null::jsonb, 'an en slug does not resolve under vi');
 
 -- (24)-(34) Entity pages.
 select is(public.catalog_entity_page('author', 'vi', 's2-tac-gia') ->> 'name', 'Tác giả S2', 'a published author page resolves');
-select is(public.catalog_entity_page('author', 'vi', 's2-tac-gia') ->> 'alternateSlug', 's2-author-en', 'the author page names the en slug');
+select is(public.catalog_entity_page('author', 'vi', 's2-tac-gia') -> 'alternateSlugs' ->> 'en', 's2-author-en', 'the author page names the en slug');
 select is(public.catalog_entity_page('series', 'en', 's2-bo-sach'), null::jsonb, 'a series without en copy has no en page');
 select is(public.catalog_entity_page('author', 'vi', 's2-tac-gia-nhap'), null::jsonb, 'a draft author page is null');
 select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-nhap'), null::jsonb, 'a draft topic page is null');
 select is(public.catalog_entity_page('series', 'vi', 's2-bo-sach-nhap'), null::jsonb, 'a draft series page is null');
 select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-tieng-viet') ->> 'name', 'Chủ đề tiếng Việt S2', 'a topic with a vi book resolves in vi');
-select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-tieng-viet') ->> 'alternateSlug', null, 'no alternate slug when the other locale has no visible book');
+select is(public.catalog_entity_page('topic', 'vi', 's2-chu-de-tieng-viet') -> 'alternateSlugs', '{}'::jsonb, 'no alternate slug when the other locale has no visible book');
 select is(public.catalog_entity_page('topic', 'en', 's2-vi-only-topic-en'), null::jsonb, 'a published topic with no visible book in the locale is null');
 select is(public.catalog_entity_page('publisher', 'vi', 's2-tac-gia'), null::jsonb, 'an unknown kind is null');
 select is((select count(*)::bigint from public.catalog_book_cards('ja')), 0::bigint, 'an unsupported locale returns nothing');

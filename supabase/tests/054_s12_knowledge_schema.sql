@@ -191,11 +191,11 @@ select throws_ok(
 select throws_ok(
   $$insert into public.idea_localizations (idea_id, locale, slug, question, short_answer)
     values ('c1240000-0000-4000-8000-000000000002', 'fr', 's12-fr', 'Q?', 'A.')$$,
-  '23514', null, 'an idea locale outside vi|en is refused');
+  '23503', null, 'an idea locale outside the registry is refused');
 select throws_ok(
   $$insert into public.article_localizations (article_id, locale, slug, title, excerpt)
     values ('c1250000-0000-4000-8000-000000000001', 'fr', 's12-fr', 'T', 'E')$$,
-  '23514', null, 'an article locale outside vi|en is refused');
+  '23503', null, 'an article locale outside the registry is refused');
 select throws_ok(
   $$insert into public.idea_localizations (idea_id, locale, slug, question, short_answer)
     values ('c1240000-0000-4000-8000-000000000002', 'vi', 'Not Kebab', 'Q?', 'A.')$$,

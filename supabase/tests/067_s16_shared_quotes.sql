@@ -48,7 +48,7 @@ select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-00
 select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', '<b>x</b>', 'vi')$$, 'EB039', null, 'html is refused');
 select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', repeat('x', 1201), 'vi')$$, 'EB039', null, 'an over-long quote is refused');
 select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', repeat('x', 301), 'vi')$$, 'EB039', null, 'a direct call cannot skip the 300-grapheme rule');
-select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', 'x', 'ja')$$, 'EB039', null, 'an unknown locale is refused');
+select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', 'x', 'fr')$$, 'EB039', null, 'an unknown locale is refused');
 select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-0000000000ff', 'x', 'vi')$$, 'EB039', null, 'an unknown publication is refused with the same code');
 
 create temporary table t_created as

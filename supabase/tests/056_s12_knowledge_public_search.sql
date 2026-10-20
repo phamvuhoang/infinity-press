@@ -173,8 +173,8 @@ select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'relatedIdeaIds',
   'related ideas keep their position and drop draft and archived ideas');
 select is(public.knowledge_idea_page('en', 's12p-small-habits')->'relatedIdeaIds',
   '["d5730000-0000-0000-0000-000000000003"]'::jsonb, 'related ideas drop ideas not localized in the locale');
-select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'alternateSlug', 's12p-small-habits', 'an existing alternate is returned');
-select is(public.knowledge_idea_page('vi', 's12p-an-sang')->'alternateSlug', 'null'::jsonb, 'a missing alternate is null');
+select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'alternateSlugs'->>'en', 's12p-small-habits', 'an existing alternate is returned');
+select is(public.knowledge_idea_page('vi', 's12p-an-sang')->'alternateSlugs', '{}'::jsonb, 'a missing alternate is null');
 select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'seoTitle', 'SEO S12P', 'the page carries its SEO override');
 select ok((public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'createdAt')::timestamptz = '2026-02-01T00:00:00Z'
   and (public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'updatedAt') is not null,
@@ -229,8 +229,8 @@ select ok(public.knowledge_article_page('vi', 's12p-bai-nhap') is null
   and public.knowledge_article_page('vi', 's12p-bai-luu') is null
   and public.knowledge_article_page('en', 's12p-bai-hai') is null
   and public.knowledge_article_page('vi', '../x') is null
-  and public.knowledge_article_page('vi', 's12p-doc-sau')->>'alternateSlug' = 's12p-deep-reading'
-  and public.knowledge_article_page('vi', 's12p-bai-hai')->'alternateSlug' = 'null'::jsonb,
+  and public.knowledge_article_page('vi', 's12p-doc-sau')->'alternateSlugs'->>'en' = 's12p-deep-reading'
+  and public.knowledge_article_page('vi', 's12p-bai-hai')->'alternateSlugs' = '{}'::jsonb,
   'drafts, archives, missing locales and malformed slugs return null; alternates exist only when localized');
 
 -- Backlinks ----------------------------------------------------------------------------------- (45)-(50)

@@ -146,8 +146,8 @@ select results_eq(
 );
 select is(
   (select title_snapshot from public.orders where id = (select order_id from t_orders where label = 'a-first')),
-  'Gói khởi đầu S9',
-  'the order snapshots the Vietnamese bundle title'
+  'S9 Starter Bundle',
+  'the order snapshots the bundle title in the default metadata locale (English)'
 );
 select is(
   (select count(*)::int from public.order_items where order_id = (select order_id from t_orders where label = 'a-first')),

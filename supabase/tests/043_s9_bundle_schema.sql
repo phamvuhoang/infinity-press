@@ -94,7 +94,7 @@ select lives_ok(
 select throws_ok(
   $$insert into public.bundle_localizations (bundle_id, locale, slug, title)
     values ('b7000000-0000-0000-0000-000000000001', 'fr', 'coffret-s9', 'Coffret')$$,
-  '23514', null, 'a locale outside vi|en is refused');
+  '23503', null, 'a locale outside the registry is refused');
 select throws_ok(
   $$insert into public.bundle_localizations (bundle_id, locale, slug, title)
     values ('b7000000-0000-0000-0000-000000000001', 'en', 'Not Kebab', 'S9 Bundle')$$,
