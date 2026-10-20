@@ -12,7 +12,7 @@ export class PaymentProviderDisabledError extends Error {
   }
 }
 
-// The app half of the payments gate (S3 spec 4.2). create_ebook_order checks the database half.
+// The app half of the payments gate (S3 spec 4.2). create_edition_order checks the database half.
 export function arePaymentsEnabled(env: Pick<ServerEnv, "paymentProvider">): boolean {
   return env.paymentProvider !== "disabled";
 }

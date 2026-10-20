@@ -18,10 +18,12 @@ import {
   updateEdition,
 } from "@/lib/data/admin-editions";
 import { fakeSupabaseClient } from "@/lib/data/supabase-test-client";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("next/navigation", () => ({
   notFound: () => {
     throw new Error("NEXT_NOT_FOUND");
@@ -200,7 +202,7 @@ describe("getAdminEdition", () => {
         order_items: { data: null, error: null },
       },
     });
-    vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
+    vi.mocked(createAdminClient).mockReturnValue(fake.client as unknown as ReturnType<typeof createAdminClient>);
 
     const edition = await getAdminEdition(bookId, editionId);
 
@@ -222,7 +224,7 @@ describe("getAdminEdition", () => {
 
   it("is not found when the edition belongs to a different book", async () => {
     const fake = fakeSupabaseClient({ tables: { editions: { data: null, error: null } } });
-    vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
+    vi.mocked(createAdminClient).mockReturnValue(fake.client as unknown as ReturnType<typeof createAdminClient>);
     await expect(getAdminEdition(bookId, editionId)).rejects.toThrow("NEXT_NOT_FOUND");
   });
 });

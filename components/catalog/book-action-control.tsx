@@ -29,7 +29,7 @@ export function BookActionControl({
   locale: Locale;
   copy: Dictionary["catalog"]["actions"];
   // Bound Server Actions from the book page. The control only renders them; the actions and
-  // create_ebook_order/acquire_free_ebook re-check everything.
+  // create_edition_order/acquire_free_edition re-check everything.
   getFreeAction: () => Promise<void>;
   buyAction: () => Promise<void>;
 }) {

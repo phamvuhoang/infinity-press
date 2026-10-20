@@ -48,7 +48,7 @@ export default async function CheckoutStatusPage({ params }: Props) {
   //
   // Payments being off is a separate case from the order being booked under the other provider, and
   // must not borrow its copy: "start a new order from the book page" is advice nobody can act on
-  // while payments are disabled, because create_ebook_order refuses every order (EB011). Their
+  // while payments are disabled, because create_edition_order refuses every order (EB011). Their
   // order is not stale, it is waiting on us.
   const env = getServerEnv();
   const paymentsOff = order.status === "pending" && !arePaymentsEnabled(env);

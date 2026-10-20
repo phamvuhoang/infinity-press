@@ -29,7 +29,7 @@ export async function payOrderAction(locale: string, orderId: string): Promise<v
   if (order.status !== "pending") redirect(commerce.checkoutStatus(order.id));
   if (order.hasAllActiveEntitlements) redirect(commerce.checkout(order.id));
   // The order's own provider, not just the environment's. An order is booked under the provider
-  // that was active when it was created, and nothing moves it afterwards: create_ebook_order
+  // that was active when it was created, and nothing moves it afterwards: create_edition_order
   // cancels and replaces a mismatched pending order, but only for a reader who comes back through
   // Buy. One reaching this action from order history would otherwise be handed to a provider that
   // cannot settle their order - shown the company's bank account for an order no manual surface

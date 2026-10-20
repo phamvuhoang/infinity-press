@@ -62,20 +62,14 @@ select is_empty(
   'authenticated holds none of the revoked write privileges on the public catalog tables'
 );
 select is(
-  (select count(distinct table_name) from information_schema.role_table_grants
-     where table_schema = 'public'
-       and table_name in ('authors', 'books', 'book_localizations', 'editions', 'skus', 'offers')
-       and grantee = 'anon'
-       and privilege_type = 'SELECT')::int,
+  (select count(*) from unnest(array['authors', 'books', 'book_localizations', 'editions', 'skus', 'offers']) as t(name)
+     where has_any_column_privilege('anon', format('public.%I', t.name)::regclass, 'SELECT'))::int,
   6,
   'anon holds SELECT on all six public catalog tables'
 );
 select is(
-  (select count(distinct table_name) from information_schema.role_table_grants
-     where table_schema = 'public'
-       and table_name in ('authors', 'books', 'book_localizations', 'editions', 'skus', 'offers')
-       and grantee = 'authenticated'
-       and privilege_type = 'SELECT')::int,
+  (select count(*) from unnest(array['authors', 'books', 'book_localizations', 'editions', 'skus', 'offers']) as t(name)
+     where has_any_column_privilege('authenticated', format('public.%I', t.name)::regclass, 'SELECT'))::int,
   6,
   'authenticated holds SELECT on all six public catalog tables'
 );

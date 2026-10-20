@@ -32,7 +32,7 @@ export type CustomerOrderDTO = {
   // sale), the single line's title for a book. Never one arbitrary member of a bundle.
   title: string;
   // In persisted order_items.position order, which is a sparse rank and not a dense index:
-  // create_bundle_order numbers the lines after bundle_books.position, and an unpublished member is
+  // create_bundle_order numbers the lines after bundle_editions.position, and an unpublished member is
   // left out, so positions 2, 3 with no 1 is an ordinary order.
   items: CustomerOrderItemDTO[];
   status: OrderStatus;

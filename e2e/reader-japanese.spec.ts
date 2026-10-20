@@ -52,7 +52,9 @@ test("a Japanese book shows ruby, finds spaceless text, keeps a highlight and re
   await expect.poll(() => passageIsVisiblyIntersecting(page, "返事のない手紙"), { timeout: 30_000 }).toBe(true);
 
   // Highlight a Japanese sentence, reload, and it is still there and still drawn.
-  await selectKnownPassage(page, JAPANESE_CORPUS.quote);
+  // A relocation that lands just after the jump clears a selection made at that instant (under a loaded
+  // server it does), so the selection is retried until the toolbar stays.
+  await expect(async () => selectKnownPassage(page, JAPANESE_CORPUS.quote)).toPass({ timeout: 30_000 });
   await page.getByRole("button", { name: "Yellow", exact: true }).click();
   const service = createServiceRoleClient();
   await expect

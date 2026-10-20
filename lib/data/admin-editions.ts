@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import type { CreateEditionInput, CreateOfferInput, EditionInput, EditionReviewInput, ProvenanceInput } from "@/lib/catalog/schemas";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 // Edition administration (spec section 6). Every function runs requireAdmin() before building a
@@ -193,7 +194,9 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
   await requireAdmin();
   if (!uuidPattern.test(bookId) || !uuidPattern.test(editionId)) notFound();
 
-  const supabase = await createClient();
+  // The editorial evidence columns are not granted to the API roles (they are internal), so this read
+  // runs with the service role, only after the admin gate above.
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("editions")
     .select(

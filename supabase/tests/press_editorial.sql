@@ -1,4 +1,9 @@
 begin;
+
+-- Editorial columns are not granted to the API roles; the test reads them as the table owner.
+create function public.t_edition_row(p_id uuid) returns public.editions language sql security definer set search_path = '' as $f$
+  select * from public.editions where id = p_id $f$;
+grant execute on function public.t_edition_row(uuid) to authenticated, anon;
 select plan(41);
 
 -- Press Task 9: provenance, editorial approval before publishing, and reader error reports.
@@ -36,15 +41,15 @@ select set_config('request.jwt.claim.sub', 'ec100000-0000-0000-0000-000000000001
 -- (1)-(4) An unreviewed edition cannot be published; the reason is named.
 select throws_ok($$select public.publish_publication('ec600000-0000-0000-0000-000000000001')$$, 'EB012', null, 'an unreviewed edition cannot go live');
 select is(public.publication_readiness_issues('ec600000-0000-0000-0000-000000000001'), array['editorial_unreviewed'], 'and the readiness list says why');
-select is((select editorial_state from public.editions where id = 'ec400000-0000-0000-0000-000000000001'), 'unreviewed', 'new editions start unreviewed');
+select is((select editorial_state from public.t_edition_row('ec400000-0000-0000-0000-000000000001')), 'unreviewed', 'new editions start unreviewed');
 select is((select status::text from public.editions where id = 'ec400000-0000-0000-0000-000000000001'), 'draft', 'and nothing changed');
 
 -- (5)-(9) Provenance is recorded by admins only, and approval needs the evidence.
 select throws_ok($$select public.admin_set_edition_review('ec400000-0000-0000-0000-000000000001', 'approved', null)$$, 'EB044', null, 'approval needs the translation source, rights note and territories');
 select lives_ok($$select public.admin_save_edition_provenance('ec400000-0000-0000-0000-000000000001', 'Original text: 1912 edition', 'Translated 1925 by T. Translator', 'Public domain in the origin country; see file.', 'Worldwide except where local law differs')$$, 'an admin records the provenance');
 select lives_ok($$select public.admin_set_edition_review('ec400000-0000-0000-0000-000000000001', 'approved', 'Checked against the scan.')$$, 'and approves it');
-select is((select reviewed_by from public.editions where id = 'ec400000-0000-0000-0000-000000000001'), (select admin_id from t_p), 'the reviewer is the acting admin');
-select ok((select reviewed_at is not null from public.editions where id = 'ec400000-0000-0000-0000-000000000001'), 'and the date is recorded');
+select is((select reviewed_by from public.t_edition_row('ec400000-0000-0000-0000-000000000001')), (select admin_id from t_p), 'the reviewer is the acting admin');
+select ok((select reviewed_at is not null from public.t_edition_row('ec400000-0000-0000-0000-000000000001')), 'and the date is recorded');
 
 -- (10)-(12) Approved: it publishes. The other edition is untouched.
 select lives_ok($$select public.publish_publication('ec600000-0000-0000-0000-000000000001')$$, 'an approved edition publishes');
@@ -59,13 +64,13 @@ select throws_ok($$select public.admin_set_edition_review('ec400000-0000-0000-00
 
 -- (17)-(19) Changing the evidence after approval withdraws the approval.
 select lives_ok($$select public.admin_save_edition_provenance('ec400000-0000-0000-0000-000000000001', 'Original text: 1912 edition', 'Translated 1925 by T. Translator', 'Rights note revised.', 'Worldwide')$$, 'the rights note is revised after approval');
-select is((select editorial_state from public.editions where id = 'ec400000-0000-0000-0000-000000000001'), 'unreviewed', 'the approval no longer stands');
-select ok((select reviewed_by is null and reviewed_at is null from public.editions where id = 'ec400000-0000-0000-0000-000000000001'), 'and its reviewer and date are cleared with it');
+select is((select editorial_state from public.t_edition_row('ec400000-0000-0000-0000-000000000001')), 'unreviewed', 'the approval no longer stands');
+select ok((select reviewed_by is null and reviewed_at is null from public.t_edition_row('ec400000-0000-0000-0000-000000000001')), 'and its reviewer and date are cleared with it');
 
 -- (20)-(21) Re-saving identical evidence changes nothing; non-admins cannot decide.
 select lives_ok($$select public.admin_set_edition_review('ec400000-0000-0000-0000-000000000001', 'approved', null)$$, 'it is approved again');
 select lives_ok($$select public.admin_save_edition_provenance('ec400000-0000-0000-0000-000000000001', 'Original text: 1912 edition', 'Translated 1925 by T. Translator', 'Rights note revised.', 'Worldwide')$$, 'saving the same evidence again');
-select is((select editorial_state from public.editions where id = 'ec400000-0000-0000-0000-000000000001'), 'approved', 'keeps the approval');
+select is((select editorial_state from public.t_edition_row('ec400000-0000-0000-0000-000000000001')), 'approved', 'keeps the approval');
 
 reset role;
 -- The reader holds the Japanese... no: the English edition, now published and approved.

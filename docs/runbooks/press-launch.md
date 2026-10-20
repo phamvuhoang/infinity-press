@@ -54,9 +54,19 @@ the cloud project.
 | Gate | Command | Result |
 | --- | --- | --- |
 | Lint, types, unit tests, build, prerender assertions | `npm run check` | pass (3438 unit tests; one pre-existing lint warning class remains, 0 errors) |
-| Database | `supabase db reset` then `supabase test db` on the owned local workdir | pass (82 files) |
+| Database | `supabase db reset` then `supabase test db` on the owned local workdir | pass (84 files) |
 | Legacy upgrade | `scripts/rehearse-upgrade.sh <workdir>` | clean fixture maps every row to its edition and keeps progress, annotations, pending order and gift; the ambiguous fixture stops the migration, names the row id, leaks no email, leaves the schema unchanged |
 | End to end | `npx playwright test --project=chromium`, then `--project=chromium-manual` | see "End to end" below |
+| Japanese reader, three engines | `e2e/reader-japanese.spec.ts` on Chromium, Firefox, WebKit | pass |
+
+### End to end
+
+`--project=chromium`: 108 tests; the last full run passed 107 and the one failure (the Japanese
+selection toolbar, which a late relocation could clear under a loaded server) was fixed in the spec by
+retrying the selection and then passed with the specs that run before it. Earlier failures in the same
+branch were fixed the same way: `admin-catalog` (publishing needs editorial approval) and `reader-voice`
+(a raw insert lacked `edition_id`). The final review's fixes were verified with `press_review_fixes.sql`.
+`--project=chromium-manual` | see "End to end" below |
 | Japanese reader, three engines | `e2e/reader-japanese.spec.ts` on Chromium, Firefox, WebKit | pass |
 
 ### End to end

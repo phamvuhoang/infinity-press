@@ -87,6 +87,10 @@ insert into public.offers (id, sku_id, market_code, currency, price_minor) value
   ('e7800000-0000-0000-0000-000000000006', 'e7700000-0000-0000-0000-000000000004', 'VN', 'VND', 30000),
   ('e7800000-0000-0000-0000-000000000007', 'e7700000-0000-0000-0000-000000000003', 'ZZ', 'VND', 0);
 update public.offers set active = false where id = 'e7800000-0000-0000-0000-000000000007';
+insert into public.edition_default_offers (edition_id, sku_id, offer_id) values
+  ('e7400000-0000-0000-0000-000000000001', 'e7700000-0000-0000-0000-000000000001', 'e7800000-0000-0000-0000-000000000001'),
+  ('e7400000-0000-0000-0000-000000000002', 'e7700000-0000-0000-0000-000000000002', 'e7800000-0000-0000-0000-000000000002'),
+  ('e7400000-0000-0000-0000-000000000003', 'e7700000-0000-0000-0000-000000000003', 'e7800000-0000-0000-0000-000000000005');
 
 -- (1)-(3) Settings: manual is the default provider and only VND can be paid. The row itself is set
 -- here, because an earlier file in the suite commits its own settings from another connection.
@@ -127,8 +131,19 @@ select throws_ok($$select public.create_edition_order('e7400000-0000-0000-0000-0
 select throws_ok($$select public.create_edition_order('e7400000-0000-0000-0000-000000000001', 'e7800000-0000-0000-0000-000000000005')$$, 'EB012', null, 'an offer of another edition is not purchasable here');
 select throws_ok($$select public.create_edition_order('e7400000-0000-0000-0000-000000000003', 'e7800000-0000-0000-0000-000000000007')$$, 'EB012', null, 'an inactive zero-price offer is not purchasable');
 select throws_ok($$select public.create_edition_order('e7400000-0000-0000-0000-000000000004', 'e7800000-0000-0000-0000-000000000006')$$, 'EB012', null, 'a draft edition is not purchasable');
+-- The offer on show is the one that sells, so the foreign-currency offers are made the default first.
+reset role;
+update public.edition_default_offers set offer_id = 'e7800000-0000-0000-0000-000000000003' where edition_id = 'e7400000-0000-0000-0000-000000000002';
+update public.edition_default_offers set offer_id = 'e7800000-0000-0000-0000-000000000004' where edition_id = 'e7400000-0000-0000-0000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e7100000-0000-0000-0000-000000000002', true);
 select throws_ok($$select public.create_edition_order('e7400000-0000-0000-0000-000000000002', 'e7800000-0000-0000-0000-000000000003')$$, 'EB041', null, 'a JPY offer cannot be paid by transfer');
 select throws_ok($$select public.create_edition_order('e7400000-0000-0000-0000-000000000001', 'e7800000-0000-0000-0000-000000000004')$$, 'EB041', null, 'a USD offer cannot be paid by transfer');
+reset role;
+update public.edition_default_offers set offer_id = 'e7800000-0000-0000-0000-000000000002' where edition_id = 'e7400000-0000-0000-0000-000000000002';
+update public.edition_default_offers set offer_id = 'e7800000-0000-0000-0000-000000000001' where edition_id = 'e7400000-0000-0000-0000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e7100000-0000-0000-0000-000000000002', true);
 select is((select count(*) from public.orders where profile_id = (select r1 from t_p)), 1::bigint, 'and none of those left an order behind');
 select set_config('request.jwt.claim.sub', 'e7100000-0000-0000-0000-000000000003', true);
 select throws_ok($$select public.create_edition_order('e7400000-0000-0000-0000-000000000001', 'e7800000-0000-0000-0000-000000000001')$$, 'EB005', null, 'a reader with no verified email cannot buy');

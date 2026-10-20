@@ -111,6 +111,7 @@ describe("createBundleOrder", () => {
     ["EB011", PaymentsDisabledError],
     ["EB027", NotPurchasableError],
     ["EB013", AlreadyOwnedError],
+    ["EB041", CurrencyNotPayableError],
   ] as const)("maps %s to a typed error", async (code, ErrorClass) => {
     rpcClient({ data: null, error: { code, message: "x" } });
     await expect(createBundleOrder("en", BUNDLE_ID)).rejects.toThrow(ErrorClass);

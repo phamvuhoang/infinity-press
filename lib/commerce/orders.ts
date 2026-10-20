@@ -73,6 +73,7 @@ export async function createBundleOrder(locale: Locale, bundleId: string): Promi
     // EB027 is the bundle's EB012: unpublished, unpriced, or nothing published left to sell.
     if (error.code === "EB027") throw new NotPurchasableError();
     if (error.code === "EB013") throw new AlreadyOwnedError();
+    if (error.code === "EB041") throw new CurrencyNotPayableError();
     throw new Error(`createBundleOrder: create_bundle_order failed: ${error.message}`);
   }
   if (typeof data !== "string" || data.length === 0) {
