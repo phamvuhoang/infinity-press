@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  ChooseEditionToReviewError,
   deleteBookReview,
   getBookReviews,
   getMyBookReview,
@@ -34,6 +35,7 @@ const pub = {
   authorReply: null,
   authorReplyAt: null,
   publishedAt: "2026-10-01T00:00:00+00:00",
+  languageCode: "ja",
 };
 
 function rpcResult(data: unknown, error: { code?: string; message?: string } | null = null) {
@@ -88,5 +90,21 @@ describe("review DAL", () => {
     await expect(deleteBookReview(BOOK_ID)).resolves.toBeUndefined();
     rpcResult(null, { code: "XX000" });
     await expect(deleteBookReview(BOOK_ID)).rejects.toThrow("deleteBookReview failed.");
+  });
+
+  it("sends the edition only when the reader named one", async () => {
+    const rpc = rpcResult(mine);
+    await getMyBookReview(BOOK_ID);
+    expect(rpc).toHaveBeenLastCalledWith("get_my_book_review", { p_book_id: BOOK_ID });
+    await getMyBookReview(BOOK_ID, "edition-1");
+    expect(rpc).toHaveBeenLastCalledWith("get_my_book_review", { p_book_id: BOOK_ID, p_edition_id: "edition-1" });
+    await deleteBookReview(BOOK_ID, "edition-1");
+    expect(rpc).toHaveBeenLastCalledWith("delete_book_review", { p_book_id: BOOK_ID, p_edition_id: "edition-1" });
+  });
+
+  it("turns EB042 into ChooseEditionToReviewError", async () => {
+    rpcResult(null, { code: "EB042", message: "x" });
+    await expect(getMyBookReview(BOOK_ID)).rejects.toBeInstanceOf(ChooseEditionToReviewError);
+    await expect(submitBookReview(BOOK_ID, { rating: 5, body: "Hay" }, "vi")).rejects.toBeInstanceOf(ChooseEditionToReviewError);
   });
 });

@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ReviewPage from "@/app/[lang]/(account)/library/reviews/[bookId]/page";
 import { requireUser } from "@/lib/auth/session";
-import { getActiveEntitlementBookIds, getBookCardById } from "@/lib/data/catalog";
+import { getBookCardById } from "@/lib/data/catalog";
+import { getOwnedEditionsOfBook } from "@/lib/data/library";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getMyBookReview } from "@/lib/data/reviews";
 
@@ -17,7 +18,8 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
-vi.mock("@/lib/data/catalog", () => ({ getActiveEntitlementBookIds: vi.fn(), getBookCardById: vi.fn() }));
+vi.mock("@/lib/data/catalog", () => ({ getBookCardById: vi.fn() }));
+vi.mock("@/lib/data/library", () => ({ getOwnedEditionsOfBook: vi.fn() }));
 vi.mock("@/lib/data/profiles", () => ({ getCurrentProfile: vi.fn() }));
 vi.mock("@/lib/data/reviews", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/data/reviews")>()),
@@ -26,6 +28,8 @@ vi.mock("@/lib/data/reviews", async (importOriginal) => ({
 
 const bookId = "00000000-0000-4000-8000-0000000000b1";
 const params = Promise.resolve({ lang: "vi", bookId });
+const english = { editionId: "00000000-0000-4000-8000-0000000000e1", languageCode: "en", title: "Sách" };
+const japanese = { editionId: "00000000-0000-4000-8000-0000000000e2", languageCode: "ja", title: "本" };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -39,14 +43,14 @@ afterEach(cleanup);
 
 describe("ReviewPage", () => {
   it("shows the form to an owner", async () => {
-    vi.mocked(getActiveEntitlementBookIds).mockResolvedValue(new Set([bookId]));
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([english]);
     render(await ReviewPage({ params }));
-    expect(getActiveEntitlementBookIds).toHaveBeenCalledWith("p1");
+    expect(getOwnedEditionsOfBook).toHaveBeenCalledWith("vi", bookId);
     expect(screen.getByRole("button", { name: "Lưu đánh giá" })).toBeInTheDocument();
   });
 
   it("shows only the not-owned message to a non-owner", async () => {
-    vi.mocked(getActiveEntitlementBookIds).mockResolvedValue(new Set());
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([]);
     render(await ReviewPage({ params }));
     expect(screen.getByText(/Bạn cần sở hữu cuốn sách này để đánh giá/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Về trang sách" })).toHaveAttribute("href", "/vi/books/sach");
@@ -54,7 +58,7 @@ describe("ReviewPage", () => {
   });
 
   it("keeps a revoked owner's review readable and deletable without edit controls", async () => {
-    vi.mocked(getActiveEntitlementBookIds).mockResolvedValue(new Set());
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([]);
     vi.mocked(getMyBookReview).mockResolvedValue({
       id: "r1", rating: 4, body: "My earlier review", status: "published",
       authorReply: "Thank you", authorReplyAt: "2026-10-01T00:00:00Z",
@@ -79,5 +83,28 @@ describe("ReviewPage", () => {
     vi.mocked(requireUser).mockRejectedValue(new Error("NEXT_REDIRECT"));
     await expect(ReviewPage({ params })).rejects.toThrow("NEXT_REDIRECT");
     expect(getMyBookReview).not.toHaveBeenCalled();
+  });
+
+  it("asks a reader who holds two editions which one they are reviewing", async () => {
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([english, japanese]);
+    render(await ReviewPage({ params }));
+    expect(screen.getByText("Bạn muốn đánh giá ấn bản nào?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "日本語" })).toHaveAttribute("href", `/vi/library/reviews/${bookId}?edition=${japanese.editionId}`);
+    expect(screen.queryByRole("button", { name: "Lưu đánh giá" })).not.toBeInTheDocument();
+    expect(getMyBookReview).not.toHaveBeenCalled();
+  });
+
+  it("opens the form for the edition they chose, and reads that edition's review", async () => {
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([english, japanese]);
+    render(await ReviewPage({ params, searchParams: Promise.resolve({ edition: japanese.editionId }) }));
+    expect(getMyBookReview).toHaveBeenCalledWith(bookId, japanese.editionId);
+    expect(screen.getByRole("button", { name: "Lưu đánh giá" })).toBeInTheDocument();
+  });
+
+  it("ignores an edition they do not hold", async () => {
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([english, japanese]);
+    render(await ReviewPage({ params, searchParams: Promise.resolve({ edition: "00000000-0000-4000-8000-0000000000e9" }) }));
+    expect(screen.queryByRole("button", { name: "Lưu đánh giá" })).not.toBeInTheDocument();
+    expect(screen.getByText("Bạn muốn đánh giá ấn bản nào?")).toBeInTheDocument();
   });
 });

@@ -15,6 +15,10 @@ values ('e1320000-0000-0000-0000-000000000011', 's13-adm-book', 'vi', 'e1330000-
 insert into public.book_localizations (book_id, locale, slug, title)
 values ('e1320000-0000-0000-0000-000000000011', 'vi', 's13-adm-book', 'Sách S13 Admin');
 
+-- Press: every work has an edition, and access (hence a review) is per edition.
+insert into public.editions (book_id, language_code)
+select b.id, 'vi' from public.books b where not exists (select 1 from public.editions e where e.book_id = b.id);
+
 insert into public.entitlements (id, profile_id, book_id, source_type, actor_profile_id, reason, status)
 select 'e1340000-0000-0000-0000-000000000011', p.id, 'e1320000-0000-0000-0000-000000000011', 'admin_grant', p.id, 'fixture', 'active'
 from public.profiles p where p.auth_user_id = 'e1300000-0000-0000-0000-000000000011';

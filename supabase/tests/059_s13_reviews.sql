@@ -19,6 +19,10 @@ insert into public.book_localizations (book_id, locale, slug, title) values
   ('e1320000-0000-0000-0000-000000000001', 'vi', 's13-book', 'Sách S13'),
   ('e1320000-0000-0000-0000-000000000002', 'vi', 's13-book-draft', 'Nháp S13');
 
+-- Press: every work has an edition, and access (hence a review) is per edition.
+insert into public.editions (book_id, language_code)
+select b.id, 'vi' from public.books b where not exists (select 1 from public.editions e where e.book_id = b.id);
+
 insert into public.entitlements (id, profile_id, book_id, source_type, actor_profile_id, reason, status)
 select 'e1340000-0000-0000-0000-000000000001', p.id, 'e1320000-0000-0000-0000-000000000001', 'admin_grant', p.id, 'fixture', 'active'
 from public.profiles p where p.auth_user_id = 'e1300000-0000-0000-0000-000000000001';
@@ -127,7 +131,7 @@ reset role;
 
 -- Draft book: a reader reads nothing public even with an entitlement row ---------------------
 select is(public.catalog_book_reviews('e1320000-0000-0000-0000-000000000002', 5), '[]'::jsonb, 'a draft book has no public reviews');
-select is(has_function_privilege('anon', 'public.submit_book_review(uuid, integer, text, text)', 'EXECUTE'), false, 'anon cannot submit');
+select is(has_function_privilege('anon', 'public.submit_book_review(uuid, integer, text, text, uuid)', 'EXECUTE'), false, 'anon cannot submit');
 select is(has_function_privilege('anon', 'public.catalog_book_reviews(uuid, integer)', 'EXECUTE'), true, 'anon can read public reviews');
 
 select * from finish();

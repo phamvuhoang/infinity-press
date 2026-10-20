@@ -146,7 +146,7 @@ test("a reader asks from an idea, the admin answers with a new idea, and publish
   const askBody = `Làm sao để đọc chậm hơn ${suffix}?`;
 
   await signInAs(page, reader.email, `/vi/ideas/${ideaSlug}`);
-  await page.getByRole("link", { name: "Hỏi tác giả về điều này" }).click();
+  await page.getByRole("link", { name: "Hỏi ban biên tập về điều này" }).click();
   await expect(page).toHaveURL(new RegExp(`/vi/ask\\?idea=${ideaId}$`));
   await page.getByLabel("Câu hỏi của bạn").fill(askBody);
   await page.getByRole("button", { name: "Gửi câu hỏi" }).click();

@@ -30,7 +30,9 @@ export function getCatalogRoutes(locale: Locale) {
     read: (bookId: string) => withLocale(locale, `/read/${bookId}`),
     readEdition: (editionId: string) => withLocale(locale, `/read/editions/${editionId}`),
     // S13 reader voice: the review form is a library page; ask-the-author is prefilled by query.
-    review: (bookId: string) => withLocale(locale, `/library/reviews/${bookId}`),
+    // A reader holding several editions of a work names the one they are reviewing.
+    review: (bookId: string, editionId?: string) =>
+      `${withLocale(locale, `/library/reviews/${bookId}`)}${editionId ? `?${new URLSearchParams({ edition: editionId })}` : ""}`,
     ask: (target: { book: string } | { idea: string }) => `${withLocale(locale, "/ask")}?${new URLSearchParams(target)}`,
     signInFor: (path: string) => `${withLocale(locale, "/sign-in")}?${new URLSearchParams({ next: path })}`,
   };

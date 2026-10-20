@@ -15,6 +15,16 @@ const ENTITLEMENT_REQUIRED = "EB034";
 // delete_book_review raises this when there is nothing to delete; deleting twice is not an error.
 const NO_DATA_FOUND = "P0002";
 
+// EB042: the reader holds several editions of the work and did not say which one they are reviewing.
+const CHOOSE_EDITION = "EB042";
+
+export class ChooseEditionToReviewError extends Error {
+  constructor() {
+    super("Choose which edition to review.");
+    this.name = "ChooseEditionToReviewError";
+  }
+}
+
 export class NotEntitledToReviewError extends Error {
   constructor() {
     super("An active entitlement is required to review this book.");
@@ -30,6 +40,8 @@ export type PublicReview = {
   authorReply: string | null;
   authorReplyAt: string | null;
   publishedAt: string;
+  // The edition the review is about, so a reader can tell which translation was judged.
+  languageCode: string | null;
 };
 
 export type MyReview = {
@@ -51,6 +63,7 @@ const publicReviewSchema = z.object({
   authorReply: z.string().nullable(),
   authorReplyAt: z.string().nullable(),
   publishedAt: z.string(),
+  languageCode: z.string().nullable().default(null),
 });
 
 const myReviewSchema = z.object({
@@ -94,25 +107,34 @@ export const getBookReviews = cache(async (bookId: string, limit = 5): Promise<P
   return parsed.success ? parsed.data : [];
 });
 
-export async function getMyBookReview(bookId: string): Promise<MyReview | null> {
-  const { data, error } = await (await createClient()).rpc("get_my_book_review", { p_book_id: bookId });
+export async function getMyBookReview(bookId: string, editionId?: string): Promise<MyReview | null> {
+  const { data, error } = await (await createClient()).rpc("get_my_book_review", {
+    p_book_id: bookId,
+    ...(editionId ? { p_edition_id: editionId } : {}),
+  });
+  if (error?.code === CHOOSE_EDITION) throw new ChooseEditionToReviewError();
   if (error) throw await requestFailure("getMyBookReview", error);
   return data === null ? null : myReviewSchema.parse(data);
 }
 
-export async function submitBookReview(bookId: string, input: ReviewInput, locale: Locale): Promise<MyReview> {
+export async function submitBookReview(bookId: string, input: ReviewInput, locale: Locale, editionId?: string): Promise<MyReview> {
   const { data, error } = await (await createClient()).rpc("submit_book_review", {
     p_book_id: bookId,
     p_rating: input.rating,
     p_body: input.body,
     p_locale: locale,
+    ...(editionId ? { p_edition_id: editionId } : {}),
   });
   if (error?.code === ENTITLEMENT_REQUIRED) throw new NotEntitledToReviewError();
+  if (error?.code === CHOOSE_EDITION) throw new ChooseEditionToReviewError();
   if (error) throw await requestFailure("submitBookReview", error);
   return myReviewSchema.parse(data);
 }
 
-export async function deleteBookReview(bookId: string): Promise<void> {
-  const { error } = await (await createClient()).rpc("delete_book_review", { p_book_id: bookId });
+export async function deleteBookReview(bookId: string, editionId?: string): Promise<void> {
+  const { error } = await (await createClient()).rpc("delete_book_review", {
+    p_book_id: bookId,
+    ...(editionId ? { p_edition_id: editionId } : {}),
+  });
   if (error && error.code !== NO_DATA_FOUND) throw await requestFailure("deleteBookReview", error);
 }

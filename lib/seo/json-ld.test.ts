@@ -284,7 +284,7 @@ describe("bookSchema", () => {
 });
 
 describe("bookSchema reviews", () => {
-  const reviews = [{ id: "r1", reviewerName: "Minh Anh", rating: 5, body: "Rất hay.", authorReply: "Cảm ơn", authorReplyAt: "2026-09-13T00:00:00+00:00", publishedAt: "2026-09-12T00:00:00+00:00" }];
+  const reviews = [{ id: "r1", reviewerName: "Minh Anh", rating: 5, body: "Rất hay.", authorReply: "Cảm ơn", authorReplyAt: "2026-09-13T00:00:00+00:00", publishedAt: "2026-09-12T00:00:00+00:00", languageCode: null }];
   it("emits aggregateRating and review from the rendered reviews", () => {
     const schema = bookSchema({ siteUrl, locale: "vi", path: "/vi/books/x", paymentsEnabled: true, book: { ...book, reviewSummary: { count: 12, average: 4.6 } }, reviews });
     expect(schema.aggregateRating).toEqual({ "@type": "AggregateRating", ratingValue: 4.6, reviewCount: 12, bestRating: 5, worstRating: 1 });

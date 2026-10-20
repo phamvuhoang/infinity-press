@@ -15,6 +15,7 @@ const review: AdminReviewDTO = {
   revision: 7,
   bookId: "b1",
   bookTitle: "The Quiet Library",
+  languageCode: "ja",
   reviewerName: "An Nguyen",
   rating: 4,
   body: "Lovely <b>read</b>.",
@@ -46,7 +47,7 @@ afterEach(cleanup);
 it("is a table row named by the book title with a link, the stars and an escaped body", () => {
   renderRow();
   const row = screen.getByRole("row", { name: /The Quiet Library/ });
-  expect(within(row).getByRole("link", { name: "The Quiet Library" })).toHaveAttribute("href", "/admin/books/b1");
+  expect(within(row).getByRole("link", { name: "The Quiet Library (ja)" })).toHaveAttribute("href", "/admin/books/b1");
   expect(within(row).getByText("An Nguyen")).toBeInTheDocument();
   expect(within(row).getByText("★★★★☆")).toBeInTheDocument();
   expect(within(row).getByText("Lovely <b>read</b>.")).toBeInTheDocument();

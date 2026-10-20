@@ -67,6 +67,7 @@ export function ReviewRow({ review }: { review: AdminReviewDTO }) {
           href={`/admin/books/${review.bookId}`}
         >
           {review.bookTitle}
+          {review.languageCode ? ` (${review.languageCode})` : ""}
         </Link>
       </th>
       <td className="py-3 pr-3">{review.reviewerName ?? "Reader"}</td>

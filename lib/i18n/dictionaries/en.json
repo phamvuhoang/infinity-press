@@ -177,8 +177,8 @@
       "countOther": "{count} reviews",
       "average": "Average rating",
       "write": "Write a review",
-      "ask": "Ask the author",
-      "authorReply": "Reply from the author:",
+      "ask": "Ask the editors",
+      "authorReply": "Reply from the editors:",
       "anonymousReader": "Reader",
       "empty": "No reviews yet."
     },
@@ -261,7 +261,7 @@
       "relatedBooks": "Related books",
       "relatedIdeas": "Related ideas",
       "topics": "Topics",
-      "ask": "Ask the author about this"
+      "ask": "Ask the editors about this"
     },
     "article": {
       "eyebrow": "Article",
@@ -440,6 +440,7 @@
     },
     "reviews": {
       "eyebrow": "Your review",
+      "chooseEdition": "Which edition are you reviewing?",
       "ratingLabel": "Rating",
       "bodyLabel": "Review",
       "counter": "{count}/1000",
@@ -452,7 +453,7 @@
         "published": "Published",
         "rejected": "Not published"
       },
-      "authorReply": "Reply from the author",
+      "authorReply": "Reply from the editors",
       "errors": {
         "notEntitled": "You need to own this book to review it.",
         "failed": "Could not save. Try again.",
@@ -462,12 +463,12 @@
       "saved": "Saved. Your review will appear once it is approved."
     },
     "questions": {
-      "title": "Ask the author",
+      "title": "Ask the editors",
       "about": "About: {title}",
       "bodyLabel": "Your question",
       "counter": "{count}/500",
       "send": "Send question",
-      "sent": "Sent. If the author answers, you will get an email.",
+      "sent": "Sent. If the editors answer, you will get an email.",
       "mineTitle": "Your questions",
       "readAnswer": "Read the answer",
       "states": {
@@ -476,7 +477,7 @@
         "archived": "Archived"
       },
       "errors": {
-        "tooMany": "You already have 5 questions waiting for an answer. Wait for the author to answer first.",
+        "tooMany": "You already have 5 questions waiting for an answer. Wait for the editors to answer first.",
         "targetMissing": "This content no longer exists.",
         "failed": "Could not send. Try again.",
         "body": "Write your question (up to 500 characters, no HTML).",
@@ -605,7 +606,7 @@
     "relatedBooks": "Continue reading",
     "noRelatedBooks": "No recommendations yet.",
     "rateBook": "Rate this book",
-    "askAuthor": "Ask the author",
+    "askAuthor": "Ask the editors",
     "chooseEdition": {
       "title": "Choose an edition to read",
       "description": "You own more than one language edition of this work."
@@ -640,7 +641,7 @@
       "signOff": "Happy reading,\nInfinity Books Press"
     },
     "questionAnswered": {
-      "subject": "The author answered your question",
+      "subject": "The editors answered your question",
       "greetingNamed": "Hi {name},",
       "greetingGeneric": "Hi,",
       "body": "The question you sent on Infinity Books Press has been answered in: “{title}”.",
@@ -648,14 +649,14 @@
       "signOff": "Happy reading,\nInfinity Books Press"
     },
     "reviewReplied": {
-      "subjectWithTitle": "The author replied to your review of “{title}”",
-      "subjectGeneric": "The author replied to your review",
+      "subjectWithTitle": "The editors replied to your review of “{title}”",
+      "subjectGeneric": "The editors replied to your review",
       "greetingNamed": "Hi {name},",
       "greetingGeneric": "Hi,",
-      "introWithTitle": "The author replied to the review you wrote of “{title}” on Infinity Books Press.",
-      "introGeneric": "The author replied to the review you wrote on Infinity Books Press.",
+      "introWithTitle": "The editors replied to the review you wrote of “{title}” on Infinity Books Press.",
+      "introGeneric": "The editors replied to the review you wrote on Infinity Books Press.",
       "yourReview": "Your review ({rating}/5):",
-      "authorReply": "The author's reply:",
+      "authorReply": "The editors' reply:",
       "open": "Open your review",
       "signOff": "Happy reading,\nInfinity Books Press"
     }

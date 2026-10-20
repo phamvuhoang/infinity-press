@@ -177,8 +177,8 @@
       "countOther": "{count} đánh giá",
       "average": "Điểm trung bình",
       "write": "Viết đánh giá",
-      "ask": "Hỏi tác giả",
-      "authorReply": "Phản hồi từ tác giả:",
+      "ask": "Hỏi ban biên tập",
+      "authorReply": "Phản hồi từ ban biên tập:",
       "anonymousReader": "Độc giả",
       "empty": "Chưa có đánh giá."
     },
@@ -261,7 +261,7 @@
       "relatedBooks": "Sách liên quan",
       "relatedIdeas": "Ý tưởng liên quan",
       "topics": "Chủ đề",
-      "ask": "Hỏi tác giả về điều này"
+      "ask": "Hỏi ban biên tập về điều này"
     },
     "article": {
       "eyebrow": "Bài viết",
@@ -440,6 +440,7 @@
     },
     "reviews": {
       "eyebrow": "Đánh giá của bạn",
+      "chooseEdition": "Bạn muốn đánh giá ấn bản nào?",
       "ratingLabel": "Số sao",
       "bodyLabel": "Nhận xét",
       "counter": "{count}/1000",
@@ -452,7 +453,7 @@
         "published": "Đã đăng",
         "rejected": "Không được đăng"
       },
-      "authorReply": "Phản hồi từ tác giả",
+      "authorReply": "Phản hồi từ ban biên tập",
       "errors": {
         "notEntitled": "Bạn cần sở hữu cuốn sách này để đánh giá.",
         "failed": "Không lưu được. Thử lại.",
@@ -462,12 +463,12 @@
       "saved": "Đã lưu. Đánh giá sẽ hiện sau khi được duyệt."
     },
     "questions": {
-      "title": "Hỏi tác giả",
+      "title": "Hỏi ban biên tập",
       "about": "Về: {title}",
       "bodyLabel": "Câu hỏi của bạn",
       "counter": "{count}/500",
       "send": "Gửi câu hỏi",
-      "sent": "Đã gửi. Nếu tác giả trả lời, bạn sẽ nhận được email.",
+      "sent": "Đã gửi. Nếu ban biên tập trả lời, bạn sẽ nhận được email.",
       "mineTitle": "Câu hỏi của bạn",
       "readAnswer": "Đọc câu trả lời",
       "states": {
@@ -476,7 +477,7 @@
         "archived": "Đã lưu trữ"
       },
       "errors": {
-        "tooMany": "Bạn đang có 5 câu hỏi chờ trả lời. Hãy đợi tác giả trả lời trước.",
+        "tooMany": "Bạn đang có 5 câu hỏi chờ trả lời. Hãy đợi ban biên tập trả lời trước.",
         "targetMissing": "Nội dung này không còn tồn tại.",
         "failed": "Không gửi được. Thử lại.",
         "body": "Hãy viết câu hỏi (tối đa 500 ký tự, không dùng HTML).",
@@ -605,7 +606,7 @@
     "relatedBooks": "Đọc tiếp",
     "noRelatedBooks": "Chưa có gợi ý sách.",
     "rateBook": "Đánh giá sách",
-    "askAuthor": "Hỏi tác giả",
+    "askAuthor": "Hỏi ban biên tập",
     "chooseEdition": {
       "title": "Chọn bản để đọc",
       "description": "Bạn sở hữu nhiều bản ngôn ngữ của tác phẩm này."
@@ -640,7 +641,7 @@
       "signOff": "Chúc bạn đọc sách vui vẻ,\nInfinity Books Press"
     },
     "questionAnswered": {
-      "subject": "Tác giả đã trả lời câu hỏi của bạn",
+      "subject": "Ban biên tập đã trả lời câu hỏi của bạn",
       "greetingNamed": "Chào {name},",
       "greetingGeneric": "Chào bạn,",
       "body": "Câu hỏi bạn gửi trên Infinity Books Press đã được trả lời trong bài: “{title}”.",
@@ -648,14 +649,14 @@
       "signOff": "Chúc bạn đọc vui,\nInfinity Books Press"
     },
     "reviewReplied": {
-      "subjectWithTitle": "Tác giả đã phản hồi đánh giá của bạn về “{title}”",
-      "subjectGeneric": "Tác giả đã phản hồi đánh giá của bạn",
+      "subjectWithTitle": "Ban biên tập đã phản hồi đánh giá của bạn về “{title}”",
+      "subjectGeneric": "Ban biên tập đã phản hồi đánh giá của bạn",
       "greetingNamed": "Chào {name},",
       "greetingGeneric": "Chào bạn,",
-      "introWithTitle": "Tác giả đã phản hồi đánh giá bạn viết về “{title}” trên Infinity Books Press.",
-      "introGeneric": "Tác giả đã phản hồi đánh giá bạn viết trên Infinity Books Press.",
+      "introWithTitle": "Ban biên tập đã phản hồi đánh giá bạn viết về “{title}” trên Infinity Books Press.",
+      "introGeneric": "Ban biên tập đã phản hồi đánh giá bạn viết trên Infinity Books Press.",
       "yourReview": "Đánh giá của bạn ({rating}/5):",
-      "authorReply": "Phản hồi từ tác giả:",
+      "authorReply": "Phản hồi từ ban biên tập:",
       "open": "Mở đánh giá của bạn",
       "signOff": "Chúc bạn đọc vui,\nInfinity Books Press"
     }

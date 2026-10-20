@@ -440,6 +440,7 @@
     },
     "reviews": {
       "eyebrow": "あなたのレビュー",
+      "chooseEdition": "どの版についてレビューしますか？",
       "ratingLabel": "評価",
       "bodyLabel": "レビュー",
       "counter": "{count}/1000",

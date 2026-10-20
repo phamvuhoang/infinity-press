@@ -216,3 +216,23 @@ Migration `20261020150000_press_edition_orders.sql`.
 
 Interim: the work-level Buy on the book page cannot sell a work whose two editions are both on sale.
 Task 8's edition selector passes the chosen edition and offer to `createEditionOrder`.
+
+## Bundles, gifts, coupons and reviews (Task 7)
+
+Migrations `20261020160000_press_edition_bundles.sql`, `20261020170000_press_edition_reviews.sql`,
+`20261020180000_press_ask_editors_default.sql`.
+
+- **Bundles hold editions.** `bundle_editions` is the source of truth; `admin_set_bundle_members`
+  takes edition ids. `bundle_books` is only a derived "works in this bundle" read model (a trigger
+  rebuilds it) for the recommender; it goes away with the contract migration. A bundle of English
+  and Japanese of one work is allowed and says so on the page (languages line, per-card language).
+- **The order line is the snapshot.** `create_bundle_order` reads the sellable editions once, writes
+  edition, language, SKU and title on each line, treats ownership per edition, refuses non-payable
+  currencies (`EB041`), and cancels an open order whose membership changed. `claim_gift` grants from
+  the order lines, so editing the bundle after purchase changes nothing for an unclaimed gift.
+- **Coupons** keep work-level scope (it covers every edition of that work). A fixed-amount coupon
+  must match the order currency; percent coupons floor at the minor unit. No edition-level scope yet.
+- **Reviews are per edition**: unique `(profile, edition)`; `submit_book_review` takes an optional
+  edition (`EB042` when a reader holds several and names none). Public reviews carry `languageCode`.
+- **Ask the author -> ask the editors**: default off for authors; copy (vi/en/ja) attributes replies
+  to the editors.

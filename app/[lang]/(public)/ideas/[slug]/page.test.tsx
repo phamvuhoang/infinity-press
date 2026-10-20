@@ -167,7 +167,7 @@ describe("IdeaPage", () => {
   it("links to the ask-the-author page for this idea, after the header and before the body", async () => {
     render(await IdeaPage({ params }));
 
-    const link = screen.getByRole("link", { name: "Ask the author about this" });
+    const link = screen.getByRole("link", { name: "Ask the editors about this" });
     expect(link).toHaveAttribute("href", `/en/ask?idea=${idea.ideaId}`);
     expect(follows(screen.getByText("Because understanding takes time."), link)).toBe(true);
     expect(follows(link, screen.getByText("Slow reading is a practice."))).toBe(true);

@@ -16,17 +16,17 @@ const base = {
 describe("buildReviewRepliedEmail", () => {
   it("renders the Vietnamese email with the title in the subject, the context, the reply and the link", () => {
     const mail = buildReviewRepliedEmail(base);
-    expect(mail.subject).toBe("Tác giả đã phản hồi đánh giá của bạn về “Sách S15”");
+    expect(mail.subject).toBe("Ban biên tập đã phản hồi đánh giá của bạn về “Sách S15”");
     expect(mail.text).toContain("Chào Minh,");
     expect(mail.text).toContain("Đánh giá của bạn (5/5):\nCuốn sách rất hay.");
-    expect(mail.text).toContain("Phản hồi từ tác giả:\nCảm ơn bạn đã đọc.");
+    expect(mail.text).toContain("Phản hồi từ ban biên tập:\nCảm ơn bạn đã đọc.");
     expect(mail.text).toContain("Mở đánh giá của bạn: https://books.example/vi/library/reviews/b1");
     expect(mail.html).toContain('<a href="https://books.example/vi/library/reviews/b1">');
   });
 
   it("uses the generic subject and greeting without a title or a name", () => {
     const mail = buildReviewRepliedEmail({ ...base, locale: "en", recipientName: "  ", bookTitle: null });
-    expect(mail.subject).toBe("The author replied to your review");
+    expect(mail.subject).toBe("The editors replied to your review");
     expect(mail.text).toContain("Hi,\n");
   });
 

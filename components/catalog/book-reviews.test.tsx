@@ -24,6 +24,7 @@ it("renders the summary, each review with reply, and the two links", () => {
           authorReply: "Cảm ơn",
           authorReplyAt: "2026-09-13T00:00:00Z",
           publishedAt: "2026-09-12T00:00:00Z",
+          languageCode: "ja",
         },
       ]}
       summary={{ count: 2, average: 4.5 }}
@@ -34,8 +35,10 @@ it("renders the summary, each review with reply, and the two links", () => {
   expect(screen.getByText("Độc giả")).toBeInTheDocument();
   expect(screen.getByLabelText("5/5")).toHaveTextContent("★★★★★");
   expect(screen.getByText("Cảm ơn")).toBeInTheDocument();
+  // The review says which translation it is about.
+  expect(screen.getByText("日本語")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Viết đánh giá" })).toHaveAttribute("href", "/vi/library/reviews/b1");
-  expect(screen.getByRole("link", { name: "Hỏi tác giả" })).toHaveAttribute("href", "/vi/ask?book=b1");
+  expect(screen.getByRole("link", { name: "Hỏi ban biên tập" })).toHaveAttribute("href", "/vi/ask?book=b1");
 });
 
 it("renders only the links when there is no summary", () => {
@@ -47,5 +50,5 @@ it("renders only the links when there is no summary", () => {
 it("leaves the ask button out when askHref is null", () => {
   render(<BookReviews askHref={null} copy={copy} locale="vi" reviewHref="/x" reviews={[]} summary={null} />);
   expect(screen.getAllByRole("link")).toHaveLength(1);
-  expect(screen.queryByRole("link", { name: "Hỏi tác giả" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Hỏi ban biên tập" })).toBeNull();
 });

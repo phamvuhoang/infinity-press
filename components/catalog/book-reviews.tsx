@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import type { CatalogReviewSummary } from "@/lib/catalog/public-types";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import type { PublicReview } from "@/lib/data/reviews";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionary";
@@ -51,6 +52,9 @@ export function BookReviews({
               <div className="flex flex-wrap items-center gap-x-3 text-[0.9375rem]">
                 <Stars rating={review.rating} />
                 <span className="font-medium">{review.reviewerName ?? copy.anonymousReader}</span>
+                {review.languageCode ? (
+                  <span className="text-xs tracking-[0.06em] text-sage-text uppercase">{editionLanguageLabel(review.languageCode)}</span>
+                ) : null}
                 <time className="text-xs text-sage-text" dateTime={review.publishedAt}>
                   {formatDate(review.publishedAt, locale)}
                 </time>

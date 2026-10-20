@@ -232,6 +232,7 @@ describe("BookPage reviews", () => {
     authorReply: null,
     authorReplyAt: null,
     publishedAt: "2026-09-12T00:00:00Z",
+    languageCode: null,
   };
 
   it("renders the reviews section and feeds the same reviews to the Book JSON-LD", async () => {
@@ -249,7 +250,7 @@ describe("BookPage reviews", () => {
       "href",
       `/en/library/reviews/${BOOK_ID}`,
     );
-    expect(within(section).getByRole("link", { name: "Ask the author" })).toHaveAttribute("href", `/en/ask?book=${BOOK_ID}`);
+    expect(within(section).getByRole("link", { name: "Ask the editors" })).toHaveAttribute("href", `/en/ask?book=${BOOK_ID}`);
 
     const book = [...container.querySelectorAll('script[type="application/ld+json"]')]
       .map((node) => JSON.parse(node.textContent ?? "null"))
@@ -261,7 +262,7 @@ describe("BookPage reviews", () => {
     cleanup();
     vi.mocked(getBookAcceptsQuestions).mockResolvedValueOnce(false);
     render(await BookPage(paramsFor("en")));
-    expect(screen.queryByRole("link", { name: "Ask the author" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Ask the editors" })).toBeNull();
     expect(screen.getByRole("link", { name: "Write a review" })).toBeInTheDocument();
   });
 });
