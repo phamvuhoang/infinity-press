@@ -75,7 +75,7 @@ const manualServerEnvironment = webServerEnvironment({
 // Every spec whose journey ends at the MANUAL provider. S9 adds the bundle purchase journey, whose
 // exit criterion is an admin confirming a bank transfer for a multi-item order, so it belongs to
 // the same project and the same server as the S7 spec rather than to a second arrangement.
-const manualSpecs = ["**/manual-payment.spec.ts", "**/bundle-purchase.spec.ts"];
+const manualSpecs = ["**/manual-payment.spec.ts", "**/bundle-purchase.spec.ts", "**/edition-purchase.spec.ts"];
 const visualSpec = "**/reader-depth-visual.spec.ts";
 const manualProject = "chromium-manual";
 

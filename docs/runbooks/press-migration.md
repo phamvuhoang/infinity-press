@@ -186,3 +186,33 @@ Japanese of the same work, each with its own progress.
 
 Samples are still resolved per work (`resolveSamplePublicationId`); the edition-aware sample arrives
 with the catalog resolver (Task 8).
+
+## Edition orders and manual QR (Task 6)
+
+Migration `20261020150000_press_edition_orders.sql`.
+
+- `create_edition_order(edition, offer, expected_minor)` is the only way to create a payable order.
+  One transaction validates the whole chain (offer belongs to a SKU of that edition; edition and work
+  published with a live publication; offer active, in window, price above zero after any sale), then
+  the currency gate, then the price the reader saw. It snapshots edition, language, offer, title and
+  amount on the order line, and locks per `(profile, edition)` so English and Japanese never collide.
+  Errors: `EB040` price/offer changed, `EB041` currency not payable, `EB012` not purchasable,
+  `EB013` already owned, `EB011` payments off, `EB005` unverified email.
+- `create_ebook_order(book)` remains as a wrapper that resolves the single edition on sale and refuses
+  (`EB042`) when there are several. The contract migration (Task 10) removes it once the book page names
+  an edition (Task 8).
+- `commerce_settings.payable_currencies` (`{VND}`) and `currency_is_payable()` are the single list of
+  currencies a transfer can settle. `PAYMENT_PROVIDER` and `commerce_settings.payment_provider` default
+  to `manual`. `payments_enabled` is untouched by the migration.
+- `claim_manual_transfer` compares editions (owning English no longer blocks reporting a Japanese
+  transfer) and refuses non-payable currencies. A trigger refuses a bank reference already used on
+  another order's confirmation (`EB043`). `order_items` gets its edition and language from the SKU when
+  a writer omits them.
+- SePay is gone from the app: provider, IPN route, hand-off page, env variables, and e2e project.
+  `PAYMENT_PROVIDER=sepay` fails startup. The historical migrations and the database check constraint
+  still name the provider; they are not rewritten, and no payment row can carry it.
+- `lib/commerce/money.ts` is the only place that converts between major text and minor units
+  (currency exponent from the currency, exact decimal parsing, safe-integer bound).
+
+Interim: the work-level Buy on the book page cannot sell a work whose two editions are both on sale.
+Task 8's edition selector passes the chosen edition and offer to `createEditionOrder`.

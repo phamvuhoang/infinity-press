@@ -737,8 +737,8 @@ test.describe("freshness matrix - each row seeds through the admin path, then re
     expect(beforeLd.offers[0].price).toBe(100000);
 
     const admin = await createReader("fresh-reprice-admin", { admin: true });
-    await signInAs(page, admin.email, `/admin/books/${bookId}`);
-    await page.getByLabel("Price (minor units)").fill("175000");
+    await signInAs(page, admin.email, `/admin/books/${bookId}/editions/${await soleEditionId(bookId)}`);
+    await page.locator("#offer-priceMinor").fill("175000");
     await saveAdminForm(page, "Save offer");
 
     await expect
