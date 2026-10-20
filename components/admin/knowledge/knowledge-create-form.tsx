@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { localeRegistry, locales } from "@/lib/i18n/config";
 
 import { createArticleAction, createIdeaAction } from "@/app/admin/knowledge/actions";
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { initialAdminFormState } from "@/lib/catalog/form";
+import { defaultLocale } from "@/lib/i18n/config";
 
 export type KnowledgeAuthorOption = { id: string; name: string; canonicalSlug: string };
 
@@ -59,9 +61,10 @@ export function KnowledgeCreateForm({ kind, authors = [] }: { kind: "idea" | "ar
       ) : null}
       <div className="min-w-0 space-y-2">
         <Label htmlFor="knowledge-new-locale">Locale</Label>
-        <NativeSelect defaultValue="vi" id="knowledge-new-locale" name="locale">
-          <option value="vi">Vietnamese (vi)</option>
-          <option value="en">English (en)</option>
+        <NativeSelect defaultValue={defaultLocale} id="knowledge-new-locale" name="locale">
+          {locales.map((code) => (
+<option key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</option>
+))}
         </NativeSelect>
         <FieldError id="knowledge-new-locale-error" message={state.fieldErrors.locale} />
       </div>

@@ -8,6 +8,7 @@ import {
   CrossBookRollbackError,
   MissingRejectionReasonError,
   PublicationNotFoundError,
+  PublicationNotReadyError,
   publishPublication,
   PublicationTransitionRejectedError,
   rejectPublication,
@@ -27,6 +28,7 @@ export type PublicationActionResult = { ok: true } | { ok: false; error: string 
 function toActionResult(error: unknown): PublicationActionResult {
   if (
     error instanceof PublicationNotFoundError ||
+    error instanceof PublicationNotReadyError ||
     error instanceof PublicationTransitionRejectedError ||
     error instanceof CrossBookRollbackError ||
     error instanceof MissingRejectionReasonError

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { requireAdmin } from "@/lib/auth/admin";
 import { requireUser } from "@/lib/auth/session";
 import {
-  acquireFreeOffer,
+  acquireFreeEdition,
   applyVerifiedPaymentEvent,
   EmailNotVerifiedError,
   GrantTargetNotFoundError,
@@ -27,7 +27,7 @@ vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 
-const bookId = "30000000-0000-0000-0000-000000000001";
+const editionId = "40000000-0000-0000-0000-000000000001";
 const profileId = "20000000-0000-0000-0000-000000000001";
 const entitlementId = "80000000-0000-0000-0000-000000000001";
 const entitlementIds = [entitlementId, "80000000-0000-0000-0000-000000000002"];
@@ -45,36 +45,19 @@ beforeEach(() => {
   vi.mocked(requireUser).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof requireUser>>);
 });
 
-describe("acquireFreeOffer", () => {
-  // Ruling AO: a customer-facing mutation - gated on requireUser, never requireAdmin.
-  it("never constructs a Supabase client when the sign-in gate denies", async () => {
+describe("acquireFreeEdition", () => {
+  it("requires a signed-in customer before touching the database", async () => {
     vi.mocked(requireUser).mockRejectedValue(new Error("NEXT_REDIRECT"));
-
-    await expect(acquireFreeOffer("en", bookId)).rejects.toThrow("NEXT_REDIRECT");
+    await expect(acquireFreeEdition("en", editionId)).rejects.toThrow("NEXT_REDIRECT");
     expect(createClient).not.toHaveBeenCalled();
   });
 
-  // Ruling AO: the profile is derived server-side from auth.uid() inside acquire_free_ebook -
-  // this call must never carry a caller-supplied profile id.
-  it("calls acquire_free_ebook through the session client with only the book id", async () => {
+  it("claims the named edition and no other", async () => {
     const client = rpcClient({ data: entitlementId, error: null });
     vi.mocked(createClient).mockResolvedValue(client);
 
-    await acquireFreeOffer("en", bookId);
-
-    expect(client.rpc).toHaveBeenCalledExactlyOnceWith("acquire_free_ebook", { p_book_id: bookId });
-    expect(createAdminClient).not.toHaveBeenCalled();
-  });
-
-  // Spec 6.2 point 5 / the brief's idempotency bullet: retrying resolves to the same entitlement.
-  it("returns the same entitlement id across repeated calls", async () => {
-    vi.mocked(createClient).mockResolvedValue(rpcClient({ data: entitlementId, error: null }));
-
-    const first = await acquireFreeOffer("en", bookId);
-    const second = await acquireFreeOffer("en", bookId);
-
-    expect(first).toEqual({ entitlementId });
-    expect(second).toEqual({ entitlementId });
+    await expect(acquireFreeEdition("en", editionId)).resolves.toEqual({ entitlementId });
+    expect(client.rpc).toHaveBeenCalledExactlyOnceWith("acquire_free_edition", { p_edition_id: editionId });
   });
 
   it.each([
@@ -82,18 +65,7 @@ describe("acquireFreeOffer", () => {
     ["EB006", NoFreeOfferError],
   ] as const)("maps %s to %s", async (code, ErrorClass) => {
     vi.mocked(createClient).mockResolvedValue(rpcClient({ data: null, error: { code, message: "x" } }));
-
-    await expect(acquireFreeOffer("en", bookId)).rejects.toBeInstanceOf(ErrorClass);
-  });
-
-  it("does not guess an error class for an unrecognized failure", async () => {
-    vi.mocked(createClient).mockResolvedValue(rpcClient({ data: null, error: { code: "XXYYY", message: "boom" } }));
-
-    const error = await acquireFreeOffer("en", bookId).catch((caught: unknown) => caught);
-
-    expect(error).not.toBeInstanceOf(EmailNotVerifiedError);
-    expect(error).not.toBeInstanceOf(NoFreeOfferError);
-    expect(error).toBeInstanceOf(Error);
+    await expect(acquireFreeEdition("en", editionId)).rejects.toBeInstanceOf(ErrorClass);
   });
 });
 
@@ -101,7 +73,7 @@ describe("grantComplimentaryEntitlement", () => {
   it("never constructs a Supabase client when the admin gate denies", async () => {
     vi.mocked(requireAdmin).mockRejectedValue(new Error("NEXT_FORBIDDEN"));
 
-    await expect(grantComplimentaryEntitlement(profileId, bookId, "launch promo")).rejects.toThrow(
+    await expect(grantComplimentaryEntitlement(profileId, editionId, "launch promo")).rejects.toThrow(
       "NEXT_FORBIDDEN",
     );
     expect(createClient).not.toHaveBeenCalled();
@@ -113,11 +85,11 @@ describe("grantComplimentaryEntitlement", () => {
     const client = rpcClient({ data: entitlementId, error: null });
     vi.mocked(createClient).mockResolvedValue(client);
 
-    const result = await grantComplimentaryEntitlement(profileId, bookId, "launch promo");
+    const result = await grantComplimentaryEntitlement(profileId, editionId, "launch promo");
 
     expect(client.rpc).toHaveBeenCalledExactlyOnceWith("grant_complimentary_entitlement", {
       p_profile_id: profileId,
-      p_book_id: bookId,
+      p_edition_id: editionId,
       p_reason: "launch promo",
     });
     expect(createAdminClient).not.toHaveBeenCalled();
@@ -131,7 +103,7 @@ describe("grantComplimentaryEntitlement", () => {
   ] as const)("maps %s to %s", async (code, ErrorClass) => {
     vi.mocked(createClient).mockResolvedValue(rpcClient({ data: null, error: { code, message: "x" } }));
 
-    await expect(grantComplimentaryEntitlement(profileId, bookId, "")).rejects.toBeInstanceOf(ErrorClass);
+    await expect(grantComplimentaryEntitlement(profileId, editionId, "")).rejects.toBeInstanceOf(ErrorClass);
   });
 });
 

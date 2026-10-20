@@ -1,4 +1,5 @@
 import "server-only";
+import type { Locale } from "@/lib/i18n/config";
 
 import { notFound } from "next/navigation";
 
@@ -31,7 +32,6 @@ import { createClient } from "@/lib/supabase/server";
 
 export type KnowledgeKind = "idea" | "article";
 export type KnowledgeStatus = "draft" | "published" | "archived";
-type Locale = "vi" | "en";
 
 export class KnowledgeNotFoundError extends Error {
   constructor() {

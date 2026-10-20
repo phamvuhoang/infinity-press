@@ -3,7 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 
 import type { OrderStatus, PaymentStatus } from "@/lib/commerce/order-state";
-import { getActiveEntitlementBookIds } from "@/lib/data/catalog";
+import { getActiveEntitlementBookIds, getActiveEntitlementEditionIds } from "@/lib/data/catalog";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getRequestId } from "@/lib/observability/request-id";
 import { createClient } from "@/lib/supabase/server";
@@ -12,9 +12,15 @@ import { createClient } from "@/lib/supabase/server";
 // over every published member book.
 export type CustomerOrderItemDTO = {
   bookId: string;
+  // The edition this line sells and its language, snapshotted when the order was made. Null only for
+  // an order that predates editions and could not be mapped.
+  editionId: string | null;
+  languageCode: string | null;
   title: string;
   hasActiveEntitlement: boolean;
 };
+
+type OwnedAccess = { books: Set<string>; editions: Set<string> };
 
 export type CustomerOrderDTO = {
   id: string;
@@ -26,7 +32,7 @@ export type CustomerOrderDTO = {
   // sale), the single line's title for a book. Never one arbitrary member of a bundle.
   title: string;
   // In persisted order_items.position order, which is a sparse rank and not a dense index:
-  // create_bundle_order numbers the lines after bundle_books.position, and an unpublished member is
+  // create_bundle_order numbers the lines after bundle_editions.position, and an unpublished member is
   // left out, so positions 2, 3 with no 1 is an ordinary order.
   items: CustomerOrderItemDTO[];
   status: OrderStatus;
@@ -69,7 +75,7 @@ type OrderRow = {
   payment_provider: string;
   bundle_id: string | null;
   title_snapshot: string | null;
-  items: { book_id: string; title_snapshot: string; position: number }[];
+  items: { book_id: string; edition_id: string | null; language_code: string | null; title_snapshot: string; position: number }[];
   // An OBJECT, not an array. PostgREST decides an embed's cardinality from the child's key:
   // manual_transfer_claims.order_id is its PRIMARY key, so at most one row can exist per order and
   // the embed comes back as `{...}` or `null`. manual_payment_declines keys on its own id with
@@ -84,7 +90,7 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 const orderColumns =
   "id, reference_code, status, payment_status, total_minor, currency, subtotal_minor, discount_minor, coupon_code, created_at, payment_provider, " +
   "bundle_id, title_snapshot, " +
-  "items:order_items ( book_id, title_snapshot, position ), " +
+  "items:order_items ( book_id, edition_id, language_code, title_snapshot, position ), " +
   "claims:manual_transfer_claims ( claimed_at ), " +
   "declines:manual_payment_declines ( reason, sequence, declined_at )";
 
@@ -99,13 +105,20 @@ async function failure(operation: string, cause: unknown): Promise<Error> {
   return new Error(`${operation} failed.`, { cause });
 }
 
-function toDTO(row: OrderRow, owned: Set<string>): CustomerOrderDTO | null {
+function toDTO(row: OrderRow, owned: OwnedAccess): CustomerOrderDTO | null {
   // Sorted here as well as in the query. The query's `order` is what PostgREST is asked for; this
   // is what the DTO guarantees, and a reader of this function should not have to go and check the
   // query to know the list is in the order the shop sold it in.
   const items = [...row.items]
     .sort((left, right) => left.position - right.position)
-    .map((item) => ({ bookId: item.book_id, title: item.title_snapshot, hasActiveEntitlement: owned.has(item.book_id) }));
+    .map((item) => ({
+      bookId: item.book_id,
+      editionId: item.edition_id,
+      languageCode: item.language_code,
+      title: item.title_snapshot,
+      // Per edition whenever the line names one; the work-level fallback is for orders that predate it.
+      hasActiveEntitlement: item.edition_id ? owned.editions.has(item.edition_id) : owned.books.has(item.book_id),
+    }));
   // An order with no line is not renderable: there is nothing to name it, price or open.
   if (items.length === 0) return null;
   // Declines are a history, not a single row (spec 5.6): the reader is shown the most recent
@@ -148,7 +161,7 @@ export async function getCustomerOrder(orderId: string): Promise<CustomerOrderDT
   if (!profile) return null;
 
   const supabase = await createClient();
-  const [{ data, error }, owned] = await Promise.all([
+  const [{ data, error }, books, editions] = await Promise.all([
     supabase
       .from("orders")
       .select(orderColumns)
@@ -157,7 +170,9 @@ export async function getCustomerOrder(orderId: string): Promise<CustomerOrderDT
       .order("position", { referencedTable: "order_items" })
       .maybeSingle(),
     getActiveEntitlementBookIds(profile.id),
+    getActiveEntitlementEditionIds(profile.id),
   ]);
+  const owned = { books, editions };
   if (error) throw await failure("getCustomerOrder", error);
   return data ? toDTO(data as unknown as OrderRow, owned) : null;
 }
@@ -167,7 +182,7 @@ export async function listCustomerOrders(): Promise<CustomerOrderDTO[]> {
   if (!profile) return [];
 
   const supabase = await createClient();
-  const [{ data, error }, owned] = await Promise.all([
+  const [{ data, error }, books, editions] = await Promise.all([
     supabase
       .from("orders")
       .select(orderColumns)
@@ -176,7 +191,9 @@ export async function listCustomerOrders(): Promise<CustomerOrderDTO[]> {
       .order("created_at", { ascending: false })
       .limit(100),
     getActiveEntitlementBookIds(profile.id),
+    getActiveEntitlementEditionIds(profile.id),
   ]);
+  const owned = { books, editions };
   if (error) throw await failure("listCustomerOrders", error);
   return ((data ?? []) as unknown as OrderRow[]).flatMap((row) => toDTO(row, owned) ?? []);
 }

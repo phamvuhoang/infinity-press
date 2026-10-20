@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { soleEditionId } from "./support/editions";
 import { seedCatalogBook } from "./support/catalog";
 import { activeEntitlementCount, createReader, enablePayments, signInAs } from "./support/commerce";
 import { revalidateStorefront } from "./support/revalidate";
@@ -23,7 +24,7 @@ test("an admin's 30% sale is what the storefront shows, crawlers read, and check
   const admin = await createReader("sale-admin", { admin: true });
   const adminContext = await browser.newContext();
   const adminPage = await adminContext.newPage();
-  await signInAs(adminPage, admin.email, `/admin/books/${bookId}`);
+  await signInAs(adminPage, admin.email, `/admin/books/${bookId}/editions/${await soleEditionId(bookId)}`);
   await adminPage.getByLabel("Discount").selectOption("percent");
   await adminPage.getByLabel("Percentage off").fill("30");
   await adminPage.getByRole("button", { name: "Save offer" }).click();

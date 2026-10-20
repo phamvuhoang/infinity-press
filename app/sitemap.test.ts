@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import sitemap, { revalidate } from "./sitemap";
 import type { CatalogBookCard } from "@/lib/catalog/public-types";
 import { getServerEnv } from "@/lib/config/server-env";
-import { getBookCards } from "@/lib/data/catalog";
+import { getBookCards, listEntitySlugs } from "@/lib/data/catalog";
 import { getKnowledgeSitemapEntries } from "@/lib/data/knowledge";
 import { listPublicBundleSlugs } from "@/lib/data/public-bundles";
 import type { Locale } from "@/lib/i18n/config";
 
 vi.mock("@/lib/config/server-env", () => ({ getServerEnv: vi.fn() }));
-vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn() }));
+vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn(), listEntitySlugs: vi.fn() }));
 vi.mock("@/lib/data/knowledge", () => ({
   getKnowledgeSitemapEntries: vi.fn(),
 }));
@@ -35,7 +35,7 @@ function card(
     cover: null,
     offer: null,
     hasActivePublication: true,
-    hasSample: true,
+    hasSample: true, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,
@@ -45,7 +45,7 @@ function card(
   };
 }
 
-const cards: Record<Locale, CatalogBookCard[]> = {
+const cards: Record<Exclude<Locale, "ja">, CatalogBookCard[]> = {
   vi: [
     card({
       slug: "song-dai",
@@ -79,8 +79,18 @@ beforeEach(() => {
     typeof getServerEnv
   >);
   vi.mocked(getBookCards).mockImplementation(
-    async (locale: Locale) => cards[locale],
+    async (locale: Locale) => (cards[locale as keyof typeof cards] ?? []).map((entry) => ({ ...entry, metadataLocale: locale })),
   );
+  // The entity pages a locale owns: here, those its cards reach, as catalog_entity_slugs would list them.
+  vi.mocked(listEntitySlugs).mockImplementation(async (locale: Locale) => {
+    const rows = cards[locale as keyof typeof cards] ?? [];
+    const unique = (slugs: string[]) => [...new Set(slugs)];
+    return {
+      author: unique(rows.flatMap((card) => (card.author.slug ? [card.author.slug] : []))),
+      series: unique(rows.flatMap((card) => (card.series ? [card.series.slug] : []))),
+      topic: unique(rows.flatMap((card) => card.topics.map((topic) => topic.slug))),
+    };
+  });
   vi.mocked(listPublicBundleSlugs).mockResolvedValue([]);
   vi.mocked(getKnowledgeSitemapEntries).mockResolvedValue([]);
 });
@@ -111,9 +121,14 @@ it("lists both home and unfiltered catalog pages, visible books, and entities wi
     `${SITE}/en/topics/poetry`,
     `${SITE}/en/ideas`,
     `${SITE}/en/articles`,
+    `${SITE}/ja`,
+    `${SITE}/ja/books`,
+    `${SITE}/ja/ideas`,
+    `${SITE}/ja/articles`,
   ]);
   expect(getBookCards).toHaveBeenCalledWith("vi");
   expect(getBookCards).toHaveBeenCalledWith("en");
+  expect(getBookCards).toHaveBeenCalledWith("ja");
 });
 
 it("lists each URL once even when several books share an entity", async () => {
@@ -132,6 +147,7 @@ it("never lists search, samples, private, application, or API routes", async () 
 
 it("lists only home, catalog, and knowledge index pages when nothing is published", async () => {
   vi.mocked(getBookCards).mockResolvedValue([]);
+  vi.mocked(listEntitySlugs).mockResolvedValue({ author: [], series: [], topic: [] });
   expect(await urls()).toEqual([
     `${SITE}/vi`,
     `${SITE}/vi/books`,
@@ -141,6 +157,10 @@ it("lists only home, catalog, and knowledge index pages when nothing is publishe
     `${SITE}/en/books`,
     `${SITE}/en/ideas`,
     `${SITE}/en/articles`,
+    `${SITE}/ja`,
+    `${SITE}/ja/books`,
+    `${SITE}/ja/ideas`,
+    `${SITE}/ja/articles`,
   ]);
 });
 
@@ -195,7 +215,7 @@ it("fails rather than publishing a partial sitemap when the bundle read fails", 
 });
 
 describe("knowledge hub", () => {
-  const knowledge: Record<Locale, { path: string; lastModified: string }[]> = {
+  const knowledge: Record<Exclude<Locale, "ja">, { path: string; lastModified: string }[]> = {
     vi: [
       {
         path: "/vi/ideas/vi-sao-doc-cham",
@@ -217,7 +237,7 @@ describe("knowledge hub", () => {
 
   beforeEach(() => {
     vi.mocked(getKnowledgeSitemapEntries).mockImplementation(
-      async (locale: Locale) => knowledge[locale],
+      async (locale: Locale) => knowledge[locale as keyof typeof knowledge] ?? [],
     );
   });
 
@@ -265,4 +285,11 @@ describe("knowledge hub", () => {
     );
     await expect(sitemap()).rejects.toThrow("getArticleIndex failed.");
   });
+});
+
+it("leaves out a work that is only shown under another locale's copy", async () => {
+  vi.mocked(getBookCards).mockImplementation(async (locale: Locale) =>
+    locale === "ja" ? [card({ slug: "english-only", metadataLocale: "en" })] : [],
+  );
+  expect((await urls()).filter((url) => url.includes("english-only"))).toEqual([]);
 });

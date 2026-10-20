@@ -35,13 +35,15 @@ const OWNED_C = "30000000-0000-4000-8000-000000000004";
 function libraryItem(bookId: string, title: string): LibraryItemDTO {
   return {
     bookId,
+    editionId: `edition-of-${bookId}`,
+    languageCode: "en",
     title,
     slug: bookId,
     coverAltText: null,
     coverUrl: null,
     state: "unread",
     progressPercent: 0,
-    continueReadingUrl: `/en/read/${bookId}`,
+    continueReadingUrl: `/en/read/editions/edition-of-${bookId}`,
   };
 }
 
@@ -56,7 +58,7 @@ function candidateCard(bookId: string, title: string): CatalogBookCard {
     cover: null,
     offer: null,
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,
@@ -187,4 +189,18 @@ describe("LibraryPage recommendations", () => {
     expect(screen.getByText("No books yet")).toBeVisible();
     expect(screen.queryByRole("region", { name: "You might like" })).not.toBeInTheDocument();
   });
+});
+
+it("tags each owned edition with its language and counts a work once for recommendations", async () => {
+  vi.mocked(getLibrary).mockResolvedValue([
+    libraryItem(OWNED_A, "Book A"),
+    { ...libraryItem(OWNED_A, "Book A"), editionId: "edition-ja", languageCode: "ja" },
+  ]);
+  vi.mocked(getShelfRecommendations).mockResolvedValue([]);
+  render(await LibraryPage({ params: Promise.resolve({ lang: "en" }) }));
+
+  expect(screen.getAllByText("ja").length).toBeGreaterThan(0);
+  expect(getShelfRecommendations).toHaveBeenCalledWith(
+    expect.objectContaining({ seedBookIds: [OWNED_A], excludeBookIds: [OWNED_A] }),
+  );
 });

@@ -4,7 +4,7 @@ import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { cache } from "react";
 
 import { getServerEnv } from "@/lib/config/server-env";
-import { getBookCards } from "@/lib/data/catalog";
+import { getBookCards, listEntitySlugs } from "@/lib/data/catalog";
 import { listPublicBundleSlugs } from "@/lib/data/public-bundles";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -46,15 +46,19 @@ export const catalogStaticParams = cache(async (locale: Locale): Promise<Catalog
     }
   }
 
-  const [cards, bundles] = await Promise.all([getBookCards(locale), listPublicBundleSlugs()]);
+  const [cards, entities, bundles] = await Promise.all([getBookCards(locale), listEntitySlugs(locale), listPublicBundleSlugs()]);
 
   const unique = (slugs: string[]) => [...new Set(slugs)];
 
   return {
-    books: unique(cards.map((card) => card.slug)),
-    authors: unique(cards.flatMap((card) => (card.author.slug ? [card.author.slug] : []))),
-    series: unique(cards.flatMap((card) => (card.series ? [card.series.slug] : []))),
-    topics: unique(cards.flatMap((card) => card.topics.map((topic) => topic.slug))),
+    // A work shown under another locale's copy (metadata fallback) is the same page as that locale's,
+    // not a page of this one: it is not prerendered or listed here, so the sitemap carries no
+    // duplicate of the English page under /ja. catalog_entity_slugs applies the same rule to
+    // authors, series and topics.
+    books: unique(cards.filter((card) => card.metadataLocale === locale).map((card) => card.slug)),
+    authors: entities.author,
+    series: entities.series,
+    topics: entities.topic,
     bundles: unique(bundles.filter((bundle) => bundle.locale === locale).map((bundle) => bundle.slug)),
   };
 });

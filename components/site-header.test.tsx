@@ -37,16 +37,18 @@ describe("SiteHeader", () => {
   it("switches to this page's alternate in the other locale when it exists", async () => {
     render(await SiteHeader({ locale: "en", alternates: { vi: "/vi/ideas/vi-sao-doc" } }));
 
-    const switcher = screen.getByRole("link", { name: "Đọc bằng tiếng Việt" });
+    const switcher = screen.getByRole("link", { name: "Tiếng Việt" });
     expect(switcher).toHaveAttribute("href", "/vi/ideas/vi-sao-doc");
     expect(switcher).toHaveAttribute("hreflang", "vi");
+    expect(screen.getByRole("link", { name: "日本語" })).toHaveAttribute("href", "/ja");
   });
 
   it("switches to the other locale's home when this page has no alternate", async () => {
     render(await SiteHeader({ locale: "vi" }));
 
-    const switcher = screen.getByRole("link", { name: "Read in English" });
+    const switcher = screen.getByRole("link", { name: "English" });
     expect(switcher).toHaveAttribute("href", "/en");
     expect(switcher).toHaveAttribute("hreflang", "en");
+    expect(screen.getByRole("link", { name: "日本語" })).toHaveAttribute("href", "/ja");
   });
 });

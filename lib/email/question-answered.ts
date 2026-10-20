@@ -1,5 +1,6 @@
 import { escapeHtml, fill, singleLine } from "@/lib/email/text";
 import en from "@/lib/i18n/dictionaries/en.json";
+import ja from "@/lib/i18n/dictionaries/ja.json";
 import vi from "@/lib/i18n/dictionaries/vi.json";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -14,6 +15,7 @@ export type QuestionAnsweredEmailInput = {
 const copy: Record<Locale, typeof en.email.questionAnswered> = {
   en: en.email.questionAnswered,
   vi: vi.email.questionAnswered,
+  ja: ja.email.questionAnswered,
 };
 
 export function buildQuestionAnsweredEmail(input: QuestionAnsweredEmailInput): { subject: string; text: string; html: string } {

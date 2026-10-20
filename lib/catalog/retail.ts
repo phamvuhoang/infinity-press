@@ -5,7 +5,7 @@ import type { Locale } from "@/lib/i18n/config";
 
 export { retailers, type Retailer };
 
-const UTM = { utm_source: "infinitybooks", utm_medium: "book_page", utm_campaign: "paperback" } as const;
+const UTM = { utm_source: "infinitybookspress", utm_medium: "book_page", utm_campaign: "paperback" } as const;
 
 // Appends the site's UTM set unless the stored URL already carries any utm_* key: an affiliate
 // URL has its own tracking and must not be corrupted. Never throws - a bad stored URL is the

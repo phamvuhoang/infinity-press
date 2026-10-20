@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getCatalogRoutes, getCommerceRoutes, getKnowledgeRoutes, getLocaleRoutes, otherLocale } from "@/lib/i18n/routes";
+import { getCatalogRoutes, getCommerceRoutes, getKnowledgeRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 
 describe("localized route graph", () => {
   it("keeps primary navigation in the selected locale", () => {
@@ -24,6 +24,7 @@ describe("localized route graph", () => {
     expect(routes.entity("topic", "habits")).toBe("/vi/topics/habits");
     expect(routes.sample("dac-nhan-tam")).toBe("/vi/read-sample/dac-nhan-tam");
     expect(routes.read("30000000-0000-4000-8000-000000000001")).toBe("/vi/read/30000000-0000-4000-8000-000000000001");
+    expect(routes.readEdition("40000000-0000-4000-8000-000000000002")).toBe("/vi/read/editions/40000000-0000-4000-8000-000000000002");
     expect(routes.signInFor("/vi/books/dac-nhan-tam")).toBe("/vi/sign-in?next=%2Fvi%2Fbooks%2Fdac-nhan-tam");
     expect(routes.bundle("goi-khoi-dau")).toBe("/vi/bundles/goi-khoi-dau");
   });
@@ -59,10 +60,6 @@ describe("localized route graph", () => {
     expect(getCommerceRoutes("vi").checkoutTransfer("abc")).toBe("/vi/checkout/abc/transfer");
   });
 
-  it("builds the SePay hand-off path", () => {
-    expect(getCommerceRoutes("vi").checkoutSepay("o1")).toBe("/vi/checkout/o1/sepay");
-  });
-
   it("builds knowledge hub routes under the locale", () => {
     expect(getKnowledgeRoutes("vi")).toEqual({
       ideas: "/vi/ideas",
@@ -76,10 +73,5 @@ describe("localized route graph", () => {
     expect(getKnowledgeRoutes("en").idea("living-awake")).toBe("/en/ideas/living-awake");
     expect(getKnowledgeRoutes("en").articles).toBe("/en/articles");
     expect(getKnowledgeRoutes("en").article("reading-slowly")).toBe("/en/articles/reading-slowly");
-  });
-
-  it("names the other locale", () => {
-    expect(otherLocale("vi")).toBe("en");
-    expect(otherLocale("en")).toBe("vi");
   });
 });

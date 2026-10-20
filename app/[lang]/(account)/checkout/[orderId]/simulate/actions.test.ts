@@ -25,7 +25,7 @@ const order: CustomerOrderDTO = {
   id: ORDER_ID,
   bundleId: null,
   title: "A Book",
-  items: [{ bookId: "30000000-0000-4000-8000-000000000001", title: "A Book", hasActiveEntitlement: false }],
+  items: [{ bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "A Book", hasActiveEntitlement: false }],
   status: "pending",
   paymentStatus: "pending",
   totalMinor: 129000,

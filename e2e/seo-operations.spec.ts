@@ -3,6 +3,7 @@ import { type APIRequestContext, type Page, expect, test } from "@playwright/tes
 import { seedBundle, seedCatalogBook } from "./support/catalog";
 import { createReader, enablePayments, signInAs } from "./support/commerce";
 import { markOutboxFailedFourTimes } from "./support/database";
+import { soleEditionId } from "./support/editions";
 import { serverEnvironmentValue } from "./support/server-env";
 import { grantEntitlement } from "./support/publication";
 import { createServiceRoleClient } from "./support/supabase";
@@ -195,7 +196,7 @@ test("a published book page carries canonical, alternate, Open Graph, and safe s
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Infinity Books", item: `${origin}/en` },
+      { "@type": "ListItem", position: 1, name: "Infinity Books Press", item: `${origin}/en` },
       { "@type": "ListItem", position: 2, name: expect.any(String), item: `${origin}/en/books` },
       { "@type": "ListItem", position: 3, name: title, item: self },
     ],
@@ -472,7 +473,7 @@ test("an admin sees each seeded operational fault with its repair link, but not 
     await expect(link).toHaveText("Review");
   };
 
-  await expectRepairLink("Stale EPUB jobs", `/admin/books/${bookId}#epub`);
+  await expectRepairLink("Stale EPUB jobs", `/admin/books/${bookId}/editions/${await soleEditionId(bookId)}#epub`);
   await expectRepairLink("Completed orders without an entitlement", `/admin/orders/${brokenOrder.id}`);
   await expectRepairLink("Unprocessed payment events", `/admin/orders/${pendingOrder.id}`);
   await expectRepairLink("Stuck book-ready emails", `/admin/users/${recipient.profileId}`);
@@ -736,8 +737,8 @@ test.describe("freshness matrix - each row seeds through the admin path, then re
     expect(beforeLd.offers[0].price).toBe(100000);
 
     const admin = await createReader("fresh-reprice-admin", { admin: true });
-    await signInAs(page, admin.email, `/admin/books/${bookId}`);
-    await page.getByLabel("Price (minor units)").fill("175000");
+    await signInAs(page, admin.email, `/admin/books/${bookId}/editions/${await soleEditionId(bookId)}`);
+    await page.locator("#offer-priceMinor").fill("175000");
     await saveAdminForm(page, "Save offer");
 
     await expect
@@ -815,36 +816,40 @@ test.describe("freshness matrix - each row seeds through the admin path, then re
     expect(new URL(redirected.headers()["location"], "http://relative-base.invalid").pathname).toBe(`/en/books/${newSlug}`);
   });
 
+  // Press: a page exists for a locale only when the work resolves to a readable edition there, so the
+  // work starts in the platform's default language (the default edition's language) and gains a
+  // second localization of its page.
   test("adding the other locale's translation makes both pages' hreflang point at each other", async ({ page, request }) => {
     test.setTimeout(60_000);
     const suffix = unique();
-    const viSlug = `fresh-translate-${suffix}`;
+    const enSlug = `fresh-translate-en-${suffix}`;
     const { bookId } = await seedCatalogBook({
       suffix,
-      localizations: { vi: { slug: viSlug, title: `Fresh Translate ${suffix}` } },
+      localizations: { en: { slug: enSlug, title: `Fresh Translate EN ${suffix}` } },
       priceMinor: 45000,
     });
 
-    const before = await fetchRaw(request, `/vi/books/${viSlug}`);
-    expect(tagAttr(before.body, "link", { rel: "alternate", hreflang: "en" }, "href")).toBeNull();
+    const before = await fetchRaw(request, `/en/books/${enSlug}`);
+    expect(tagAttr(before.body, "link", { rel: "alternate", hreflang: "vi" }, "href")).toBeNull();
 
-    const enSlug = `fresh-translate-en-${suffix}`;
+    const viSlug = `fresh-translate-${suffix}`;
     const admin = await createReader("fresh-translate-admin", { admin: true });
     await signInAs(page, admin.email, `/admin/books/${bookId}`);
-    await page.getByLabel("Title (en)", { exact: true }).fill(`Fresh Translate EN ${suffix}`);
-    await page.getByLabel("Slug (en)").fill(enSlug);
-    await page.getByLabel("Description (en)", { exact: true }).fill(`English copy ${suffix}`);
-    await saveAdminForm(page, "Save en copy");
+    await page.getByLabel("Title (vi)", { exact: true }).fill(`Fresh Translate ${suffix}`);
+    await page.getByLabel("Slug (vi)").fill(viSlug);
+    await page.getByLabel("Description (vi)", { exact: true }).fill(`Bản tiếng Việt ${suffix}`);
+    await saveAdminForm(page, "Save vi copy");
 
     await expect
       .poll(
-        async () => tagAttr((await fetchRaw(request, `/vi/books/${viSlug}`)).body, "link", { rel: "alternate", hreflang: "en" }, "href"),
-        { message: "the vi page gains an en alternate", timeout: 30_000 },
+        async () => tagAttr((await fetchRaw(request, `/en/books/${enSlug}`)).body, "link", { rel: "alternate", hreflang: "vi" }, "href"),
+        { message: "the en page gains a vi alternate", timeout: 30_000 },
       )
-      .toContain(`/en/books/${enSlug}`);
+      .toContain(`/vi/books/${viSlug}`);
 
-    const en = await fetchRaw(request, `/en/books/${enSlug}`);
-    expect(tagAttr(en.body, "link", { rel: "alternate", hreflang: "vi" }, "href")).toContain(`/vi/books/${viSlug}`);
+    // The vi page shows the same (English) edition under Vietnamese copy: its own page, pointing back.
+    const vi = await fetchRaw(request, `/vi/books/${viSlug}`);
+    expect(tagAttr(vi.body, "link", { rel: "alternate", hreflang: "en" }, "href")).toContain(`/en/books/${enSlug}`);
   });
 });
 

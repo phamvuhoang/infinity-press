@@ -52,13 +52,16 @@ test("an admin saves every editor section, sees validation, and reloads saved va
   await page.getByLabel("Author name").fill(`Editor Author ${unique}`);
   await page.getByLabel("Title").fill("Editor book");
   await page.getByLabel("Slug").fill(`editor-${unique}`);
+  // The form defaults to the platform language (English); this flow edits the Vietnamese copy.
+  await page.locator("#locale-trigger").click();
+  await page.locator('[role="listbox"]').getByRole("option", { name: "Vietnamese (vi)" }).click();
   await page.getByLabel("Market").fill("VN");
   await page.getByLabel("Currency").fill("VND");
   await page.getByLabel("Price (minor units)").fill("0");
   await page.getByRole("button", { name: "Create book" }).click();
   await expect(page).toHaveURL(/\/admin\/books\/[0-9a-f-]{36}$/);
   const bookId = new URL(page.url()).pathname.split("/").at(-1)!;
-  await expect(page.getByLabel("EPUB file")).toBeVisible();
+  await expect(page.getByRole("link", { name: /English/ })).toBeVisible();
   await page.setViewportSize({ width: 375, height: 812 });
   const save = async (label: string) => {
     const button = page.getByRole("button", { name: label, exact: true });
@@ -78,12 +81,6 @@ test("an admin saves every editor section, sees validation, and reloads saved va
   await page.getByLabel("Title (en)", { exact: true }).fill("Saved English title");
   await page.getByLabel("Slug (en)").fill(`english-${unique}`);
   await save("Save en copy");
-  await page.getByLabel("Edition number").fill("2");
-  await page.getByLabel("Publication date").fill("2026-09-14");
-  await save("Save edition");
-  await page.getByLabel("Price (minor units)").fill("2500");
-  await page.getByLabel("Offer is active").uncheck();
-  await save("Save offer");
   await page.getByLabel(topic.name, { exact: true }).check();
   await page.getByLabel("Series", { exact: true }).selectOption(series.id);
   await page.getByRole("button", { name: "Save relations" }).click();
@@ -97,14 +94,27 @@ test("an admin saves every editor section, sees validation, and reloads saved va
   await expect(page.getByLabel("Title (en)", { exact: true })).toHaveValue("Saved English title");
   await expect(page.getByLabel("Key ideas (vi)")).toHaveValue("Quan sát | Nhìn mà không phán xét\nTự do");
   await expect(page.getByLabel("FAQ (vi)")).toHaveValue("Q: Đọc ở đâu?\nA: Trên web.");
-  await expect(page.getByLabel("Edition number")).toHaveValue("2");
-  await expect(page.getByLabel("Publication date")).toHaveValue("2026-09-14");
-  await expect(page.getByLabel("Price (minor units)")).toHaveValue("2500");
-  await expect(page.getByLabel("Offer is active")).not.toBeChecked();
   await expect(page.getByLabel(topic.name, { exact: true })).toBeChecked();
   await expect(page.getByLabel("Series position")).toHaveValue("1");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   for (const button of await page.getByRole("button", { name: /^Save / }).all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  // Edition details, credits and the offer live on the edition's own page.
+  await page.getByRole("link", { name: /English/ }).click();
+  await expect(page).toHaveURL(/\/admin\/books\/[0-9a-f-]{36}\/editions\/[0-9a-f-]{36}$/);
+  await page.getByLabel("Edition number").fill("2");
+  await page.getByLabel("Publication date").fill("2026-09-14");
+  await page.getByLabel("Credits").fill("translator: E2E Translator");
+  await save("Save edition");
+  await page.locator("#offer-priceMinor").fill("2500");
+  await page.getByLabel("Offer is active").uncheck();
+  await save("Save offer");
+  await page.reload();
+  await expect(page.getByLabel("Edition number")).toHaveValue("2");
+  await expect(page.getByLabel("Publication date")).toHaveValue("2026-09-14");
+  await expect(page.getByLabel("Credits")).toHaveValue("translator: E2E Translator");
+  await expect(page.locator("#offer-priceMinor")).toHaveValue("2500");
+  await expect(page.getByLabel("Offer is active")).not.toBeChecked();
+  await page.goto(`/admin/books/${bookId}`);
   const { data: audit, error: auditError } = await service.from("audit_logs").select("action, entity_type").eq("entity_id", bookId);
   if (auditError) throw auditError;
   expect(audit?.filter((row) => row.action === "save_book_localization")).toHaveLength(2);
@@ -150,7 +160,7 @@ test("an admin creates a book and lands on its detail page", async ({ page }) =>
   await expect(page).toHaveURL(/\/admin\/books\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { name: "The E2E Book" })).toBeVisible();
   await expect(page.getByText(new RegExp(`^E2E Author ${unique} ·`))).toBeVisible();
-  await expect(page.getByText("Price: 1500 VND (VN)")).toBeVisible();
+  await expect(page.getByText("Draft · default · 1 offer")).toBeVisible();
 });
 
 test("an admin reuses an author and finds the second book through the books search", async ({ page }) => {

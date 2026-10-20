@@ -15,7 +15,7 @@ describe("decideRouteAccess", () => {
     ["/vi/account", "", "/vi/sign-in?next=%2Fvi%2Faccount"],
     ["/en/library", "", "/en/sign-in?next=%2Fen%2Flibrary"],
     ["/en/read/book-1", "?page=2", "/en/sign-in?next=%2Fen%2Fread%2Fbook-1%3Fpage%3D2"],
-    ["/admin/books/new", "", "/vi/sign-in?next=%2Fadmin%2Fbooks%2Fnew"],
+    ["/admin/books/new", "", "/en/sign-in?next=%2Fadmin%2Fbooks%2Fnew"],
     [
       "/internal/en/update-password",
       "",

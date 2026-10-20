@@ -1,10 +1,22 @@
-export const locales = ["vi", "en"] as const;
-export const defaultLocale = "vi" as const;
-export const localeHeader = "x-infinity-locale";
+// The one registry of customer UI locales (spec section 5). `Locale` and everything that used to
+// branch on "vi" or "en" derives from it. The dictionary loader for each locale lives in
+// lib/i18n/dictionary.ts (server-only), typed over Locale so adding a code here fails the build
+// until a dictionary exists. A matching row in supported_locales (migration) is checked by
+// supabase/tests/press_locales.sql and lib/i18n/registry-db.test.ts.
+export const locales = ["vi", "en", "ja"] as const;
 export type Locale = (typeof locales)[number];
 
+export const localeRegistry: Record<Locale, { englishName: string; nativeName: string; intlTag: string; openGraph: string; dir: "ltr" | "rtl" }> = {
+  vi: { englishName: "Vietnamese", nativeName: "Tiếng Việt", intlTag: "vi-VN", openGraph: "vi_VN", dir: "ltr" },
+  en: { englishName: "English", nativeName: "English", intlTag: "en-US", openGraph: "en_US", dir: "ltr" },
+  ja: { englishName: "Japanese", nativeName: "日本語", intlTag: "ja-JP", openGraph: "ja_JP", dir: "ltr" },
+};
+
+export const defaultLocale: Locale = "en";
+export const localeHeader = "x-infinity-locale";
+
 export function isLocale(value: string): value is Locale {
-  return locales.some((locale) => locale === value);
+  return Object.hasOwn(localeRegistry, value);
 }
 
 export function resolveLocale(value: unknown): Locale {

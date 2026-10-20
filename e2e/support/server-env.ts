@@ -16,11 +16,6 @@
 export const simulatorServerUrl = "http://127.0.0.1:3000";
 export const manualServerUrl = "http://127.0.0.1:3100";
 export const manualServerPort = new URL(manualServerUrl).port;
-// S18: a third origin, for the same reason as the second. PAYMENT_PROVIDER=sepay.
-// Overridable because 3200 is a common dev-server port; the config never reuses a server it did not
-// start, so a squatter there is a loud failure rather than a quiet substitution.
-export const sepayServerUrl = process.env.E2E_SEPAY_SERVER_URL ?? "http://127.0.0.1:3200";
-export const sepayServerPort = new URL(sepayServerUrl).port;
 
 export const serverEnvironmentDefaults = {
   APP_ENV: "test",
@@ -31,7 +26,7 @@ export const serverEnvironmentDefaults = {
   // S5: the no-network mail adapter (never Resend in Playwright), a sender so the worker delivers
   // the outbox, and a fake worker secret the operations spec authenticates with.
   EMAIL_PROVIDER: "test",
-  EMAIL_FROM: "Infinity Books <books@example.test>",
+  EMAIL_FROM: "Infinity Books Press <books@example.test>",
   OPS_WORKER_SECRET: "e2e-worker-secret-not-for-real-use-00000000000",
 } as const;
 
@@ -53,7 +48,7 @@ export const bankTransferDefaults = {
   BANK_TRANSFER_BANK_CODE: "970436",
   BANK_TRANSFER_BANK_NAME: "E2E Test Bank",
   BANK_TRANSFER_ACCOUNT_NUMBER: "19020250000001",
-  BANK_TRANSFER_ACCOUNT_HOLDER: "INFINITY BOOKS E2E",
+  BANK_TRANSFER_ACCOUNT_HOLDER: "INFINITY BOOKS PRESS E2E",
 } as const;
 
 export type BankTransferName = keyof typeof bankTransferDefaults;
@@ -62,16 +57,3 @@ export function bankTransferValue(name: BankTransferName): string {
   return process.env[name] ?? bankTransferDefaults[name];
 }
 
-// S18: what the SePay web server is started with. Sandbox, and not real credentials: the spec
-// intercepts the browser's POST to SePay and posts the notification itself with this secret.
-export const sepayDefaults = {
-  SEPAY_MERCHANT_ID: "E2E_MERCHANT",
-  SEPAY_SECRET_KEY: "e2e-sepay-secret-not-for-real-use",
-  SEPAY_ENV: "sandbox",
-} as const;
-
-export type SepayName = keyof typeof sepayDefaults;
-
-export function sepayValue(name: SepayName): string {
-  return process.env[name] ?? sepayDefaults[name];
-}

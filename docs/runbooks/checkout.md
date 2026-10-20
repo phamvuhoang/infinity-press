@@ -8,8 +8,7 @@ which one is live is `PAYMENT_PROVIDER` on the running server:
 - `manual` - bank transfer, confirmed by hand by an admin. This is what production runs. Its
   configuration, reconciliation loop, and decline paths are in
   [manual bank transfer](manual-payment.md).
-- `sepay` - SePay's hosted payment page with a VietQR code, completed by SePay's notification. Its
-  setup, go-live, and failure handling are in [SePay payment gateway](sepay-payment.md).
+Press has no `sepay` provider. `PAYMENT_PROVIDER=sepay` fails the environment check at startup.
 
 An order can also be discounted by a promotion code before it is paid, on either provider - see
 [coupons](coupons.md) for issuing, scoping, and retiring codes, and for where the reason a code was
@@ -23,11 +22,10 @@ order states, the order reference, the customer's order list, and revoking acces
 | Step | URL | What happens |
 | --- | --- | --- |
 | Get free | Book page → **Get free** | `acquire_free_ebook` grants access. The reader opens at `/{locale}/read/<bookId>`. |
-| Buy | Book page → **Buy ebook** | `create_ebook_order` creates or reuses a pending order. |
+| Buy | Book page → **Buy ebook** | `create_edition_order` creates or reuses a pending order for ONE edition (`create_ebook_order` is the work-level wrapper and refuses a work with several editions on sale). |
 | Checkout | `/{locale}/checkout/<orderId>` | Shows the ebook, the total, the account email, and **Pay**. |
 | Simulate | `/{locale}/checkout/<orderId>/simulate` | **Succeed**, **Fail**, **Cancel**, or **Send duplicate**. Simulator only; local, test, and staging only. |
 | Transfer | `/{locale}/checkout/<orderId>/transfer` | Bank details and the order reference. Manual provider only - see [manual bank transfer](manual-payment.md). |
-| SePay | `/{locale}/checkout/<orderId>/sepay` | Posts the order to SePay's payment page. SePay provider only - see [SePay payment gateway](sepay-payment.md). |
 | Status | `/{locale}/checkout/<orderId>/status` | Reads the order from the database. |
 | Orders | `/{locale}/account/orders` | The reader's own orders. |
 | Admin | `/admin/orders` | Find an order by email or ID. Revoke the access it granted. |
@@ -60,10 +58,9 @@ kept at the price they transferred, and **Buy** returns it.
 A paid order needs all three of these, and the two providers must agree:
 
 1. The app: `PAYMENT_PROVIDER` set to a real provider - `simulator` outside production, or `manual`
-   or `sepay` anywhere including production. The app refuses to start with `simulator` in
-   production, `manual` additionally requires all four `BANK_TRANSFER_*` variables
-   ([manual bank transfer](manual-payment.md)), and `sepay` requires the three `SEPAY_*` variables
-   ([SePay payment gateway](sepay-payment.md)). `disabled` means nobody can buy anything. This
+   anywhere including production. The app refuses to start with `simulator` in
+   production, and `manual` additionally requires all four `BANK_TRANSFER_*` variables
+   ([manual bank transfer](manual-payment.md)). `disabled` means nobody can buy anything. This
    decides which checkout pages and actions exist.
 2. The database: `commerce_settings.payments_enabled = true`. The default is `false`.
 3. The database: `commerce_settings.payment_provider`, which is the provider `create_ebook_order`

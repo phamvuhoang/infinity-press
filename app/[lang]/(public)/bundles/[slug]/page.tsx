@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { alternatePaths } from "@/lib/i18n/alternates";
 
 import { ActionErrorBanner } from "@/components/catalog/action-error-banner";
 import { BookGrid } from "@/components/catalog/book-card";
@@ -10,13 +11,15 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { formatPrice } from "@/lib/catalog/price";
+import { fillTemplate } from "@/lib/i18n/format";
 import { catalogStaticParams } from "@/lib/catalog/static-params";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getPublicBundle, publicBundleAction } from "@/lib/data/public-bundles";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
-import { getCatalogRoutes, getLocaleRoutes, otherLocale } from "@/lib/i18n/routes";
+import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { breadcrumbSchema, bundleSchema } from "@/lib/seo/json-ld";
 import { buildPageMetadata, localePaths, SITE_NAME } from "@/lib/seo/metadata";
 
@@ -48,17 +51,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const bundle = await getPublicBundle(locale, slug);
   if (!bundle) return {};
-  const other = otherLocale(locale);
+  // The alternate only when the bundle really is localized there: a bundle with one localization
+  // is a one-locale page, not the same page under two URLs.
+  const alternates = alternatePaths(bundle.alternateSlugs, (l, s) => getCatalogRoutes(l).bundle(s));
+  // This URL shows another locale's copy: it is that page's duplicate, not a translation.
+  const copyFrom = bundle.metadataLocale !== locale ? bundle.metadataLocale : undefined;
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    // The alternate only when the bundle really is localized there: a bundle with one localization
-    // is a one-locale page, not the same page under two URLs.
-    paths: localePaths(
-      locale,
-      getCatalogRoutes(locale).bundle(bundle.slug),
-      bundle.alternateSlug ? getCatalogRoutes(other).bundle(bundle.alternateSlug) : null,
-    ),
+    copyFrom,
+    paths: copyFrom ? alternates : localePaths(locale, getCatalogRoutes(locale).bundle(bundle.slug), alternates),
     title: bundle.title,
     description: bundle.description ?? bundle.subtitle ?? undefined,
     image: bundle.cover,
@@ -81,7 +83,6 @@ export default async function BundlePage({ params }: Props) {
   const dictionary = await getDictionary(locale);
   const copy = dictionary.catalog;
   const routes = getCatalogRoutes(locale);
-  const other = otherLocale(locale);
   const env = getServerEnv();
   // What an anonymous visitor could do now, so the page can be prerendered: nobody owns anything.
   // ViewerBundleAction corrects this in the browser from /api/catalog/bundles/[bundleId]/action-state.
@@ -91,7 +92,7 @@ export default async function BundlePage({ params }: Props) {
   return (
     <div className="min-h-screen bg-ivory">
       <SiteHeader
-        alternates={bundle.alternateSlug ? { [other]: getCatalogRoutes(other).bundle(bundle.alternateSlug) } : undefined}
+        alternates={alternatePaths(bundle.alternateSlugs, (l, s) => getCatalogRoutes(l).bundle(s))}
         current="books"
         locale={locale}
       />
@@ -120,6 +121,11 @@ export default async function BundlePage({ params }: Props) {
             <p className="text-xs tracking-[0.08em] text-sage-text uppercase">{copy.bundle.eyebrow}</p>
             <h1 className="mt-2 font-serif text-4xl leading-[1.08] font-normal tracking-[-0.01em] sm:text-5xl">{bundle.title}</h1>
             {bundle.subtitle ? <p className="mt-3 font-serif text-xl text-ink-soft">{bundle.subtitle}</p> : null}
+            {bundle.metadataLocale !== locale ? (
+              <p className="mt-3 text-xs text-sage-text">
+                {fillTemplate(copy.editions.metadataNote, { language: editionLanguageLabel(bundle.metadataLocale) ?? bundle.metadataLocale })}
+              </p>
+            ) : null}
 
             <div className="mt-8 flex flex-wrap items-start gap-x-6 gap-y-4 border-y border-hairline py-6">
               {bundle.offer ? (
@@ -159,6 +165,11 @@ export default async function BundlePage({ params }: Props) {
           <h2 className={sectionTitle} id="bundle-members">
             {copy.bundle.includes}
           </h2>
+          {new Set(bundle.members.map((member) => member.languageCode)).size > 1 ? (
+            <p className="mb-6 text-sm text-sage-text">
+              {fillTemplate(copy.bundle.languages, { languages: [...new Set(bundle.members.map((member) => member.languageLabel))].join(", ") })}
+            </p>
+          ) : null}
           {bundle.members.length > 0 ? (
             <BookGrid books={bundle.members} copy={copy.book} locale={locale} />
           ) : (

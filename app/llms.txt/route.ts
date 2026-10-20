@@ -4,7 +4,7 @@ import type { CatalogBookCard } from "@/lib/catalog/public-types";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getBookCards } from "@/lib/data/catalog";
 import { getArticleIndex, getPublishedIdeas } from "@/lib/data/knowledge";
-import { locales, type Locale } from "@/lib/i18n/config";
+import { locales, type Locale, defaultLocale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionary";
 import { fillTemplate } from "@/lib/i18n/format";
 import { getCatalogRoutes, getKnowledgeRoutes } from "@/lib/i18n/routes";
@@ -38,8 +38,9 @@ export async function GET(): Promise<Response> {
   const { siteUrl } = getServerEnv();
   const sections: LlmsLocaleSection[] = [];
 
-  for (const locale of locales) {
-    const [cards, ideas, articles, dictionary] = await Promise.all([
+  // The default locale leads: its section is the document title, the others nest below it.
+  for (const locale of [defaultLocale, ...locales.filter((candidate) => candidate !== defaultLocale)]) {
+    const [allCards, ideas, articles, dictionary] = await Promise.all([
       getBookCards(locale),
       getPublishedIdeas(locale),
       getArticleIndex(locale),
@@ -47,10 +48,12 @@ export async function GET(): Promise<Response> {
     ]);
     const catalog = getCatalogRoutes(locale);
     const hub = getKnowledgeRoutes(locale);
+    // Only works with a real copy in this locale; a fallback copy is listed once, under its own locale.
+    const cards = allCards.filter((card) => card.metadataLocale === locale);
 
     sections.push({
       locale,
-      heading: locale === "vi" ? SITE_NAME : dictionary.llms.heading,
+      heading: locale === defaultLocale ? SITE_NAME : dictionary.llms.heading,
       intro: dictionary.llms.intro,
       groups: [
         { heading: dictionary.navigation.books, entries: cards.map((card) => ({ title: card.title, path: catalog.book(card.slug), description: card.shortDescription, price: bookPrice(card.offer, locale, dictionary) })) },

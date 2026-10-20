@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { type Locale } from "@/lib/i18n/config";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { isCatalogEntityType } from "@/lib/catalog/entity-guards";
@@ -93,7 +94,7 @@ export async function updateEntityAction(
 export async function saveEntityLocalizationAction(
   type: CatalogEntityType,
   id: string,
-  locale: "vi" | "en",
+  locale: Locale,
   _previous: AdminFormState,
   formData: FormData,
 ): Promise<AdminFormState> {

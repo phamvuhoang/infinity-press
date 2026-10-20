@@ -12,7 +12,13 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 
 import { buyEbookAction, getFreeEbookAction } from "../../books/[slug]/actions";
 
-type Props = { params: Promise<{ lang: string; slug: string }> };
+type Props = { params: Promise<{ lang: string; slug: string }>; searchParams: Promise<{ edition?: string | string[] }> };
+
+// `?edition=` names the edition whose sample to open; absent, the default edition's.
+function requestedEdition(params: { edition?: string | string[] }): string | null {
+  const value = Array.isArray(params.edition) ? params.edition[0] : params.edition;
+  return value && /^[0-9a-f-]{36}$/i.test(value) ? value : null;
+}
 
 // The sample's CONTENT is public - that is the point of a sample, and /api/samples/* serves it to
 // anonymous callers by design. This surface is still noindex: it is a reading application rather
@@ -35,14 +41,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function ReadSamplePage({ params }: Props) {
+export default async function ReadSamplePage({ params, searchParams }: Props) {
   const { lang: locale, slug } = await params;
   if (!isLocale(locale)) notFound();
 
   // No requireUser: this is the one reading surface with no sign-in wall, and lib/auth/route-access
   // leaves /{locale}/read-sample public for the same reason. The sample allowlist in
   // lib/reader/session.ts is the entire trust boundary here.
-  const book = await getSampleReaderBook(locale, slug);
+  const book = await getSampleReaderBook(locale, slug, requestedEdition(await searchParams));
   if (!book) notFound();
 
   const dictionary = await getDictionary(locale);
@@ -63,12 +69,16 @@ export default async function ReadSamplePage({ params }: Props) {
         endSlot={
           <BookActionControl
             action={book.action}
-            bookId={book.bookId}
             bookPath={bookPath}
-            buyAction={buyEbookAction.bind(null, locale, book.bookId, book.slug)}
+            buyAction={
+              book.offer
+                ? buyEbookAction.bind(null, locale, book.bookId, book.slug, book.editionId, book.offer.offerId, book.offer.priceMinor)
+                : async () => undefined
+            }
             copy={dictionary.catalog.actions}
-            getFreeAction={getFreeEbookAction.bind(null, locale, book.bookId, book.slug)}
+            getFreeAction={getFreeEbookAction.bind(null, locale, book.bookId, book.slug, book.editionId)}
             locale={locale}
+            readHref={routes.readEdition(book.editionId)}
             signedIn={book.signedIn}
           />
         }

@@ -13,6 +13,10 @@ export class ManualProviderEventError extends Error {
   }
 }
 
+// The only currency manual QR transfer settles. The checkout, the transfer page and the QR all ask
+// this one question, and the database enforces the same list (commerce_settings.payable_currencies).
+export const MANUAL_TRANSFER_CURRENCIES: readonly string[] = ["VND"];
+
 // VietQR serves a static image; nothing is sent to it but the public payee details that the page
 // already prints beside it.
 //
@@ -29,7 +33,7 @@ export function buildVietQrImageUrl(input: {
   currency: string;
   reference: string;
 }): string | null {
-  if (input.currency !== "VND") return null;
+  if (!MANUAL_TRANSFER_CURRENCIES.includes(input.currency)) return null;
   const query = new URLSearchParams({
     amount: String(input.amountMinor),
     addInfo: input.reference,

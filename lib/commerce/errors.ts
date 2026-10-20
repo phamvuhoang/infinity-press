@@ -30,3 +30,29 @@ export class PaymentEventRejectedError extends Error {
     this.name = "PaymentEventRejectedError";
   }
 }
+
+// The offer the reader submitted is no longer current: its price moved, or it was withdrawn. No
+// order is created; the page shows the refreshed price and the reader presses Buy again.
+export class OfferChangedError extends Error {
+  constructor() {
+    super("The price of this edition changed.");
+    this.name = "OfferChangedError";
+  }
+}
+
+// Manual bank transfer settles VND only. A USD or JPY offer is never turned into a payable order and
+// never converted at a made-up rate.
+export class CurrencyNotPayableError extends Error {
+  constructor() {
+    super("This edition cannot be paid for by bank transfer.");
+    this.name = "CurrencyNotPayableError";
+  }
+}
+
+// The work has several editions on sale and the request did not say which one.
+export class EditionRequiredError extends Error {
+  constructor() {
+    super("Choose an edition to buy.");
+    this.name = "EditionRequiredError";
+  }
+}

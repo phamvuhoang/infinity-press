@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getServerEnv } from "@/lib/config/server-env";
-import { getActiveEntitlementBookIds, getBookCards } from "@/lib/data/catalog";
+import { getActiveEntitlementEditionIds, getBookCards } from "@/lib/data/catalog";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import {
   getBundleActionState,
@@ -18,7 +18,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 vi.mock("@/lib/supabase/public", () => ({ createPublicClient: vi.fn() }));
 vi.mock("@/lib/config/server-env", () => ({ getServerEnv: vi.fn() }));
 vi.mock("@/lib/data/profiles", () => ({ getCurrentProfile: vi.fn() }));
-vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn(), getActiveEntitlementBookIds: vi.fn() }));
+vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn(), getActiveEntitlementEditionIds: vi.fn() }));
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
 
 const BUNDLE_ID = "40000000-0000-4000-8000-000000000001";
@@ -26,6 +26,19 @@ const BOOK_ONE = "30000000-0000-4000-8000-000000000001";
 const BOOK_TWO = "30000000-0000-4000-8000-000000000002";
 const HIDDEN_BOOK = "30000000-0000-4000-8000-000000000009";
 const PROFILE_ID = "10000000-0000-4000-8000-000000000001";
+const ED_ONE = "50000000-0000-4000-8000-000000000001";
+const ED_TWO = "50000000-0000-4000-8000-000000000002";
+const ED_TWO_JA = "50000000-0000-4000-8000-000000000003";
+const ED_HIDDEN = "50000000-0000-4000-8000-000000000009";
+
+function edition(bookId: string, language = "en", overrides: Record<string, unknown> = {}) {
+  return { language_code: language, book_id: bookId, status: "published", active_publication_id: "pub", ...overrides };
+}
+
+// A bundle member is the card plus the edition it stands for.
+function member(cardValue: ReturnType<typeof card>, editionId: string, languageCode = "en", languageLabel = "English") {
+  return { ...cardValue, editionId, languageCode, languageLabel };
+}
 
 function card(bookId: string, slug: string, title: string) {
   return {
@@ -38,7 +51,7 @@ function card(bookId: string, slug: string, title: string) {
     cover: null,
     offer: { priceMinor: 129000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,
@@ -50,7 +63,7 @@ function card(bookId: string, slug: string, title: string) {
 type BundleRow = {
   id: string;
   localizations: { locale: string; slug: string; title: string; subtitle: string | null; description: string | null }[];
-  members: { book_id: string; position: number }[];
+  members: { edition_id: string; position: number; edition: ReturnType<typeof edition> | null }[];
 };
 
 function bundleRow(overrides: Partial<BundleRow> = {}): BundleRow {
@@ -62,9 +75,9 @@ function bundleRow(overrides: Partial<BundleRow> = {}): BundleRow {
     ],
     // Deliberately out of position order, so a passing ordering assertion cannot be the row order.
     members: [
-      { book_id: BOOK_TWO, position: 2 },
-      { book_id: HIDDEN_BOOK, position: 3 },
-      { book_id: BOOK_ONE, position: 1 },
+      { edition_id: ED_TWO, position: 2, edition: edition(BOOK_TWO) },
+      { edition_id: ED_HIDDEN, position: 3, edition: edition(HIDDEN_BOOK) },
+      { edition_id: ED_ONE, position: 1, edition: edition(BOOK_ONE) },
     ],
     ...overrides,
   };
@@ -73,9 +86,11 @@ function bundleRow(overrides: Partial<BundleRow> = {}): BundleRow {
 // One recorded chain per table, so each assertion can check both the answer and the filter that
 // produced it.
 function mockClient({
-  localization = { bundle_id: BUNDLE_ID },
+  // The bundle_localizations rows that answer a slug lookup (requested or fallback locale).
+  localization = [{ bundle_id: BUNDLE_ID, locale: "en" }] as { bundle_id: string; locale: string }[] | null,
   bundle = bundleRow() as BundleRow | null,
   localizations = null as { locale: string; slug: string }[] | null,
+  defaultMetadataLocale = "en",
   cover = [] as { storage_key: string; alt_text: string }[],
   // The price is now resolved by catalog_bundle_live_offer, the rule this page shares with
   // create_bundle_order, so it arrives as an RPC row rather than as an embed on the bundle.
@@ -91,13 +106,23 @@ function mockClient({
     const filters: Record<string, unknown> = {};
     calls[table].push(filters);
     const answer =
-      table === "bundles" ? { data: bundle, error } : localizations ? { data: localizations, error } : { data: localization, error };
+      table === "bundles"
+        ? { data: bundle, error }
+        : table === "platform_settings"
+          ? { data: { default_metadata_locale: defaultMetadataLocale }, error: null }
+          : localizations
+            ? { data: localizations, error }
+            : { data: localization, error };
     const builder: Record<string, unknown> = {};
     builder.select = vi.fn((columns: string) => {
       filters.select = columns;
       return builder;
     });
     builder.eq = vi.fn((column: string, value: unknown) => {
+      filters[column] = value;
+      return builder;
+    });
+    builder.in = vi.fn((column: string, value: unknown) => {
       filters[column] = value;
       return builder;
     });
@@ -121,7 +146,7 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
   vi.mocked(getServerEnv).mockReturnValue({ paymentProvider: "simulator" } as ReturnType<typeof getServerEnv>);
   vi.mocked(getCurrentProfile).mockResolvedValue(null);
-  vi.mocked(getActiveEntitlementBookIds).mockResolvedValue(new Set<string>());
+  vi.mocked(getActiveEntitlementEditionIds).mockResolvedValue(new Set<string>());
   vi.mocked(getBookCards).mockResolvedValue([card(BOOK_ONE, "book-one", "Book One"), card(BOOK_TWO, "book-two", "Book Two")]);
 });
 
@@ -138,13 +163,14 @@ describe("getPublicBundle", () => {
     expect(bundle).toEqual({
       bundleId: BUNDLE_ID,
       slug: "starter-bundle",
-      alternateSlug: "goi-khoi-dau",
+      alternateSlugs: { vi: "goi-khoi-dau" },
+      metadataLocale: "en",
       title: "Starter Bundle",
       subtitle: "Two books",
       description: "A set.",
       cover: null,
       offer: { priceMinor: 199000, currency: "VND" },
-      members: [card(BOOK_ONE, "book-one", "Book One"), card(BOOK_TWO, "book-two", "Book Two")],
+      members: [member(card(BOOK_ONE, "book-one", "Book One"), ED_ONE), member(card(BOOK_TWO, "book-two", "Book Two"), ED_TWO)],
     });
   });
 
@@ -159,8 +185,15 @@ describe("getPublicBundle", () => {
     expect(bundle).not.toHaveProperty("ownedMemberCount");
   });
 
-  it("orders the members by bundle_books.position, not by the row order", async () => {
-    mockClient({ bundle: bundleRow({ members: [{ book_id: BOOK_ONE, position: 9 }, { book_id: BOOK_TWO, position: 1 }] }) });
+  it("orders the members by bundle_editions.position, not by the row order", async () => {
+    mockClient({
+      bundle: bundleRow({
+        members: [
+          { edition_id: ED_ONE, position: 9, edition: edition(BOOK_ONE) },
+          { edition_id: ED_TWO, position: 1, edition: edition(BOOK_TWO) },
+        ],
+      }),
+    });
 
     const bundle = await getPublicBundle("en", "starter-bundle");
 
@@ -187,6 +220,40 @@ describe("getPublicBundle", () => {
     const bundle = await getPublicBundle("en", "starter-bundle");
 
     expect(bundle?.members).toEqual([]);
+  });
+
+  // English + Japanese of one work is a deliberate bundle: two members, told apart by edition.
+  it("keeps both languages of one work as separate members", async () => {
+    mockClient({
+      bundle: bundleRow({
+        members: [
+          { edition_id: ED_TWO, position: 1, edition: edition(BOOK_TWO, "en") },
+          { edition_id: ED_TWO_JA, position: 2, edition: edition(BOOK_TWO, "ja") },
+        ],
+      }),
+    });
+
+    const bundle = await getPublicBundle("en", "starter-bundle");
+
+    expect(bundle?.members.map((m) => [m.editionId, m.languageCode, m.languageLabel])).toEqual([
+      [ED_TWO, "en", "English"],
+      [ED_TWO_JA, "ja", "日本語"],
+    ]);
+  });
+
+  // The same bar edition_is_sellable applies in the database.
+  it("drops an edition that is not published, is blocked, or has no live publication", async () => {
+    mockClient({
+      bundle: bundleRow({
+        members: [
+          { edition_id: ED_ONE, position: 1, edition: edition(BOOK_ONE, "en", { status: "draft" }) },
+          { edition_id: ED_TWO, position: 2, edition: edition(BOOK_TWO, "en", { active_publication_id: null }) },
+          { edition_id: ED_TWO_JA, position: 3, edition: edition(BOOK_TWO, "ja", { editorial_state: "blocked" }) },
+        ],
+      }),
+    });
+
+    await expect(getPublicBundle("en", "starter-bundle")).resolves.toMatchObject({ members: [] });
   });
 
   it("reports no offer when the bundle has no live one", async () => {
@@ -232,7 +299,7 @@ describe("getPublicBundle", () => {
   });
 
   it("returns null for an unknown slug", async () => {
-    mockClient({ localization: null as unknown as { bundle_id: string } });
+    mockClient({ localization: [] });
     await expect(getPublicBundle("en", "no-such-bundle")).resolves.toBeNull();
   });
 
@@ -252,26 +319,52 @@ describe("getPublicBundle", () => {
     await expect(getPublicBundle("en", "starter-bundle")).rejects.toThrow("getPublicBundle failed.");
   });
 
-  it("asks for this locale's localization only", async () => {
-    const { calls } = mockClient({});
+  it("looks the slug up in this locale and the platform default locale only", async () => {
+    const { calls } = mockClient({ localization: [{ bundle_id: BUNDLE_ID, locale: "vi" }] });
     await getPublicBundle("vi", "goi-khoi-dau");
-    expect(calls.bundle_localizations?.[0]).toMatchObject({ locale: "vi", slug: "goi-khoi-dau" });
+    expect(calls.bundle_localizations?.[0]).toMatchObject({ locale: ["vi", "en"], slug: "goi-khoi-dau" });
+  });
+
+  // Metadata fallback (spec section 5): a bundle with no Japanese copy is shown under its English
+  // copy, whole, and says so; the English slug is what reaches it.
+  it("falls back to the platform default locale's copy and reports it", async () => {
+    mockClient({ localization: [{ bundle_id: BUNDLE_ID, locale: "en" }] });
+
+    const bundle = await getPublicBundle("ja", "starter-bundle");
+
+    expect(bundle).toMatchObject({ slug: "starter-bundle", title: "Starter Bundle", metadataLocale: "en", alternateSlugs: { en: "starter-bundle", vi: "goi-khoi-dau" } });
+  });
+
+  // A bundle that HAS its own copy in this locale is reached under that slug only: the fallback slug
+  // is not a second URL for the same page.
+  it("does not serve a bundle under its fallback slug when it is localized in this locale", async () => {
+    mockClient({ localization: [{ bundle_id: BUNDLE_ID, locale: "en" }] });
+
+    await expect(getPublicBundle("vi", "starter-bundle")).resolves.toBeNull();
   });
 });
 
 describe("getBundleOwnership", () => {
-  const members = [card(BOOK_ONE, "book-one", "Book One"), card(BOOK_TWO, "book-two", "Book Two")];
+  const members = [{ editionId: ED_ONE }, { editionId: ED_TWO }];
 
   it("is zero for a signed-out visitor, without reading entitlements", async () => {
     await expect(getBundleOwnership(members)).resolves.toBe(0);
-    expect(getActiveEntitlementBookIds).not.toHaveBeenCalled();
+    expect(getActiveEntitlementEditionIds).not.toHaveBeenCalled();
   });
 
-  it("counts only the visible members the signed-in reader owns", async () => {
+  it("counts only the member editions the signed-in reader owns", async () => {
     vi.mocked(getCurrentProfile).mockResolvedValue({ id: PROFILE_ID } as Awaited<ReturnType<typeof getCurrentProfile>>);
-    vi.mocked(getActiveEntitlementBookIds).mockResolvedValue(new Set([BOOK_ONE, HIDDEN_BOOK]));
+    vi.mocked(getActiveEntitlementEditionIds).mockResolvedValue(new Set([ED_ONE, ED_HIDDEN]));
 
     await expect(getBundleOwnership(members)).resolves.toBe(1);
+  });
+
+  // Owning the English edition of a work leaves its Japanese edition unowned.
+  it("does not count another language of an owned work", async () => {
+    vi.mocked(getCurrentProfile).mockResolvedValue({ id: PROFILE_ID } as Awaited<ReturnType<typeof getCurrentProfile>>);
+    vi.mocked(getActiveEntitlementEditionIds).mockResolvedValue(new Set([ED_TWO]));
+
+    await expect(getBundleOwnership([{ editionId: ED_TWO }, { editionId: ED_TWO_JA }])).resolves.toBe(1);
   });
 });
 
@@ -311,7 +404,7 @@ describe("getPublicBundleById", () => {
   // resolve a bundle whose `members` (and so the owned-of-total denominator) belonged to a different
   // locale than the one the caller actually asked for (Ruling 4).
   it("resolves the bundle by id in the requested locale", async () => {
-    mockClient({});
+    mockClient({ localizations: [{ locale: "en", slug: "starter-bundle" }] });
 
     const bundle = await getPublicBundleById("en", BUNDLE_ID);
 
@@ -319,11 +412,20 @@ describe("getPublicBundleById", () => {
     expect(bundle?.slug).toBe("starter-bundle");
   });
 
-  // Covers both a bundle that does not exist at all and one that exists but is not localized in the
-  // requested locale - getPublicBundleById treats them the same, which is correct: the island only
-  // ever asks in the locale the page rendered, so "not found there" is the whole answer either way.
-  it("returns null when the id has no localization in the requested locale", async () => {
-    mockClient({ localization: null as unknown as { bundle_id: string } });
+  // The island asks in the locale the page rendered; a bundle shown there under the platform
+  // default's copy resolves to that copy, the same way the page did.
+  it("resolves a bundle shown under the fallback copy", async () => {
+    mockClient({ localizations: [{ locale: "en", slug: "starter-bundle" }] });
+
+    const bundle = await getPublicBundleById("ja", BUNDLE_ID);
+
+    expect(bundle).toMatchObject({ slug: "starter-bundle", metadataLocale: "en" });
+  });
+
+  // Covers both a bundle that does not exist at all and one that is localized in neither the
+  // requested nor the fallback locale.
+  it("returns null when the id has no localization this locale can show", async () => {
+    mockClient({ localizations: [] });
 
     await expect(getPublicBundleById("en", BUNDLE_ID)).resolves.toBeNull();
   });
@@ -332,7 +434,7 @@ describe("getPublicBundleById", () => {
 describe("publicBundleAction", () => {
   it("answers for an anonymous visitor without reading a session", () => {
     const action = publicBundleAction({
-      members: [card(BOOK_ONE, "book-one", "Book One"), card(BOOK_TWO, "book-two", "Book Two")],
+      members: [member(card(BOOK_ONE, "book-one", "Book One"), ED_ONE), member(card(BOOK_TWO, "book-two", "Book Two"), ED_TWO)],
       offer: { priceMinor: 199000, currency: "VND" },
     });
 
@@ -342,7 +444,7 @@ describe("publicBundleAction", () => {
 
   it("never answers `owned_bundle`, because an anonymous visitor owns nothing", () => {
     const action = publicBundleAction({
-      members: [card(BOOK_ONE, "book-one", "Book One")],
+      members: [member(card(BOOK_ONE, "book-one", "Book One"), ED_ONE)],
       offer: { priceMinor: 199000, currency: "VND" },
     });
 

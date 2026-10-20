@@ -1,4 +1,5 @@
 import "server-only";
+import { alternateSlugsSchema } from "@/lib/i18n/alternates";
 
 import { headers } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
@@ -110,8 +111,9 @@ const ideaIndexRowsSchema = z.array(
     short_answer: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
-    alternate_slug: z.string().nullable(),
+    alternate_slugs: alternateSlugsSchema,
     topics: topicRefsSchema,
+    metadata_locale: z.string(),
   }),
 );
 
@@ -123,8 +125,9 @@ const articleIndexRowsSchema = z.array(
     excerpt: z.string(),
     published_at: z.string(),
     updated_at: z.string(),
-    alternate_slug: z.string().nullable(),
+    alternate_slugs: alternateSlugsSchema,
     author: authorSchema,
+    metadata_locale: z.string(),
   }),
 );
 
@@ -138,7 +141,8 @@ const ideaPageSchema = z.object({
   seoDescription: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  alternateSlug: z.string().nullable(),
+  alternateSlugs: alternateSlugsSchema,
+  metadataLocale: z.string(),
   bookIds: idsSchema,
   relatedIdeaIds: idsSchema,
   topics: topicRefsSchema,
@@ -154,7 +158,8 @@ const articlePageSchema = z.object({
   seoDescription: z.string().nullable(),
   publishedAt: z.string(),
   updatedAt: z.string(),
-  alternateSlug: z.string().nullable(),
+  alternateSlugs: alternateSlugsSchema,
+  metadataLocale: z.string(),
   author: authorSchema,
   bookIds: idsSchema,
   ideaIds: idsSchema,
@@ -192,7 +197,8 @@ export const getPublishedIdeas = cache(
       shortAnswer: row.short_answer,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      alternateSlug: row.alternate_slug,
+      alternateSlugs: row.alternate_slugs,
+      metadataLocale: row.metadata_locale,
       topics: row.topics,
     }));
   },
@@ -254,7 +260,8 @@ export const getArticleIndex = cache(
       excerpt: row.excerpt,
       publishedAt: row.published_at,
       updatedAt: row.updated_at,
-      alternateSlug: row.alternate_slug,
+      alternateSlugs: row.alternate_slugs,
+      metadataLocale: row.metadata_locale,
       author: row.author,
     }));
   },
@@ -275,12 +282,14 @@ export async function getKnowledgeSitemapEntries(
   ]);
   const routes = getKnowledgeRoutes(locale);
   const entries = new Map<string, KnowledgeSitemapEntry>();
+  // A page shown under another locale's copy (metadata fallback) is that locale's page, not one of
+  // this locale's: it is not listed, so the sitemap carries no duplicate under /ja.
   for (const { path, lastModified } of [
-    ...ideas.map((idea) => ({
+    ...ideas.filter((idea) => idea.metadataLocale === locale).map((idea) => ({
       path: routes.idea(idea.slug),
       lastModified: idea.updatedAt,
     })),
-    ...articles.map((article) => ({
+    ...articles.filter((article) => article.metadataLocale === locale).map((article) => ({
       path: routes.article(article.slug),
       lastModified: article.updatedAt,
     })),

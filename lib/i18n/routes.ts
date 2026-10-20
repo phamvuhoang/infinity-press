@@ -25,9 +25,16 @@ export function getCatalogRoutes(locale: Locale) {
     // S16: a shared quote card. Public, noindex, not localized by the viewer's locale: the card
     // renders in the locale the quote was shared in.
     quoteCard: (code: string) => withLocale(locale, `/q/${encodeURIComponent(code)}`),
+    // Legacy deep link: resolves to an edition the reader owns (redirect or chooser), never by the
+    // interface locale. Prefer readEdition wherever the edition is known.
     read: (bookId: string) => withLocale(locale, `/read/${bookId}`),
+    readEdition: (editionId: string) => withLocale(locale, `/read/editions/${editionId}`),
+    // Translation error report for an edition the reader owns.
+    reportError: (editionId: string) => withLocale(locale, `/library/report/${editionId}`),
     // S13 reader voice: the review form is a library page; ask-the-author is prefilled by query.
-    review: (bookId: string) => withLocale(locale, `/library/reviews/${bookId}`),
+    // A reader holding several editions of a work names the one they are reviewing.
+    review: (bookId: string, editionId?: string) =>
+      `${withLocale(locale, `/library/reviews/${bookId}`)}${editionId ? `?${new URLSearchParams({ edition: editionId })}` : ""}`,
     ask: (target: { book: string } | { idea: string }) => `${withLocale(locale, "/ask")}?${new URLSearchParams(target)}`,
     signInFor: (path: string) => `${withLocale(locale, "/sign-in")}?${new URLSearchParams({ next: path })}`,
   };
@@ -49,7 +56,6 @@ export function getCommerceRoutes(locale: Locale) {
     checkout: (orderId: string) => withLocale(locale, `/checkout/${orderId}`),
     checkoutSimulate: (orderId: string) => withLocale(locale, `/checkout/${orderId}/simulate`),
     checkoutTransfer: (orderId: string) => withLocale(locale, `/checkout/${orderId}/transfer`),
-    checkoutSepay: (orderId: string) => withLocale(locale, `/checkout/${orderId}/sepay`),
     checkoutStatus: (orderId: string) => withLocale(locale, `/checkout/${orderId}/status`),
     order: (orderId: string) => withLocale(locale, `/account/orders/${orderId}`),
     bookActionError: (slug: string, code: string) =>
@@ -63,8 +69,4 @@ export function getCommerceRoutes(locale: Locale) {
     // place a token must never be is somewhere a stray character can change what the path means.
     giftClaim: (token: string) => withLocale(locale, `/gifts/claim/${encodeURIComponent(token)}`),
   };
-}
-
-export function otherLocale(locale: Locale): Locale {
-  return locale === "vi" ? "en" : "vi";
 }

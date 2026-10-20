@@ -27,17 +27,23 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("submitBookReviewAction", () => {
   it("submits a parsed review and revalidates", async () => {
-    const state = await submitBookReviewAction("vi", "b1", initialAdminFormState, formWith("4", "Hay"));
+    const state = await submitBookReviewAction("vi", "b1", undefined, initialAdminFormState, formWith("4", "Hay"));
     expect(requireUser).toHaveBeenCalledWith("vi", "/vi/library/reviews/b1");
-    expect(submitBookReview).toHaveBeenCalledWith("b1", { rating: 4, body: "Hay" }, "vi");
+    expect(submitBookReview).toHaveBeenCalledWith("b1", { rating: 4, body: "Hay" }, "vi", undefined);
     expect(revalidatePath).toHaveBeenCalledWith("/[lang]", "layout");
     expect(revalidatePath).toHaveBeenCalledWith("/vi/library/reviews/b1");
     expect(revalidatePath).toHaveBeenCalledWith("/vi/library");
     expect(state.savedAt).not.toBeNull();
   });
 
+  it("pins the review to the edition the reader chose", async () => {
+    await submitBookReviewAction("vi", "b1", "e1", initialAdminFormState, formWith("4", "Hay"));
+    expect(requireUser).toHaveBeenCalledWith("vi", "/vi/library/reviews/b1?edition=e1");
+    expect(submitBookReview).toHaveBeenCalledWith("b1", { rating: 4, body: "Hay" }, "vi", "e1");
+  });
+
   it("returns field errors without writing when the input is invalid", async () => {
-    const state = await submitBookReviewAction("vi", "b1", initialAdminFormState, formWith("9", ""));
+    const state = await submitBookReviewAction("vi", "b1", undefined, initialAdminFormState, formWith("9", ""));
     expect(submitBookReview).not.toHaveBeenCalled();
     expect(Object.keys(state.fieldErrors).sort()).toEqual(["body", "rating"]);
     expect(state.savedAt).toBeNull();
@@ -45,14 +51,14 @@ describe("submitBookReviewAction", () => {
 
   it("maps NotEntitledToReviewError to a form error key", async () => {
     vi.mocked(submitBookReview).mockRejectedValueOnce(new NotEntitledToReviewError());
-    const state = await submitBookReviewAction("vi", "b1", initialAdminFormState, formWith("4", "Hay"));
+    const state = await submitBookReviewAction("vi", "b1", undefined, initialAdminFormState, formWith("4", "Hay"));
     expect(state.formError).toBe("not_entitled");
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
   it("maps any other failure to the failed key", async () => {
     vi.mocked(submitBookReview).mockRejectedValueOnce(new Error("boom"));
-    const state = await submitBookReviewAction("vi", "b1", initialAdminFormState, formWith("4", "Hay"));
+    const state = await submitBookReviewAction("vi", "b1", undefined, initialAdminFormState, formWith("4", "Hay"));
     expect(state.formError).toBe("failed");
   });
 });
@@ -61,7 +67,7 @@ describe("deleteBookReviewAction", () => {
   it("deletes, revalidates, and returns to the library", async () => {
     await deleteBookReviewAction("en", "b1");
     expect(requireUser).toHaveBeenCalledWith("en", "/en/library/reviews/b1");
-    expect(deleteBookReview).toHaveBeenCalledWith("b1");
+    expect(deleteBookReview).toHaveBeenCalledWith("b1", undefined);
     expect(revalidatePath).toHaveBeenCalledWith("/[lang]", "layout");
     expect(redirect).toHaveBeenCalledWith("/en/library");
   });

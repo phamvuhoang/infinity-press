@@ -1,5 +1,6 @@
 import { escapeHtml, fill, singleLine } from "@/lib/email/text";
 import en from "@/lib/i18n/dictionaries/en.json";
+import ja from "@/lib/i18n/dictionaries/ja.json";
 import vi from "@/lib/i18n/dictionaries/vi.json";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -16,6 +17,7 @@ export type BookReadyEmailInput = {
 const copy: Record<Locale, typeof en.email.bookReady> = {
   en: en.email.bookReady,
   vi: vi.email.bookReady,
+  ja: ja.email.bookReady,
 };
 
 export function buildBookReadyEmail(input: BookReadyEmailInput): { subject: string; text: string; html: string } {

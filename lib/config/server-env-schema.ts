@@ -28,10 +28,7 @@ const schema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: serviceUrl,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  PAYMENT_PROVIDER: z.enum(["disabled", "simulator", "manual", "sepay"]),
-  SEPAY_MERCHANT_ID: z.preprocess((value) => value === "" ? undefined : value, z.string().min(1).optional()),
-  SEPAY_SECRET_KEY: z.preprocess((value) => value === "" ? undefined : value, z.string().min(1).optional()),
-  SEPAY_ENV: z.preprocess((value) => value === "" ? undefined : value, z.enum(["sandbox", "production"]).optional()),
+  PAYMENT_PROVIDER: z.enum(["disabled", "simulator", "manual"]),
   PAYMENT_SIMULATOR_SECRET: z.string().min(32).optional(),
   BANK_TRANSFER_BANK_CODE: z.string().regex(/^\d{6}$/).optional(),
   BANK_TRANSFER_BANK_NAME: z.string().min(1).optional(),
@@ -71,22 +68,6 @@ export function parseServerEnv(values: Record<string, string | undefined>) {
     throw new Error(
       "BANK_TRANSFER_BANK_CODE, BANK_TRANSFER_BANK_NAME, BANK_TRANSFER_ACCOUNT_NUMBER, and BANK_TRANSFER_ACCOUNT_HOLDER are required when PAYMENT_PROVIDER=manual",
     );
-  }
-  // All three or none. The settings may be present while another provider is active: the IPN
-  // route keeps answering to settle pending orders or flag late payments on cancelled orders.
-  const sepaySet = [parsed.SEPAY_MERCHANT_ID, parsed.SEPAY_SECRET_KEY, parsed.SEPAY_ENV].filter(Boolean).length;
-  if (sepaySet !== 0 && sepaySet !== 3) {
-    throw new Error("SEPAY_MERCHANT_ID, SEPAY_SECRET_KEY, and SEPAY_ENV must be set together");
-  }
-  if (parsed.PAYMENT_PROVIDER === "sepay" && sepaySet !== 3) {
-    throw new Error("SEPAY_MERCHANT_ID, SEPAY_SECRET_KEY, and SEPAY_ENV are required when PAYMENT_PROVIDER=sepay");
-  }
-  // Sandbox payments move no money, so production must never complete an order from one.
-  if (parsed.SEPAY_ENV && parsed.APP_ENV === "production" && parsed.SEPAY_ENV !== "production") {
-    throw new Error("SEPAY_ENV must be production when APP_ENV=production");
-  }
-  if (parsed.SEPAY_ENV === "production" && (parsed.APP_ENV === "local" || parsed.APP_ENV === "test")) {
-    throw new Error("SEPAY_ENV=production is not allowed when APP_ENV is local or test");
   }
   // EMAIL_PROVIDER=test skips Resend entirely, so it must never reach a real customer inbox.
   if (
@@ -134,10 +115,6 @@ export function parseServerEnv(values: Record<string, string | undefined>) {
             accountNumber: parsed.BANK_TRANSFER_ACCOUNT_NUMBER,
             accountHolder: parsed.BANK_TRANSFER_ACCOUNT_HOLDER,
           }
-        : null,
-    sepay:
-      parsed.SEPAY_MERCHANT_ID && parsed.SEPAY_SECRET_KEY && parsed.SEPAY_ENV
-        ? { merchantId: parsed.SEPAY_MERCHANT_ID, secretKey: parsed.SEPAY_SECRET_KEY, env: parsed.SEPAY_ENV }
         : null,
     readerSessionTtlSeconds: parsed.READER_SESSION_TTL_SECONDS,
     siteUrl: new URL(parsed.SITE_URL).origin,

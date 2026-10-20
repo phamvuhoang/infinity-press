@@ -38,8 +38,8 @@ const bundle: AdminBundleDTO = {
     { id: "loc-vi", locale: "vi", slug: "bo-khoi-dau", title: "Bộ khởi đầu", subtitle: null, description: "Hai cuốn sách." },
   ],
   members: [
-    { bookId: bookA, position: 1, title: "Cuốn một", canonicalKey: "first", published: true },
-    { bookId: bookB, position: 2, title: "Cuốn hai", canonicalKey: "second", published: false },
+    { editionId: bookA, bookId: bookA, languageCode: "en", position: 1, title: "Cuốn một", canonicalKey: "first", published: true },
+    { editionId: bookB, bookId: bookB, languageCode: "en", position: 2, title: "Cuốn hai", canonicalKey: "second", published: false },
   ],
   offers: [{ id: "offer-vn", marketCode: "VN", currency: "VND", priceMinor: 150000, active: true }],
   cover: null,
@@ -52,9 +52,9 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getAdminBundle).mockResolvedValue(bundle);
   vi.mocked(listAdminBooks).mockResolvedValue([
-    { id: bookA, canonicalKey: "first", title: "Cuốn một", authorName: "A", status: "published", hasActivePublication: true, readinessIssues: [] },
-    { id: bookB, canonicalKey: "second", title: "Cuốn hai", authorName: "B", status: "draft", hasActivePublication: false, readinessIssues: [] },
-    { id: "8a1b2c3d-0000-4000-8000-00000000000c", canonicalKey: "third", title: "Cuốn ba", authorName: "C", status: "published", hasActivePublication: true, readinessIssues: [] },
+    { id: bookA, canonicalKey: "first", title: "Cuốn một", authorName: "A", status: "published", hasActivePublication: true, editions: [], readinessIssues: [] },
+    { id: bookB, canonicalKey: "second", title: "Cuốn hai", authorName: "B", status: "draft", hasActivePublication: false, editions: [], readinessIssues: [] },
+    { id: "8a1b2c3d-0000-4000-8000-00000000000c", canonicalKey: "third", title: "Cuốn ba", authorName: "C", status: "published", hasActivePublication: true, editions: [], readinessIssues: [] },
   ]);
 });
 
@@ -93,9 +93,9 @@ it("gives keyboard users explicit reorder controls and posts the whole ordered l
   expect(screen.getByRole("button", { name: "Move Cuốn một down" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Move Cuốn hai down" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Remove Cuốn hai from the bundle" })).toBeInTheDocument();
-  expect(screen.getByLabelText("Add a book to the bundle")).toBeInTheDocument();
+  expect(screen.getByLabelText("Add an edition to the bundle")).toBeInTheDocument();
 
-  const posted = [...container.querySelectorAll<HTMLInputElement>("input[type='hidden'][name='bookIds']")].map((input) => input.value);
+  const posted = [...container.querySelectorAll<HTMLInputElement>("input[type='hidden'][name='editionIds']")].map((input) => input.value);
   expect(posted).toEqual([bookA, bookB]);
 });
 

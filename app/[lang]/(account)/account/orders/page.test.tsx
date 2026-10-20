@@ -21,7 +21,7 @@ const order: CustomerOrderDTO = {
   id: ORDER_ID,
   bundleId: null,
   title: "A Book",
-  items: [{ bookId: "30000000-0000-4000-8000-000000000001", title: "A Book", hasActiveEntitlement: false }],
+  items: [{ bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "A Book", hasActiveEntitlement: false }],
   status: "completed",
   paymentStatus: "succeeded",
   totalMinor: 129000,
@@ -46,9 +46,9 @@ const bundleOrder: CustomerOrderDTO = {
   totalMinor: 300000,
   subtotalMinor: 300000,
   items: [
-    { bookId: "30000000-0000-4000-8000-000000000001", title: "First", hasActiveEntitlement: true },
-    { bookId: "30000000-0000-4000-8000-000000000002", title: "Second", hasActiveEntitlement: true },
-    { bookId: "30000000-0000-4000-8000-000000000003", title: "Third", hasActiveEntitlement: true },
+    { bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "First", hasActiveEntitlement: true },
+    { bookId: "30000000-0000-4000-8000-000000000002", editionId: null, languageCode: null, title: "Second", hasActiveEntitlement: true },
+    { bookId: "30000000-0000-4000-8000-000000000003", editionId: null, languageCode: null, title: "Third", hasActiveEntitlement: true },
   ],
 };
 
@@ -73,11 +73,11 @@ describe("OrdersPage", () => {
       "href",
       `/en/account/orders/${BUNDLE_ORDER_ID}`,
     );
-    expect(screen.getByText("3 books")).toBeInTheDocument();
+    expect(screen.getByText("3 editions")).toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: "A Book" })).toHaveAttribute("href", `/en/account/orders/${ORDER_ID}`);
     // One count line on the page, for the one bundle order: a single-book row gains nothing.
-    expect(screen.getAllByText(/^\d+ books?$/)).toHaveLength(1);
+    expect(screen.getAllByText(/^\d+ editions?$/)).toHaveLength(1);
   });
 
   it("keeps each order's own total rather than one row's", async () => {

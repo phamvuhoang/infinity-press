@@ -29,6 +29,7 @@ function mockAuthClient() {
 
 const props = {
   bookId: "book-1",
+  editionId: "edition-1",
   bookPath: "/en/books/a-book",
   locale: "en" as const,
   copy: {} as never,
@@ -58,7 +59,7 @@ describe("ViewerBookAction", () => {
 
     await waitFor(() => expect(screen.getByText("read")).toHaveAttribute("data-signed-in", "true"));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/catalog/books/book-1/action-state?locale=en",
+      "/api/catalog/books/book-1/action-state?locale=en&edition=edition-1",
       expect.objectContaining({ signal: expect.anything() }),
     );
   });

@@ -16,14 +16,14 @@ describe("proxy", () => {
     const response = await proxy(request("/"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://localhost:3000/vi");
+    expect(response.headers.get("location")).toBe("http://localhost:3000/en");
   });
 
   it("keeps the query string when it redirects a bare / to the default locale", async () => {
     const response = await proxy(request("/?utm_source=newsletter"));
 
     expect(response.headers.get("location")).toBe(
-      "http://localhost:3000/vi?utm_source=newsletter",
+      "http://localhost:3000/en?utm_source=newsletter",
     );
   });
 

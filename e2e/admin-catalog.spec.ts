@@ -3,6 +3,7 @@ import { type Page, expect, test } from "@playwright/test";
 
 import { validEpub } from "../scripts/fixtures/create-test-epub";
 import { createAnonClient, createServiceRoleClient } from "./support/supabase";
+import { approveEditionDirectly } from "./support/editions";
 
 // S1 acceptance: deleting a section save, bypassing readiness, chaining slug redirects, or
 // removing a page gate must fail here. Only account/role setup writes fixture rows directly;
@@ -90,11 +91,16 @@ test("an operator builds, publishes, replaces the cover, renames, and unpublishe
     await page.getByLabel(`Key ideas (${locale})`).fill("Quan sát | Nhìn mà không phán xét");
     await save(page, `Save ${locale} copy`);
   }
+  // Edition details and the offer live on the edition's own page.
+  await page.getByRole("link", { name: /English/ }).click();
+  await expect(page).toHaveURL(/\/editions\/[0-9a-f-]{36}$/);
+  const editionUrl = page.url();
   await page.getByLabel("Edition number").fill("2");
   await page.getByLabel("Publication date").fill("2026-09-14");
   await save(page, "Save edition");
-  await page.getByLabel("Price (minor units)").fill("1500");
+  await page.locator("#offer-priceMinor").fill("1500");
   await save(page, "Save offer");
+  await page.goto(`/admin/books/${bookId}`);
   await page.getByLabel(names.topic, { exact: true }).check();
   await page.getByLabel("Series", { exact: true }).selectOption({ label: names.series });
   await page.getByLabel("Series position").fill("1");
@@ -128,11 +134,14 @@ test("an operator builds, publishes, replaces the cover, renames, and unpublishe
     await expect(page.getByRole("link", { name: "Upload a cover image." })).toHaveCount(0);
   }
 
+  await page.goto(editionUrl);
   await page.getByLabel("EPUB file").setInputFiles({ name: "launch.epub", mimeType: "application/epub+zip", buffer: Buffer.from(validEpub()) });
   await page.getByRole("button", { name: "Upload EPUB" }).click();
   await expect(page.locator("#epub").getByRole("status")).toContainText("Queued for processing. Job");
   const { data: edition, error: editionError } = await service.from("editions").select("id,edition_number,publication_date").eq("book_id", bookId).single();
   if (editionError) throw editionError;
+  // Editorial approval gates publishing (covered end to end in ebook-golden-path.spec.ts).
+  await approveEditionDirectly(edition.id);
   expect(edition).toMatchObject({ edition_number: 2, publication_date: "2026-09-14" });
   const { data: asset, error: assetError } = await service.from("ebook_assets").select("id,source_storage_key").eq("edition_id", edition.id).single();
   if (assetError) throw assetError;
@@ -152,9 +161,10 @@ test("an operator builds, publishes, replaces the cover, renames, and unpublishe
   const { error: sourceDenied } = await anon.storage.from("ebook-source").download(asset.source_storage_key);
   expect(sourceDenied).not.toBeNull();
 
+  await page.goto(editionUrl);
+  await expect(page.locator("#offer-priceMinor")).toHaveValue("1500");
   await page.goto(`/admin/books/${bookId}`);
   await expect(page.getByLabel("Canonical key")).toHaveValue(`edited-${oldSlug}`);
-  await expect(page.getByLabel("Price (minor units)")).toHaveValue("1500");
   await expect(page.getByLabel(names.topic, { exact: true })).toBeChecked();
   await expect(page.getByLabel("Series position")).toHaveValue("1");
   for (const width of [375, 768, 1440]) {

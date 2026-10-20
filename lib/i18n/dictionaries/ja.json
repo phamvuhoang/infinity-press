@@ -1,0 +1,691 @@
+{
+  "llms": {
+    "heading": "日本語",
+    "intro": "Infinity Books Press は世界の古典作品とその翻訳を紹介します。ひとつの作品に複数の言語版があり、電子書籍はこのサイトのブラウザ上で読めます。",
+    "authors": "著者",
+    "series": "シリーズ",
+    "topics": "トピック",
+    "listPrice": "定価 {price}",
+    "saleUntil": "{date} まで"
+  },
+  "navigation": {
+    "primary": "メインナビゲーション",
+    "account": "アカウント",
+    "signIn": "ログイン",
+    "signOut": "ログアウト",
+    "skipToContent": "本文へスキップ",
+    "library": "ライブラリ",
+    "switchLocale": "言語を選択",
+    "switchLocaleShort": "言語",
+    "books": "作品",
+    "search": "検索",
+    "ideas": "アイデア",
+    "articles": "記事"
+  },
+  "authentication": {
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "magicLink": {
+      "title": "メールでログイン",
+      "description": "ライブラリに進むための安全なリンクをお送りします。",
+      "submit": "ログイン用リンクを送信",
+      "pending": "リンクを送信しています…"
+    },
+    "passwordSignIn": {
+      "title": "パスワードでのログイン（予備手段）",
+      "description": "パスワードでのアクセスが必要な場合にのみ使う、内部向けの復旧手段です。",
+      "submit": "パスワードでログイン",
+      "pending": "ログインしています…",
+      "forgotPrompt": "パスワードをお忘れですか？",
+      "forgotLink": "再設定する"
+    },
+    "forgotPassword": {
+      "title": "パスワードの再設定",
+      "description": "パスワードでのログインは、管理者のみが使う内部向けの予備手段です。続けると、安全な復旧リンクをメールでお送りします。",
+      "submit": "復旧リンクを送信",
+      "pending": "リンクを送信しています…",
+      "rememberPrompt": "パスワードを思い出しましたか？",
+      "backToSignIn": "ログインに戻る"
+    },
+    "updatePassword": {
+      "title": "新しいパスワードの設定",
+      "description": "アカウントを安全に保つため、新しいパスワードを2回入力してください。",
+      "newPassword": "新しいパスワード",
+      "confirmPassword": "新しいパスワード（確認）",
+      "submit": "パスワードを更新",
+      "pending": "パスワードを更新しています…",
+      "restartPrompt": "別のリンクが必要ですか？",
+      "restartLink": "復旧をやり直す"
+    },
+    "alerts": {
+      "errorTitle": "続行できません",
+      "messageTitle": "次のステップ",
+      "errors": {
+        "callback": "認証リンクが無効か、有効期限が切れています。新しいリンクをリクエストしてください。",
+        "credentials": "メールアドレスまたはパスワードが正しくありません。",
+        "email": "有効なメールアドレスを入力してください。",
+        "magic-link": "ログイン用リンクを送信できませんでした。もう一度お試しください。",
+        "password-length": "パスワードは8文字以上で入力してください。",
+        "password-match": "パスワードが一致しません。",
+        "recovery": "復旧メールを送信できませんでした。もう一度お試しください。",
+        "staff-only": "パスワードでのログインはスタッフアカウント専用です。メールのログインリンクをご利用ください。",
+        "update": "パスワードを更新できませんでした。新しい復旧リンクをリクエストしてください。"
+      },
+      "messages": {
+        "check-email": "メールを確認し、安全なリンクから続行してください。",
+        "password-updated": "パスワードを更新しました。"
+      }
+    }
+  },
+  "home": {
+    "eyebrow": "世界の古典を、あなたの言語で",
+    "title": "世界の古典を、さまざまな言語でもっと身近に。",
+    "description": "Infinity Books Press は世界の古典作品を厳選し、その翻訳版を紹介して、ブラウザですぐに読めるようにします。作品を探し、言語を選び、あなたに合った版を見つけてください。",
+    "getStarted": "はじめる",
+    "coverQuote": "終わりのない物語。",
+    "journeyTitle": "旅を\n続ける",
+    "journeySteps": [
+      "すでに読んだ方へ",
+      "次はこちら",
+      "その次に"
+    ],
+    "platform": {
+      "eyebrow": "Press について",
+      "title": "ひとつの作品、たくさんの言語版。",
+      "copy": "ひとつの古典に、複数の言語版があります。版ごとに翻訳、価格、閲覧権が独立しているので、読みたい版だけを選べます。"
+    },
+    "howItWorks": {
+      "explore": {
+        "title": "作品を探す",
+        "copy": "著者やトピックから古典を探し、利用できる言語版を確認できます。"
+      },
+      "language": {
+        "title": "言語を選ぶ",
+        "copy": "購入前に、各版の言語と価格が表示されます。サイトの表示言語を変えても、選んだ版は変わりません。"
+      },
+      "read": {
+        "title": "ブラウザで読む",
+        "copy": "ライブラリを開けば、どの端末でも読めます。読書の進み具合は版ごとに別々に保存されます。"
+      }
+    },
+    "footerTagline": "世界の古典を、ひとつずつ言語ごとに。",
+    "featured": {
+      "eyebrow": "注目の作品",
+      "sample": "試し読み",
+      "view": "作品を見る"
+    },
+    "topicsTitle": "トピックから探す",
+    "topicsLink": "すべてのトピック",
+    "shelfTitle": "注目の\n作品",
+    "shelfDescription": "少しずつ増えていく古典の本棚です。各カードには、読む版の言語が表示されています。"
+  },
+  "catalog": {
+    "editions": {
+      "label": "言語別の版",
+      "notOnSale": "販売準備中",
+      "invalid": "この版はご利用いただけません。下の版からお選びください。",
+      "ebookIn": "電子書籍・{language}",
+      "fallbackNote": "{requested}版はまだありません。こちらは{language}版です。",
+      "metadataNote": "タイトルと説明は{language}で表示しています。"
+    },
+    "quoteCard": {
+      "eyebrow": "引用元",
+      "sharedFrom": "Infinity Books Press から共有",
+      "readSample": "試し読み",
+      "openBook": "作品について"
+    },
+    "retail": {
+      "title": "紙の本",
+      "intro": "紙の本はこちらで購入できます：",
+      "listPrice": "定価 {price}",
+      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+    },
+    "browseAll": "すべての作品を見る",
+    "featuredEyebrow": "注目",
+    "shelfTitle": "本棚",
+    "books": {
+      "eyebrow": "カタログ",
+      "title": "すべての作品",
+      "description": "Infinity Books Press で読めるすべての作品です。",
+      "filtersTitle": "作品を絞り込む",
+      "topic": "トピック",
+      "author": "著者",
+      "series": "シリーズ",
+      "price": "価格",
+      "any": "指定なし",
+      "free": "無料",
+      "paid": "有料",
+      "sort": "並べ替え",
+      "sortFeatured": "おすすめ順",
+      "sortNewest": "新着順",
+      "sortTitle": "タイトル順",
+      "apply": "適用",
+      "clear": "絞り込みを解除",
+      "countOne": "{count} 作品",
+      "countOther": "{count} 作品",
+      "emptyTitle": "条件に合う作品がありません。"
+    },
+    "book": {
+      "by": "著者：",
+      "free": "無料",
+      "salePrice": "セール価格",
+      "listPrice": "定価",
+      "sample": "試し読み",
+      "audience": "こんな方におすすめ",
+      "keyIdeas": "主なアイデア",
+      "faq": "よくある質問",
+      "topics": "トピック",
+      "seriesPosition": "{series} の第{position}巻",
+      "format": "電子書籍（EPUB・ウェブで閲覧）",
+      "knowledgeTitle": "この作品に関するアイデアと記事"
+    },
+    "reviews": {
+      "title": "読者レビュー",
+      "countOne": "{count} 件のレビュー",
+      "countOther": "{count} 件のレビュー",
+      "average": "平均評価",
+      "write": "レビューを書く",
+      "ask": "編集部に質問する",
+      "authorReply": "編集部からの返信：",
+      "anonymousReader": "読者",
+      "empty": "まだレビューはありません。"
+    },
+    "bundle": {
+      "eyebrow": "セット",
+      "itemCountOne": "{count}点",
+      "itemCountOther": "{count}点",
+      "includes": "セットの内容",
+      "priceNote": "セット全体で一つの価格です。すでに一部の版をお持ちでも価格は変わりません。",
+      "ownedSome": "このセットの{total}点のうち{owned}点をすでにお持ちです。",
+      "ownedAll": "このセットのすべての版をすでにお持ちです。",
+      "buy": "セットを購入",
+      "library": "ライブラリへ",
+      "empty": "現在、表示できる版がありません。",
+      "languages": "このセットに含まれる言語：{languages}"
+    },
+    "actions": {
+      "read": "今すぐ読む",
+      "getFree": "無料で入手",
+      "buy": "電子書籍を購入",
+      "comingSoon": "近日公開",
+      "unavailable": "まだご利用いただけません",
+      "signInHint": "先にメールでログインします。",
+      "pending": "処理中…"
+    },
+    "actionErrors": {
+      "email-not-verified": "この作品を入手する前に、メールアドレスを確認してください。",
+      "no-free-offer": "この作品はもう無料ではありません。",
+      "payments-unavailable": "電子書籍の購入はまだご利用いただけません。",
+      "not-purchasable": "この作品は現在購入できません。",
+      "currency-unavailable": "この版は現在、銀行振込でお支払いいただけません。",
+      "choose-edition": "購入する版を選んでください。",
+      "price-changed": "価格が変更されました。新しい価格をご確認のうえ、もう一度お試しください。",
+      "unexpected": "問題が発生しました。もう一度お試しください。"
+    },
+    "entity": {
+      "author": "著者",
+      "series": "シリーズ",
+      "topic": "トピック",
+      "booksTitle": "作品",
+      "recommendationsTitle": "関連する作品",
+      "knowledgeTitle": "アイデアと記事"
+    },
+    "search": {
+      "title": "検索",
+      "description": "Infinity Books Press で、作品、著者、アイデア、記事、シリーズ、トピックを検索します。",
+      "label": "作品、著者、アイデア、記事、シリーズ、トピックを検索",
+      "placeholder": "タイトル、著者、トピック",
+      "submit": "検索",
+      "resultsFor": "「{query}」の検索結果",
+      "books": "作品",
+      "authors": "著者",
+      "ideas": "アイデア",
+      "articles": "記事",
+      "series": "シリーズ",
+      "topics": "トピック",
+      "emptyTitle": "「{query}」に一致するものはありませんでした。",
+      "emptyHint": "綴りを確認するか、言葉を減らしてお試しください。",
+      "promptTitle": "何をお探しですか？",
+      "promptHint": "2文字以上入力してください。"
+    }
+  },
+  "knowledge": {
+    "ideas": {
+      "eyebrow": "ナレッジ",
+      "title": "アイデア",
+      "description": "作品が扱う問いへの短い答えと、さらに深く読める作品をご紹介します。",
+      "empty": "公開されているアイデアはまだありません。",
+      "otherTopic": "その他"
+    },
+    "articles": {
+      "eyebrow": "ナレッジ",
+      "title": "記事",
+      "description": "作品、その著者、そして作品が共有するアイデアについての、より長い読みものです。",
+      "empty": "公開されている記事はまだありません。"
+    },
+    "idea": {
+      "eyebrow": "アイデア",
+      "shortAnswer": "短い答え",
+      "relatedBooks": "関連する作品",
+      "relatedIdeas": "関連するアイデア",
+      "topics": "トピック",
+      "ask": "編集部にこの件を質問する"
+    },
+    "article": {
+      "eyebrow": "記事",
+      "by": "執筆：",
+      "published": "公開日",
+      "updated": "更新日",
+      "relatedBooks": "関連する作品",
+      "relatedIdeas": "関連するアイデア",
+      "topics": "トピック"
+    }
+  },
+  "checkout": {
+    "eyebrow": "お支払い",
+    "title": "ご注文内容の確認",
+    "description": "Infinity Books Press アカウント向けの電子書籍をご購入いただきます。",
+    "total": "合計",
+    "account": "アカウント",
+    "pay": "支払う",
+    "paying": "お支払いを開始しています…",
+    "previousFailed": "前回のお支払いが完了しませんでした。もう一度お試しいただけます。",
+    "alreadyOwned": "この作品はすでにお持ちです。",
+    "readNow": "今すぐ読む",
+    "gift": {
+      "legend": "ギフトとして贈る",
+      "description": "指定した方に、受け取り用のリンクをメールでお送りします。この注文の閲覧権はあなたには付与されず、受け取った方だけが利用できます。",
+      "emailLabel": "受取人のメールアドレス",
+      "messageLabel": "メッセージ（任意）",
+      "save": "ギフトを保存",
+      "saving": "保存しています…",
+      "remove": "ギフトを解除",
+      "removing": "解除しています…",
+      "configured": "この注文は {email} 宛てのギフトです。お支払いが完了すると、受け取り用のリンクをメールでお送りします。",
+      "lockedTransfer": "振込のご連絡をいただいたため、ギフトの内容は変更できません。内容に誤りがある場合はサポートまでご連絡ください。",
+      "invalidEmail": "受取人の有効なメールアドレスを入力してください。",
+      "messageTooLong": "メッセージは500文字以内で入力してください。",
+      "unavailable": "この注文は現在ギフトとして設定できません。"
+    },
+    "coupon": {
+      "legend": "プロモーションコード",
+      "label": "コードを入力",
+      "apply": "適用",
+      "applying": "適用しています…",
+      "remove": "解除",
+      "removing": "解除しています…",
+      "subtotal": "小計",
+      "discount": "割引",
+      "applied": "コード {code} を適用しました。",
+      "invalid": "このコードは使用できません。",
+      "rateLimited": "コードの試行回数が多すぎます。しばらく待ってからもう一度お試しください。",
+      "unavailable": "この注文には現在コードを適用できません。"
+    },
+    "simulate": {
+      "eyebrow": "決済シミュレーター",
+      "title": "決済をシミュレートする",
+      "description": "このページはテスト環境にのみ存在します。決済事業者が報告する結果を選んでください。",
+      "succeed": "成功",
+      "fail": "失敗",
+      "cancel": "キャンセル",
+      "duplicate": "重複を送信",
+      "sending": "送信しています…"
+    },
+    "status": {
+      "eyebrow": "注文の状況",
+      "processingTitle": "お支払いを処理しています",
+      "processingBody": "このページはしばらくの間、自動的に更新されます。",
+      "checkAgain": "再確認する",
+      "awaitingTransferTitle": "お振込みをお待ちしています",
+      "awaitingTransferBody": "ご注文を受け付けました。案内に従って銀行振込を完了してください。",
+      "awaitingConfirmationTitle": "確認待ち",
+      "awaitingConfirmationBody": "振込のご連絡を受け取りました。確認でき次第、閲覧できるようにします。",
+      "transferInstructions": "振込の案内を見る",
+      "successTitle": "お支払いが完了しました",
+      "successBody": "電子書籍がライブラリに追加されました。",
+      "successGiftTitle": "ギフトをお届けしています",
+      "successGiftBody": "お支払いが完了しました。受け取り用のリンクを指定の方にメールでお送りしたため、この電子書籍はあなたのライブラリには表示されません。",
+      "failedTitle": "お支払いが完了しませんでした",
+      "failedBody": "お支払いが完了しませんでした。もう一度お試しいただけます。",
+      "tryAgain": "もう一度試す",
+      "declinedTitle": "お振込みがまだ確認できていません",
+      "declinedBody": "理由：{reason}。もう一度お振込みのうえ、ご連絡ください。",
+      "unavailableTitle": "この注文はお支払いできなくなりました",
+      "unavailableBody": "この注文で使われた支払い方法は、現在ご利用いただけません。作品のページから新しく注文してください。",
+      "paymentsOffTitle": "お支払いを一時停止しています",
+      "paymentsOffBody": "現在、お支払いを受け付けていません。ご注文は保存されており、再開後に続きから進められます。",
+      "cancelledTitle": "注文はキャンセルされました",
+      "cancelledBody": "この注文はキャンセルされました。",
+      "backToBook": "作品に戻る",
+      "library": "ライブラリへ"
+    },
+    "transfer": {
+      "eyebrow": "銀行振込",
+      "title": "お振込みで注文を完了する",
+      "description": "下記の金額と振込名義（参照コード）のとおりにお振込みください。確認は営業時間内に行います。",
+      "bankName": "銀行",
+      "accountNumber": "口座番号",
+      "accountHolder": "口座名義",
+      "amount": "金額",
+      "reference": "振込参照コード",
+      "copy": "コピー",
+      "copied": "コピーしました",
+      "copyAriaLabel": "振込参照コード {reference} をコピー",
+      "qrAlt": "注文 {reference} の銀行振込用 QR コード",
+      "noteLabel": "メモ（任意）",
+      "claim": "振込みました",
+      "claiming": "送信しています…",
+      "claimedTitle": "振込のご連絡を受け取りました",
+      "claimedBody": "確認でき次第、閲覧できるようにします。",
+      "declinedTitle": "お振込みがまだ確認できていません",
+      "declinedBody": "理由：{reason}。もう一度お振込みのうえ、ご連絡ください。",
+      "unavailable": "振込の情報を読み込めませんでした。サポートまでご連絡ください。"
+    }
+  },
+  "orders": {
+    "navLabel": "注文履歴",
+    "eyebrow": "アカウント",
+    "title": "注文履歴",
+    "description": "入手または購入した電子書籍です。",
+    "emptyTitle": "注文はまだありません",
+    "emptyBody": "入手または購入した作品がここに表示されます。",
+    "browse": "作品を見る",
+    "listLabel": "ご注文の一覧",
+    "free": "無料",
+    "placedOn": "注文日 {date}",
+    "total": "合計",
+    "status": "状況",
+    "detailEyebrow": "注文",
+    "continueCheckout": "お支払いに進む",
+    "transferInstructions": "振込の案内を見る",
+    "viewStatus": "注文の状況を見る",
+    "declinedTitle": "お振込みがまだ確認できていません",
+    "declinedBody": "理由：{reason}。もう一度お振込みのうえ、ご連絡ください。",
+    "read": "今すぐ読む",
+    "statuses": {
+      "completed": "完了",
+      "awaitingPayment": "お支払い待ち",
+      "awaitingTransfer": "お振込み待ち",
+      "awaitingConfirmation": "確認待ち",
+      "paymentFailed": "お支払い失敗",
+      "cancelled": "キャンセル済み"
+    }
+  },
+  "account": {
+    "eyebrow": "アカウント",
+    "title": "Infinity Books Press へようこそ",
+    "description": "安全なアカウントの準備ができました。Infinity Books Press の成長とともに、ライブラリや読書機能がここに加わります。",
+    "detailsTitle": "アカウント情報",
+    "detailsDescription": "アカウントに登録されているメールアドレスです。"
+  },
+  "library": {
+    "report": {
+      "title": "翻訳の誤りを報告",
+      "intro": "「{title}」で気になる点を編集部にお知らせください。報告は編集部が読み、原著者には送られません。",
+      "place": "読んでいた場所",
+      "messageLabel": "どの点が気になりますか？",
+      "counter": "{count}/2000",
+      "send": "報告を送る",
+      "sent": "ありがとうございます。編集部で確認します。",
+      "back": "ライブラリに戻る",
+      "errors": {
+        "empty": "先に内容を書いてください。",
+        "tooLong": "2000文字以内でお願いします。",
+        "markup": "プレーンテキストで入力してください。",
+        "notAllowed": "この版はあなたのライブラリにありません。",
+        "tooMany": "短時間に報告が続いています。しばらくしてからお試しください。",
+        "failed": "問題が発生しました。もう一度お試しください。"
+      }
+    },
+    "eyebrow": "ライブラリ",
+    "title": "続きから読む",
+    "description": "入手した作品がここに並びます。",
+    "emptyStateTitle": "まだ作品がありません",
+    "emptyStateDescription": "作品を入手すると、ライブラリに表示されます。",
+    "continueReading": "続きを読む",
+    "progressLabel": "読了",
+    "states": {
+      "unread": "未読",
+      "reading": "読書中",
+      "completed": "読了"
+    },
+    "shelfTitle": "マイブックス",
+    "lastRead": "最近読んだ作品",
+    "recommendationsTitle": "こちらもおすすめ",
+    "review": "レビュー",
+    "quotes": {
+      "eyebrow": "ライブラリ",
+      "title": "共有した引用",
+      "description": "作品から共有した引用です。削除するまで、それぞれ公開ページとして残ります。",
+      "empty": "共有した引用はまだありません。リーダーで文章を選択し、「共有」を押してください。",
+      "copyLink": "リンクをコピー",
+      "copied": "コピーしました",
+      "remove": "削除",
+      "views": "閲覧数：{count}",
+      "link": "共有した引用"
+    },
+    "reviews": {
+      "eyebrow": "あなたのレビュー",
+      "chooseEdition": "どの版についてレビューしますか？",
+      "ratingLabel": "評価",
+      "bodyLabel": "レビュー",
+      "counter": "{count}/1000",
+      "save": "レビューを保存",
+      "delete": "レビューを削除",
+      "notOwned": "レビューを書くには、この作品を所有している必要があります。",
+      "backToBook": "作品に戻る",
+      "states": {
+        "pending": "審査中",
+        "published": "公開中",
+        "rejected": "非公開"
+      },
+      "authorReply": "編集部からの返信",
+      "errors": {
+        "notEntitled": "レビューを書くには、この作品を所有している必要があります。",
+        "failed": "保存できませんでした。もう一度お試しください。",
+        "rating": "1〜5の評価を選択してください。",
+        "body": "レビューを入力してください（1000文字以内、HTML は使用できません）。"
+      },
+      "saved": "保存しました。承認されるとレビューが表示されます。"
+    },
+    "questions": {
+      "title": "編集部に質問する",
+      "about": "対象：{title}",
+      "bodyLabel": "質問",
+      "counter": "{count}/500",
+      "send": "質問を送信",
+      "sent": "送信しました。回答があった場合は、メールでお知らせします。",
+      "mineTitle": "あなたの質問",
+      "readAnswer": "回答を読む",
+      "states": {
+        "new": "回答待ち",
+        "answered": "回答済み",
+        "archived": "アーカイブ済み"
+      },
+      "errors": {
+        "tooMany": "回答待ちの質問がすでに5件あります。先に回答をお待ちください。",
+        "targetMissing": "このコンテンツは存在しなくなりました。",
+        "failed": "送信できませんでした。もう一度お試しください。",
+        "body": "質問を入力してください（500文字以内、HTML は使用できません）。",
+        "target": "質問の対象となる作品またはアイデアを選択してください。"
+      }
+    }
+  },
+  "gifts": {
+    "claim": {
+      "eyebrow": "ギフト",
+      "title": "あなたへのギフト",
+      "addedTitle": "ライブラリに追加しました",
+      "ownedTitle": "すでにライブラリにあります",
+      "currentNote": "これは、このギフトが現在ライブラリに含んでいる内容であり、受け取った時点の記録ではありません。",
+      "empty": "このギフトの内容は現在ライブラリにありません。心当たりがない場合は、サポートまでご連絡ください。",
+      "library": "ライブラリへ",
+      "refusedTitle": "このギフトのリンクは使用できません",
+      "refusedBody": "このリンクではギフトを受け取れません。送り主に新しいリンクをお願いしてください。"
+    }
+  },
+  "reader": {
+    "title": "リーダー",
+    "backToLibrary": "ライブラリに戻る",
+    "loading": "作品を開いています…",
+    "failed": "この作品を開けませんでした。",
+    "retry": "もう一度試す",
+    "nextPage": "次のページ",
+    "previousPage": "前のページ",
+    "saveFailed": "読書位置を保存できませんでした。位置は保持されています。もう一度お試しください。",
+    "saveRetry": "位置を保存",
+    "progressLabel": "読了",
+    "settings": "表示設定",
+    "settingsTitle": "表示設定",
+    "fontSize": "文字サイズ",
+    "decreaseFontSize": "文字を小さく",
+    "increaseFontSize": "文字を大きく",
+    "font": "フォント",
+    "fonts": {
+      "publisher": "出版社指定",
+      "serif": "Lora",
+      "sans": "ゴシック"
+    },
+    "lineHeight": "行間",
+    "lineHeights": {
+      "tight": "狭い",
+      "normal": "標準",
+      "loose": "広い"
+    },
+    "width": "本文の幅",
+    "widths": {
+      "narrow": "狭い",
+      "medium": "標準",
+      "wide": "広い"
+    },
+    "theme": "テーマ",
+    "themes": {
+      "light": "ライト",
+      "sepia": "ペーパー",
+      "dark": "ダーク"
+    },
+    "contents": "目次",
+    "contentsTitle": "目次",
+    "contentsEmpty": "この作品には目次がありません。",
+    "close": "閉じる",
+    "lostAccessSignedOut": "ログアウトされました。続きを読むには、もう一度ログインしてください。",
+    "lostAccessRevoked": "この作品を閲覧する権限がなくなりました。",
+    "signIn": "ログイン",
+    "goToLibrary": "ライブラリへ",
+    "finishedTitle": "この作品を読み終えました。",
+    "finishedBody": "ライブラリで読了として記録されました。",
+    "dismiss": "読み続ける",
+    "sampleEndTitle": "試し読みはここまでです。",
+    "sampleEndBody": "続きを読むには、全編を入手してください。",
+    "backToBook": "作品に戻る",
+    "sampleUnavailable": "この試し読みは現在ご利用いただけません。",
+    "bookmarks": "しおり",
+    "notes": "メモ",
+    "highlights": "ハイライト",
+    "unavailable": "利用できません",
+    "delete": "削除",
+    "addBookmark": "しおりを追加",
+    "editBookmark": "しおりを編集",
+    "bookmarkLabel": "しおりの名前",
+    "bookmarkFallback": "しおり",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "note": "メモ",
+    "editNote": "メモを編集",
+    "yellow": "黄",
+    "green": "緑",
+    "rose": "ピンク",
+    "highlightYellow": "黄",
+    "highlightGreen": "緑",
+    "highlightRose": "ピンク",
+    "addNote": "メモを追加",
+    "copy": "コピー",
+    "share": "共有",
+    "askInfinity": "Infinity に質問",
+    "comingSoon": "近日公開",
+    "copied": "コピーしました",
+    "copyFailed": "引用をコピーできませんでした",
+    "shareCancelled": "共有をキャンセルしました",
+    "quoteTruncated": "引用を300文字に短縮しました",
+    "annotationTooLong": "ハイライトやメモに使える選択範囲は1,000文字までです。この選択範囲のコピーや共有はできます。",
+    "shareUnavailable": "共有を利用できないため、コピーしました。",
+    "shareCreated": "公開の引用ページを作成しました。ライブラリから削除できます。",
+    "sharePublic": "共有すると公開の引用ページが作成されます。ライブラリから削除できます。",
+    "emptyBookmarks": "しおりはまだありません。",
+    "emptyNotes": "メモはまだありません。",
+    "loadingSavedItems": "保存した項目を読み込んでいます…",
+    "search": "この作品内を検索",
+    "searchPlaceholder": "単語やフレーズを検索",
+    "searchPrompt": "2文字以上入力してください。",
+    "searching": "検索しています…",
+    "searchEmpty": "一致するものが見つかりませんでした。",
+    "searchFailed": "現在、検索を利用できません。",
+    "untitledChapter": "無題の章",
+    "annotationsFailed": "保存した項目は現在利用できません。",
+    "locationUnavailable": "位置を特定できません。",
+    "page": "ページ",
+    "pages": "ページ",
+    "searchOpen": "この作品内を検索",
+    "menu": "リーダーメニュー",
+    "onePage": "1ページ表示",
+    "twoPages": "2ページ表示",
+    "relatedBooks": "続けて読む",
+    "noRelatedBooks": "おすすめはまだありません。",
+    "rateBook": "この作品を評価",
+    "askAuthor": "編集部に質問する",
+    "reportError": "翻訳の誤りを報告",
+    "chooseEdition": {
+      "title": "読む版を選んでください",
+      "description": "この作品の言語版を複数お持ちです。"
+    }
+  },
+  "forbidden": {
+    "title": "アクセスが拒否されました",
+    "description": "このページを表示する権限がありません。",
+    "backHome": "ホームに戻る"
+  },
+  "email": {
+    "bookReady": {
+      "subjectWithTitle": "作品の準備ができました：{title}",
+      "subjectGeneric": "新しい作品の準備ができました",
+      "greetingNamed": "{name} 様",
+      "greetingGeneric": "こんにちは。",
+      "readyWithTitle": "「{title}」が Infinity Books Press のライブラリに追加され、読めるようになりました。",
+      "readyGeneric": "新しい作品が Infinity Books Press のライブラリに追加され、読めるようになりました。",
+      "openLibrary": "ライブラリを開く",
+      "signOff": "素敵な読書の時間を。\nInfinity Books Press"
+    },
+    "giftClaim": {
+      "subjectFromName": "{name} さんから Infinity Books Press でギフトが届きました",
+      "subjectGeneric": "Infinity Books Press でギフトが届きました",
+      "greeting": "こんにちは。",
+      "introNamed": "{name} さんから Infinity Books Press でギフトが届きました。",
+      "introGeneric": "どなたかから Infinity Books Press でギフトが届きました。",
+      "messageLabel": "メッセージ：",
+      "includesLabel": "ギフトの内容：",
+      "claim": "ギフトを開く",
+      "claimHint": "リンクを開いてログイン（またはアカウントを作成）すると、これらの作品がライブラリに追加されます。リンクは一度しか使えません。",
+      "signOff": "素敵な読書の時間を。\nInfinity Books Press"
+    },
+    "questionAnswered": {
+      "subject": "ご質問に回答しました",
+      "greetingNamed": "{name} 様",
+      "greetingGeneric": "こんにちは。",
+      "body": "Infinity Books Press でお寄せいただいたご質問への回答が、次の記事に掲載されました：「{title}」。",
+      "read": "回答を読む",
+      "signOff": "素敵な読書の時間を。\nInfinity Books Press"
+    },
+    "reviewReplied": {
+      "subjectWithTitle": "「{title}」のレビューに返信がありました",
+      "subjectGeneric": "レビューに返信がありました",
+      "greetingNamed": "{name} 様",
+      "greetingGeneric": "こんにちは。",
+      "introWithTitle": "Infinity Books Press で「{title}」に投稿いただいたレビューに、編集部から返信がありました。",
+      "introGeneric": "Infinity Books Press で投稿いただいたレビューに、編集部から返信がありました。",
+      "yourReview": "あなたのレビュー（{rating}/5）：",
+      "authorReply": "編集部からの返信：",
+      "open": "レビューを開く",
+      "signOff": "素敵な読書の時間を。\nInfinity Books Press"
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import "server-only";
+import type { AlternateSlugs } from "@/lib/i18n/alternates";
 
 import { headers } from "next/headers";
 import { cache } from "react";
@@ -8,9 +9,10 @@ import { coverPublicUrl } from "@/lib/catalog/covers";
 import type { CatalogBookCard } from "@/lib/catalog/public-types";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
-import { getActiveEntitlementBookIds, getBookCards } from "@/lib/data/catalog";
+import { getActiveEntitlementEditionIds, getBookCards } from "@/lib/data/catalog";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { getCurrentProfile } from "@/lib/data/profiles";
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { defaultLocale, isLocale, type Locale } from "@/lib/i18n/config";
 import { getRequestId } from "@/lib/observability/request-id";
 import { createPublicClient } from "@/lib/supabase/public";
 
@@ -24,7 +26,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 //
 // getPublicBundle itself never reads the session, so the bundle page can be prerendered. Ownership
 // is the one per-reader fact this module has, and it lives in getBundleOwnership below, which comes
-// from the session client through getActiveEntitlementBookIds, never from a policy an admin could
+// from the session client through getActiveEntitlementEditionIds, never from a policy an admin could
 // see past.
 
 const slugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -34,7 +36,10 @@ export type PublicBundleDTO = {
   slug: string;
   // The other locale's slug, when the bundle is localized there. Null makes the page single-locale:
   // no hreflang alternate, no locale switch.
-  alternateSlug: string | null;
+  alternateSlugs: AlternateSlugs;
+  // The locale of the copy shown: the requested one, else the platform default metadata locale
+  // (spec section 5: one whole localization, never a field-by-field mix).
+  metadataLocale: Locale;
   title: string;
   subtitle: string | null;
   description: string | null;
@@ -42,10 +47,13 @@ export type PublicBundleDTO = {
   // Only a live offer of a published bundle reaches this type - the read policy enforces the window
   // and the `active` flag, so there is no inactive offer to represent.
   offer: { priceMinor: number; currency: string } | null;
-  // The members the storefront can actually show, in bundle_books.position order. A member that is
-  // not a published, locale-localized book is absent, not marked.
-  members: CatalogBookCard[];
+  // The EDITIONS the storefront can actually show, in bundle_editions.position order. A member that
+  // is not a published edition of a locale-localized book is absent, not marked. Each carries its
+  // edition and language: English and Japanese of one work are two members.
+  members: BundleMemberCard[];
 };
+
+export type BundleMemberCard = CatalogBookCard & { editionId: string; languageCode: string; languageLabel: string };
 
 async function currentRequestId(): Promise<string | null> {
   try {
@@ -70,14 +78,32 @@ async function failure(operation: string, cause: unknown): Promise<Error> {
 type BundleRow = {
   id: string;
   localizations: { locale: string; slug: string; title: string; subtitle: string | null; description: string | null }[];
-  members: { book_id: string; position: number }[];
+  members: {
+    edition_id: string;
+    position: number;
+    edition: BundleEditionRow | BundleEditionRow[] | null;
+  }[];
 };
+
+type BundleEditionRow = { language_code: string; book_id: string; status: string; editorial_state: string; active_publication_id: string | null };
 
 const bundleSelect = `
   id,
   localizations:bundle_localizations ( locale, slug, title, subtitle, description ),
-  members:bundle_books ( book_id, position )
+  members:bundle_editions ( edition_id, position, edition:editions ( language_code, book_id, status, editorial_state, active_publication_id ) )
 `;
+
+// The platform default metadata locale, the one locale a page falls back to. Public read policy.
+const getDefaultMetadataLocale = cache(async (): Promise<Locale> => {
+  const { data, error } = await createPublicClient().from("platform_settings").select("default_metadata_locale").maybeSingle();
+  if (error) throw await failure("getDefaultMetadataLocale", error);
+  return data && isLocale(data.default_metadata_locale) ? data.default_metadata_locale : defaultLocale;
+});
+
+// The localization a bundle is shown with in a locale: its own row, else the default locale's.
+function pickLocalization<T extends { locale: string }>(rows: T[], locale: Locale, fallback: Locale): T | null {
+  return rows.find((row) => row.locale === locale) ?? rows.find((row) => row.locale === fallback) ?? null;
+}
 
 // The RPC applies the rule and returns at most one row; this only shapes it.
 function liveOffer(row: { price_minor: number; currency: string } | null): PublicBundleDTO["offer"] {
@@ -88,20 +114,23 @@ export const getPublicBundle = cache(async (locale: Locale, slug: string): Promi
   if (!slugPattern.test(slug)) return null;
 
   const supabase = createPublicClient();
-  // The slug identifies the bundle in one locale; everything below is about the bundle, including
-  // the OTHER locale's slug, which is why this is resolved first rather than folded into one query
-  // with an inner join that would filter the alternate localization away with it.
-  const { data: localization, error } = await supabase
+  const fallbackLocale = await getDefaultMetadataLocale();
+  // The slug identifies the bundle in the requested locale or the fallback one; everything below is
+  // about the bundle, including the OTHER locales' slugs, which is why this is resolved first rather
+  // than folded into one query with an inner join that would filter the alternate localizations
+  // away with it. Whether the hit is the row this locale actually shows is checked once the bundle's
+  // localizations are known.
+  const { data: hits, error } = await supabase
     .from("bundle_localizations")
-    .select("bundle_id")
-    .eq("locale", locale)
-    .eq("slug", slug)
-    .maybeSingle();
+    .select("bundle_id, locale")
+    .in("locale", [locale, fallbackLocale])
+    .eq("slug", slug);
 
   if (error) throw await failure("getPublicBundle", error);
-  if (!localization) return null;
+  const hit = pickLocalization(hits ?? [], locale, fallbackLocale);
+  if (!hit) return null;
 
-  const bundleId = localization.bundle_id;
+  const bundleId = hit.bundle_id;
   // The price comes from catalog_bundle_live_offer: the one market-resolution rule this page
   // shares with create_bundle_order, behind a published-bundle gate, because the rule itself is
   // status-blind and readable by anyone this function is granted to. A bundle may be priced per (market, currency), so choosing among several
@@ -124,16 +153,33 @@ export const getPublicBundle = cache(async (locale: Locale, slug: string): Promi
   if (!row) return null;
 
   const bundle = row as unknown as BundleRow;
-  const current = bundle.localizations.find((candidate) => candidate.locale === locale);
-  if (!current) return null;
-  const alternate = bundle.localizations.find((candidate) => candidate.locale !== locale);
+  // One whole localization, and the slug resolves only under it: a bundle with its own copy in this
+  // locale is not reachable under its fallback slug here.
+  const current = pickLocalization(bundle.localizations, locale, fallbackLocale);
+  if (!current || current.slug !== slug || !isLocale(current.locale)) return null;
+  // The chosen locale stays in when it is not the requested one, so a fallback page can name its canonical.
+  const alternateSlugs = Object.fromEntries(
+    bundle.localizations.filter((candidate) => candidate.locale !== locale && isLocale(candidate.locale)).map((candidate) => [candidate.locale, candidate.slug]),
+  );
 
   const byBookId = new Map(cards.map((card) => [card.bookId, card]));
   const members = [...bundle.members]
     .sort((a, b) => a.position - b.position)
-    .flatMap((member) => {
-      const card = byBookId.get(member.book_id);
-      return card ? [card] : [];
+    .flatMap((member): BundleMemberCard[] => {
+      const edition = Array.isArray(member.edition) ? (member.edition[0] ?? null) : member.edition;
+      // The same bar edition_is_sellable applies: published, not blocked, with a live publication
+      // (the work's own status is what puts its card in `cards`).
+      if (!edition || edition.status !== "published" || edition.editorial_state === "blocked" || edition.active_publication_id === null) return [];
+      const card = byBookId.get(edition.book_id);
+      if (!card) return [];
+      return [
+        {
+          ...card,
+          editionId: member.edition_id,
+          languageCode: edition.language_code,
+          languageLabel: editionLanguageLabel(edition.language_code) ?? edition.language_code,
+        },
+      ];
     });
 
   const cover = (coverRows ?? [])[0];
@@ -141,7 +187,8 @@ export const getPublicBundle = cache(async (locale: Locale, slug: string): Promi
   return {
     bundleId: bundle.id,
     slug: current.slug,
-    alternateSlug: alternate?.slug ?? null,
+    alternateSlugs: alternateSlugs,
+    metadataLocale: current.locale,
     title: current.title,
     subtitle: current.subtitle,
     description: current.description,
@@ -154,12 +201,13 @@ export const getPublicBundle = cache(async (locale: Locale, slug: string): Promi
 // How many of a bundle's visible members the current viewer already holds. Zero when signed out.
 // Split out of getPublicBundle so that read stays session-free and the bundle page can be
 // prerendered; this one is called from the route handler the page's island fetches.
-export async function getBundleOwnership(members: CatalogBookCard[]): Promise<number> {
+export async function getBundleOwnership(members: Pick<BundleMemberCard, "editionId">[]): Promise<number> {
   const profile = await getCurrentProfile();
   if (!profile) return 0;
 
-  const owned = await getActiveEntitlementBookIds(profile.id);
-  return members.filter((member) => owned.has(member.bookId)).length;
+  // Per edition: holding the English edition says nothing about the Japanese one.
+  const owned = await getActiveEntitlementEditionIds(profile.id);
+  return members.filter((member) => owned.has(member.editionId)).length;
 }
 
 // The bundle counterpart of getBookActionState. It takes the counts the caller already resolved
@@ -189,16 +237,17 @@ export async function getBundleActionState(bundle: {
 // search the other locale: doing that once produced a bundle whose `members` (and so
 // ownedMemberCount's denominator) belonged to a different locale than the one the caller asked for.
 export async function getPublicBundleById(locale: Locale, bundleId: string): Promise<PublicBundleDTO | null> {
+  const fallbackLocale = await getDefaultMetadataLocale();
   const { data, error } = await createPublicClient()
     .from("bundle_localizations")
-    .select("slug")
-    .eq("locale", locale)
-    .eq("bundle_id", bundleId)
-    .maybeSingle();
+    .select("slug, locale")
+    .in("locale", [locale, fallbackLocale])
+    .eq("bundle_id", bundleId);
   if (error) throw await failure("getPublicBundleById", error);
-  if (!data) return null;
+  const current = pickLocalization(data ?? [], locale, fallbackLocale);
+  if (!current) return null;
 
-  return getPublicBundle(locale, data.slug);
+  return getPublicBundle(locale, current.slug);
 }
 
 // What an anonymous visitor could do with this bundle: the same rule as getBundleActionState, minus

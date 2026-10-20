@@ -23,6 +23,7 @@ import {
   setBundleOffer,
   unpublishBundle,
 } from "@/lib/data/bundles";
+import { type Locale } from "@/lib/i18n/config";
 
 // Each action gates on requireAdmin() for this editor before parsing, never returns raw database
 // text, and revalidates the bundle pages only after the write succeeded.
@@ -44,7 +45,7 @@ function knownFailure(error: unknown): AdminFormState {
 
 export async function saveBundleLocalizationAction(
   bundleId: string,
-  locale: "vi" | "en",
+  locale: Locale,
   _previous: AdminFormState,
   formData: FormData,
 ): Promise<AdminFormState> {
@@ -76,7 +77,7 @@ export async function setBundleMembersAction(
   formData: FormData,
 ): Promise<AdminFormState> {
   await requireAdmin({ next: `/admin/bundles/${bundleId}` });
-  const parsed = bundleMembersSchema.safeParse({ bookIds: readList(formData, "bookIds") });
+  const parsed = bundleMembersSchema.safeParse({ editionIds: readList(formData, "editionIds") });
   if (!parsed.success) return invalid(parsed.error);
 
   try {

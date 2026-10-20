@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { defaultLocale, localeRegistry, locales } from "@/lib/i18n/config";
 
 import { initialGiftActionState, reissueGiftAction, resendGiftAction, type GiftActionState } from "@/app/admin/gifts/actions";
 import { Button } from "@/components/ui/button";
@@ -67,9 +68,12 @@ function ReissueForm({ giftId, claimLocale }: { giftId: string; claimLocale: Loc
         {/* The language the recipient's message is written in, defaulted to the one the gift was
             first sent in so a corrected address does not silently switch languages. */}
         <Label htmlFor={`reissue-locale-${giftId}`}>Email language</Label>
-        <NativeSelect defaultValue={claimLocale ?? "vi"} id={`reissue-locale-${giftId}`} name="locale">
-          <option value="vi">Tiếng Việt</option>
-          <option value="en">English</option>
+        <NativeSelect defaultValue={claimLocale ?? defaultLocale} id={`reissue-locale-${giftId}`} name="locale">
+          {locales.map((code) => (
+            <option key={code} value={code}>
+              {localeRegistry[code].nativeName}
+            </option>
+          ))}
         </NativeSelect>
       </div>
       <div className="space-y-2">

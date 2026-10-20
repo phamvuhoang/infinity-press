@@ -64,7 +64,7 @@ from generate_series(1, 2) as n;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e1000000-0000-0000-0000-000000000001', true);
 select public.grant_complimentary_entitlement(
-  (select reader_id from t_ids), 'e2000000-0000-0000-0000-000000000001', 'launch giveaway');
+  (select reader_id from t_ids), 'e4000000-0000-0000-0000-000000000001', 'launch giveaway');
 reset role;
 
 set local role authenticated;

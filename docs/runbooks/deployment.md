@@ -1,6 +1,6 @@
 # Handbook triển khai MVP ebook
 
-Tài liệu này dùng cho Vercel + Supabase hosted. Hiện chưa có staging database riêng và EPUB worker
+Tài liệu này dùng cho Vercel + Supabase hosted của **Infinity Books Press** (project riêng, không dùng lại project infinitybooks.vn). Hiện chưa có staging database riêng và EPUB worker
 vẫn chạy từ máy operator. Không triển khai production khi ma trận năm EPUB trong
 `docs/spikes/readium-web-results.md` còn `unmeasured`.
 

@@ -581,21 +581,25 @@ export async function resolveSampleManifest(publicationId: string): Promise<Read
 // The public catalog DTOs carry no publication ids by contract (lib/catalog/public-types.ts), and
 // this does not change that: the id reaches the browser only inside the sample manifest URL, exactly
 // as it already does for an entitled reader.
-export async function resolveSamplePublicationId(bookId: string): Promise<string | null> {
+export async function resolveSamplePublicationId(editionId: string): Promise<string | null> {
   const admin = createAdminClient();
 
-  const { data: book, error: bookError } = await admin
-    .from("books")
-    .select("active_publication_id, status")
-    .eq("id", bookId)
+  // The sample belongs to ONE edition: its own live publication, never another language's.
+  const { data: edition, error: editionError } = await admin
+    .from("editions")
+    .select("active_publication_id, status, books!inner ( status )")
+    .eq("id", editionId)
     .maybeSingle();
 
-  if (bookError || !book || book.status !== "published" || !book.active_publication_id) return null;
+  const book = Array.isArray(edition?.books) ? edition?.books[0] : edition?.books;
+  if (editionError || !edition || edition.status !== "published" || book?.status !== "published" || !edition.active_publication_id) {
+    return null;
+  }
 
   const { data: publication, error: publicationError } = await admin
     .from("ebook_publications")
     .select("id, status")
-    .eq("id", book.active_publication_id)
+    .eq("id", edition.active_publication_id)
     .maybeSingle();
 
   if (publicationError || !publication || publication.status !== "published") return null;

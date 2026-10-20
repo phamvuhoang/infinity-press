@@ -47,7 +47,7 @@ function card(bookId: string, slug: string, title: string): CatalogBookCard {
     cover: null,
     offer: null,
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,
@@ -63,7 +63,8 @@ const related: KnowledgeIdeaSummary = {
   shortAnswer: "Sometimes.",
   createdAt: "2026-09-01T00:00:00+00:00",
   updatedAt: "2026-09-02T00:00:00+00:00",
-  alternateSlug: null,
+  alternateSlugs: {},
+  metadataLocale: "en",
   topics: [],
 };
 
@@ -78,7 +79,8 @@ const idea: KnowledgeIdeaPage = {
   seoDescription: null,
   createdAt: "2026-09-01T00:00:00+00:00",
   updatedAt: "2026-09-03T00:00:00+00:00",
-  alternateSlug: "vi-sao-doc-cham",
+  alternateSlugs: { vi: "vi-sao-doc-cham" },
+  metadataLocale: "en",
   blocks: [
     { type: "paragraph", content: [{ text: "Slow reading is a practice." }] },
   ],
@@ -167,7 +169,7 @@ describe("IdeaPage", () => {
   it("links to the ask-the-author page for this idea, after the header and before the body", async () => {
     render(await IdeaPage({ params }));
 
-    const link = screen.getByRole("link", { name: "Ask the author about this" });
+    const link = screen.getByRole("link", { name: "Ask the editors about this" });
     expect(link).toHaveAttribute("href", `/en/ask?idea=${idea.ideaId}`);
     expect(follows(screen.getByText("Because understanding takes time."), link)).toBe(true);
     expect(follows(link, screen.getByText("Slow reading is a practice."))).toBe(true);
@@ -203,10 +205,10 @@ describe("IdeaPage", () => {
   });
 
   it("leaves the switcher on the other locale's home when the idea has no alternate", async () => {
-    vi.mocked(getIdeaPage).mockResolvedValue({ ...idea, alternateSlug: null });
+    vi.mocked(getIdeaPage).mockResolvedValue({ ...idea, alternateSlugs: {} });
     render(await IdeaPage({ params }));
 
-    expect(header.props?.alternates).toBeUndefined();
+    expect(header.props?.alternates).toEqual({});
   });
 
   it("emits breadcrumbs through the idea index", async () => {
@@ -307,7 +309,7 @@ describe("generateMetadata", () => {
       languages: {
         en: "https://books.example/en/ideas/why-read-slowly",
         vi: "https://books.example/vi/ideas/vi-sao-doc-cham",
-        "x-default": "https://books.example/vi/ideas/vi-sao-doc-cham",
+        "x-default": "https://books.example/en/ideas/why-read-slowly",
       },
     });
   });
@@ -315,7 +317,8 @@ describe("generateMetadata", () => {
   it("prefers the SEO overrides and names only the locales that exist", async () => {
     vi.mocked(getIdeaPage).mockResolvedValue({
       ...idea,
-      alternateSlug: null,
+      alternateSlugs: {},
+      metadataLocale: "en",
       seoTitle: "Slow reading, explained",
       seoDescription: "What slow reading gives you.",
     });

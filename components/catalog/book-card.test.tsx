@@ -17,7 +17,7 @@ const card: CatalogBookCard = {
   cover: { url: "http://127.0.0.1:54321/storage/v1/object/public/covers/books/x/cover.png", alt: "Cover of Harbour Lights" },
   offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null },
   hasActivePublication: true,
-  hasSample: false,
+  hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
   series: null,
   topics: [],
   featured: false,
@@ -38,4 +38,9 @@ it("shows a sale price with the list price struck through and both labelled for 
   const struck = container.querySelector("del");
   expect(struck).toHaveTextContent("List price: 129.000");
   expect(struck?.parentElement).toHaveTextContent(/^Sale price: 90\.300\s₫/);
+});
+
+it("names the language of the EPUB on every card", () => {
+  render(<BookCard card={{ ...card, languageCode: "ja" }} copy={en.catalog.book} locale="en" />);
+  expect(screen.getByText("日本語")).toBeInTheDocument();
 });

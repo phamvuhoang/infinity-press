@@ -10,9 +10,9 @@ import { getServerEnv } from "@/lib/config/server-env";
 import { getArticleIndex } from "@/lib/data/knowledge";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
-import { getKnowledgeRoutes, getLocaleRoutes, otherLocale } from "@/lib/i18n/routes";
+import { getKnowledgeRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { breadcrumbSchema } from "@/lib/seo/json-ld";
-import { buildPageMetadata, SITE_NAME } from "@/lib/seo/metadata";
+import { buildPageMetadata, fixedPaths, SITE_NAME } from "@/lib/seo/metadata";
 
 type Props = { params: Promise<{ lang: string }> };
 
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    paths: { vi: getKnowledgeRoutes("vi").articles, en: getKnowledgeRoutes("en").articles },
+    paths: fixedPaths((l) => getKnowledgeRoutes(l).articles),
     title: copy.title,
     description: copy.description,
   });
@@ -44,11 +44,10 @@ export default async function ArticlesPage({ params }: Props) {
   const [dictionary, articles] = await Promise.all([getDictionary(locale), getArticleIndex(locale)]);
   const copy = dictionary.knowledge;
   const routes = getKnowledgeRoutes(locale);
-  const other = otherLocale(locale);
 
   return (
     <div className="min-h-screen bg-ivory">
-      <SiteHeader alternates={{ [other]: getKnowledgeRoutes(other).articles }} current="articles" locale={locale} />
+      <SiteHeader alternates={fixedPaths((l) => getKnowledgeRoutes(l).articles)} current="articles" locale={locale} />
       <JsonLd
         data={breadcrumbSchema(getServerEnv().siteUrl, [
           { name: SITE_NAME, path: getLocaleRoutes(locale).home },

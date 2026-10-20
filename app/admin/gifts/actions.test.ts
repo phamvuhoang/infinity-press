@@ -120,13 +120,13 @@ describe("reissueGiftAction", () => {
   it("falls back to the default locale rather than trusting an unknown one from the form", async () => {
     await reissueGiftAction(giftId, initialGiftActionState, validReissue({ locale: "fr" }));
 
-    expect(reissueGift).toHaveBeenCalledWith(giftId, "new@example.test", "vi", "wrong address");
+    expect(reissueGift).toHaveBeenCalledWith(giftId, "new@example.test", "en", "wrong address");
   });
 
   it("sends the message in the language the form asked for", async () => {
-    await reissueGiftAction(giftId, initialGiftActionState, validReissue({ locale: "en" }));
+    await reissueGiftAction(giftId, initialGiftActionState, validReissue({ locale: "ja" }));
 
-    expect(reissueGift).toHaveBeenCalledWith(giftId, "new@example.test", "en", "wrong address");
+    expect(reissueGift).toHaveBeenCalledWith(giftId, "new@example.test", "ja", "wrong address");
   });
 
   it("explains a claimed gift and points at the revocation route instead", async () => {

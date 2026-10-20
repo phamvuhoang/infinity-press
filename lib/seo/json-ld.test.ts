@@ -37,7 +37,7 @@ const book: CatalogBookPage = {
   },
   offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null },
   hasActivePublication: true,
-  hasSample: true,
+  hasSample: true, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
   series: null,
   topics: [{ slug: "sea", name: "Sea" }],
   featured: false,
@@ -49,8 +49,9 @@ const book: CatalogBookPage = {
   faq: [],
   seoTitle: "SEO-TITLE-MARKER",
   seoDescription: "SEO-DESCRIPTION-MARKER",
-  alternateSlug: "den-cang",
+  alternateSlugs: { vi: "den-cang" },
   isbn: null,
+  editions: [],
   retailLinks: [],
   reviewSummary: null,
 };
@@ -60,7 +61,7 @@ describe("organizationSchema", () => {
     expect(organizationSchema(siteUrl)).toEqual({
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: "Infinity Books",
+      name: "Infinity Books Press",
       url: "https://books.example",
     });
   });
@@ -70,7 +71,7 @@ describe("breadcrumbSchema", () => {
   it("numbers absolute items from one", () => {
     expect(
       breadcrumbSchema(siteUrl, [
-        { name: "Infinity Books", path: "/en" },
+        { name: "Infinity Books Press", path: "/en" },
         { name: "Books", path: "/en/books?sort=title" },
       ]),
     ).toEqual({
@@ -80,7 +81,7 @@ describe("breadcrumbSchema", () => {
         {
           "@type": "ListItem",
           position: 1,
-          name: "Infinity Books",
+          name: "Infinity Books Press",
           item: "https://books.example/en",
         },
         {
@@ -97,7 +98,7 @@ describe("breadcrumbSchema", () => {
 describe("bookSchema", () => {
   const siteOrg = {
     "@type": "Organization",
-    name: "Infinity Books",
+    name: "Infinity Books Press",
     url: siteUrl,
   };
   const ebookOffer = (offers: unknown) => (offers as unknown[])[0];
@@ -218,7 +219,7 @@ describe("bookSchema", () => {
       expect.objectContaining({ "@type": "Offer", price: 0, priceCurrency: "VND", seller: siteOrg, itemOffered: ebookItem }),
       {
         "@type": "Offer",
-        url: "https://shopee.vn/x?utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
+        url: "https://shopee.vn/x?utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
         availability: "https://schema.org/InStock",
         price: 129000,
         priceCurrency: "VND",
@@ -227,7 +228,7 @@ describe("bookSchema", () => {
       },
       {
         "@type": "Offer",
-        url: "https://abc.example/x?utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
+        url: "https://abc.example/x?utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=vi",
         availability: "https://schema.org/InStock",
         seller: { "@type": "Organization", name: "Nhà sách ABC" },
         itemOffered: { "@type": "Book", bookFormat: "https://schema.org/Paperback" },
@@ -284,7 +285,7 @@ describe("bookSchema", () => {
 });
 
 describe("bookSchema reviews", () => {
-  const reviews = [{ id: "r1", reviewerName: "Minh Anh", rating: 5, body: "Rất hay.", authorReply: "Cảm ơn", authorReplyAt: "2026-09-13T00:00:00+00:00", publishedAt: "2026-09-12T00:00:00+00:00" }];
+  const reviews = [{ id: "r1", reviewerName: "Minh Anh", rating: 5, body: "Rất hay.", authorReply: "Cảm ơn", authorReplyAt: "2026-09-13T00:00:00+00:00", publishedAt: "2026-09-12T00:00:00+00:00", languageCode: null }];
   it("emits aggregateRating and review from the rendered reviews", () => {
     const schema = bookSchema({ siteUrl, locale: "vi", path: "/vi/books/x", paymentsEnabled: true, book: { ...book, reviewSummary: { count: 12, average: 4.6 } }, reviews });
     expect(schema.aggregateRating).toEqual({ "@type": "AggregateRating", ratingValue: 4.6, reviewCount: 12, bestRating: 5, worstRating: 1 });
@@ -312,7 +313,8 @@ describe("personSchema", () => {
     id: "40000000-0000-4000-8000-000000000001",
     name: "Mai Tran",
     description: "Writes about the sea.",
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "en",
     quote: null,
     image: null,
     books: [],
@@ -354,8 +356,9 @@ describe("serializeJsonLd", () => {
   });
 });
 
-function bundleMemberCard(slug: string, title: string): CatalogBookCard {
+function bundleMemberCard(slug: string, title: string): PublicBundleDTO["members"][number] {
   return {
+    languageLabel: "English",
     bookId: `book-${slug}`,
     slug,
     title,
@@ -365,7 +368,7 @@ function bundleMemberCard(slug: string, title: string): CatalogBookCard {
     cover: null,
     offer: { priceMinor: 129000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,
@@ -378,7 +381,8 @@ describe("bundleSchema", () => {
   const bundle: PublicBundleDTO = {
     bundleId: "40000000-0000-4000-8000-000000000001",
     slug: "starter-bundle",
-    alternateSlug: "goi-khoi-dau",
+    alternateSlugs: { vi: "goi-khoi-dau" },
+    metadataLocale: "en",
     title: "Starter Bundle",
     subtitle: "Two books",
     description: "A set of two.",
@@ -486,7 +490,8 @@ describe("knowledge structured data", () => {
     shortAnswer: "Related answer.",
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-01T00:00:00+00:00",
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "en",
     topics: [],
   };
   const renderContext = {
@@ -509,7 +514,8 @@ describe("knowledge structured data", () => {
     seoDescription: "SEO-DESCRIPTION-MARKER",
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-03T00:00:00+00:00",
-    alternateSlug: "vi-sao-doc-cham",
+    alternateSlugs: { vi: "vi-sao-doc-cham" },
+    metadataLocale: "en",
     relatedIdeas: [relatedIdea],
   };
 
@@ -523,14 +529,15 @@ describe("knowledge structured data", () => {
     seoDescription: "SEO-DESCRIPTION-MARKER",
     publishedAt: "2026-09-20T03:00:00+00:00",
     updatedAt: "2026-09-21T03:00:00+00:00",
-    alternateSlug: "doc-mua-thu",
+    alternateSlugs: { vi: "doc-mua-thu" },
+    metadataLocale: "en",
     author: { name: "Mai Tran", slug: "mai-tran" },
     ideas: [relatedIdea],
   };
 
   const siteOrg = {
     "@type": "Organization",
-    name: "Infinity Books",
+    name: "Infinity Books Press",
     url: "https://books.example",
   };
 
@@ -641,5 +648,14 @@ describe("knowledge structured data", () => {
     expect(
       ideaFaqSchema({ question: "A question?", shortAnswer: "   " }),
     ).toBeNull();
+  });
+});
+
+describe("bookSchema language", () => {
+  it("describes the language of the EPUB sold, not of the interface", () => {
+    const schema = bookSchema({ siteUrl, locale: "ja", path: "/ja/books/harbour-lights", book: { ...book, languageCode: "en" }, paymentsEnabled: true });
+    expect(schema.inLanguage).toBe("en");
+    const japanese = bookSchema({ siteUrl, locale: "en", path: "/en/books/harbour-lights", book: { ...book, languageCode: "ja" }, paymentsEnabled: true });
+    expect(japanese.inLanguage).toBe("ja");
   });
 });

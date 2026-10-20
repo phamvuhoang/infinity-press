@@ -41,6 +41,19 @@ insert into public.skus (id, edition_id, sku_code) values
   ('e5000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', 'S9-PRFIX2-SKU-1'),
   ('e5000000-0000-0000-0000-000000000002', 'e4000000-0000-0000-0000-000000000002', 'S9-PRFIX2-SKU-2');
 
+
+-- Press: a bundle member is an EDITION that can be sold now, so each fixture edition of a published
+-- work gets a live publication.
+insert into public.ebook_assets (edition_id, source_storage_key, version, status)
+select e.id, 'fx/' || e.id || '.epub', 1, 'published'
+from public.editions e join public.books b on b.id = e.book_id
+where b.status = 'published' and e.active_publication_id is null;
+insert into public.ebook_publications (ebook_asset_id, version, manifest_key, status, epub_language)
+select a.id, 1, 'fx/' || a.id || '.json', 'published', 'vi' from public.ebook_assets a where a.source_storage_key like 'fx/%';
+update public.editions e set status = 'published', active_publication_id = p.id
+from public.ebook_publications p join public.ebook_assets a on a.id = p.ebook_asset_id
+where a.edition_id = e.id and a.source_storage_key like 'fx/%';
+
 -- Bundle 1 is published and sells. Bundle 2 is a DRAFT with a live offer, which is the shape
 -- finding 2 is about.
 insert into public.bundles (id, status) values
@@ -51,11 +64,11 @@ insert into public.bundle_localizations (bundle_id, locale, slug, title, descrip
   ('e7000000-0000-0000-0000-000000000001', 'vi', 's9-prfix2-bo-mot', 'Bo mot', 'Mo ta'),
   ('e7000000-0000-0000-0000-000000000002', 'vi', 's9-prfix2-bo-hai', 'Bo hai', 'Mo ta');
 
-insert into public.bundle_books (bundle_id, book_id, position) values
-  ('e7000000-0000-0000-0000-000000000001', 'e2000000-0000-0000-0000-000000000001', 1),
-  ('e7000000-0000-0000-0000-000000000001', 'e2000000-0000-0000-0000-000000000002', 2),
-  ('e7000000-0000-0000-0000-000000000002', 'e2000000-0000-0000-0000-000000000001', 1),
-  ('e7000000-0000-0000-0000-000000000002', 'e2000000-0000-0000-0000-000000000002', 2);
+insert into public.bundle_editions (bundle_id, edition_id, position) values
+  ('e7000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', 1),
+  ('e7000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000002', 2),
+  ('e7000000-0000-0000-0000-000000000002', 'e4000000-0000-0000-0000-000000000001', 1),
+  ('e7000000-0000-0000-0000-000000000002', 'e4000000-0000-0000-0000-000000000002', 2);
 
 insert into public.offers (id, bundle_id, market_code, currency, price_minor, active) values
   ('e6000000-0000-0000-0000-000000000001', 'e7000000-0000-0000-0000-000000000001', 'VN', 'VND', 250000, true),

@@ -1,7 +1,7 @@
 {
   "llms": {
     "heading": "Tiếng Việt",
-    "intro": "Infinity Books xuất bản sách của Phương Bùi về tỉnh biết, tình yêu, gia đình, tiền bạc và hành động. Ebook đọc ngay trên trình duyệt tại đây; sách giấy bán tại Shopee, Fahasa và Tiki.",
+    "intro": "Infinity Books Press tuyển chọn tác phẩm kinh điển thế giới cùng các bản dịch. Mỗi tác phẩm có thể có nhiều bản ngôn ngữ, và ebook được đọc ngay trên trình duyệt tại đây.",
     "authors": "Tác giả",
     "series": "Bộ sách",
     "topics": "Chủ đề",
@@ -15,8 +15,8 @@
     "signOut": "Đăng xuất",
     "skipToContent": "Chuyển đến nội dung chính",
     "library": "Thư viện",
-    "switchLocale": "Read in English",
-    "switchLocaleShort": "EN",
+    "switchLocale": "Chọn ngôn ngữ",
+    "switchLocaleShort": "Ngôn ngữ",
     "books": "Sách",
     "search": "Tìm kiếm",
     "ideas": "Ý tưởng",
@@ -78,44 +78,59 @@
     }
   },
   "home": {
-    "eyebrow": "Ngôi nhà bền lâu cho người đọc",
-    "title": "Giữ gần bên những cuốn sách định hình thế giới của bạn.",
-    "description": "Infinity Books khởi đầu với một tài khoản cá nhân bảo mật, sẵn sàng trở thành ngôi nhà chu đáo cho hành trình đọc của bạn.",
+    "eyebrow": "Kinh điển thế giới, bằng ngôn ngữ của bạn",
+    "title": "Tác phẩm kinh điển, đến gần hơn qua từng ngôn ngữ.",
+    "description": "Infinity Books Press tuyển chọn những tác phẩm kinh điển thế giới, giới thiệu các bản dịch và giúp bạn đọc ngay trên trình duyệt. Khám phá tác phẩm, chọn ngôn ngữ và tìm bản đọc phù hợp.",
     "getStarted": "Bắt đầu",
     "coverQuote": "Những câu chuyện không có hồi kết.",
     "journeyTitle": "Tiếp tục\nhành trình",
-    "journeySteps": ["Nếu bạn đã đọc", "Hãy thử", "Rồi tới"],
-    "values": {
-      "calm": {
-        "title": "Bình an và vững chãi",
-        "copy": "Không phải sự vắng mặt của sóng gió, mà là khả năng đứng vững khi sóng tới."
+    "journeySteps": [
+      "Nếu bạn đã đọc",
+      "Hãy thử",
+      "Rồi tới"
+    ],
+    "platform": {
+      "eyebrow": "Về Press",
+      "title": "Một tác phẩm, nhiều bản ngôn ngữ.",
+      "copy": "Mỗi tác phẩm kinh điển có thể có nhiều bản ngôn ngữ. Mỗi bản có bản dịch, giá và quyền đọc riêng, nên bạn chỉ chọn đúng bản mình muốn đọc."
+    },
+    "howItWorks": {
+      "explore": {
+        "title": "Khám phá tác phẩm",
+        "copy": "Duyệt tác phẩm kinh điển theo tác giả hoặc chủ đề và xem những bản ngôn ngữ hiện có."
       },
-      "love": {
-        "title": "Tình yêu luôn ngập tràn",
-        "copy": "Tình yêu không phải thứ để tìm. Nó là điều còn lại khi ta ngừng che nó đi."
+      "language": {
+        "title": "Chọn ngôn ngữ",
+        "copy": "Mỗi bản ghi rõ ngôn ngữ và giá trước khi bạn mua. Đổi ngôn ngữ giao diện không làm đổi bản bạn đã chọn."
       },
-      "abundance": {
-        "title": "Thịnh vượng trên mọi cấp độ",
-        "copy": "Tiền, thời gian, mối quan hệ, sức khoẻ. Đủ ở nơi này thì cũng đủ ở nơi khác."
+      "read": {
+        "title": "Đọc ngay trên trình duyệt",
+        "copy": "Mở thư viện và đọc trên mọi thiết bị. Tiến độ đọc được lưu riêng cho từng bản."
       }
     },
-    "footerTagline": "Ngôi nhà mới cho những câu chuyện trường tồn.",
+    "footerTagline": "Tác phẩm kinh điển thế giới, từng ngôn ngữ một.",
     "featured": {
-      "eyebrow": "Sách nổi bật",
+      "eyebrow": "Tác phẩm nổi bật",
       "sample": "Đọc thử",
-      "view": "Xem sách"
+      "view": "Xem tác phẩm"
     },
-    "topicsTitle": "Khám phá theo điều bạn đang quan tâm",
+    "topicsTitle": "Khám phá theo chủ đề",
     "topicsLink": "Tất cả chủ đề",
-    "shelfTitle": "Kệ sách\nInfinity",
-    "shelfDescription": "Sắp theo hành trình đọc, không theo doanh số. Bắt đầu từ cuốn đầu tiên, rồi đi tiếp tới tình yêu, gia đình, công việc.",
-    "authorEyebrow": "Tác giả",
-    "authorLink": "Khám phá tác phẩm của {name} →"
+    "shelfTitle": "Tác phẩm\nnổi bật",
+    "shelfDescription": "Kệ sách kinh điển đang lớn dần. Mỗi thẻ ghi rõ ngôn ngữ của bản bạn sẽ đọc."
   },
   "catalog": {
+    "editions": {
+      "label": "Các ấn bản theo ngôn ngữ",
+      "notOnSale": "Chưa mở bán",
+      "invalid": "Ấn bản này không có. Hãy chọn một trong các ấn bản bên dưới.",
+      "ebookIn": "Ebook · {language}",
+      "fallbackNote": "Chưa có ấn bản {requested}. Đây là ấn bản {language}.",
+      "metadataNote": "Tiêu đề và mô tả hiển thị bằng {language}."
+    },
     "quoteCard": {
       "eyebrow": "Trích dẫn từ",
-      "sharedFrom": "Chia sẻ từ Infinity Books",
+      "sharedFrom": "Chia sẻ từ Infinity Books Press",
       "readSample": "Đọc thử",
       "openBook": "Về cuốn sách"
     },
@@ -131,7 +146,7 @@
     "books": {
       "eyebrow": "Danh mục",
       "title": "Tất cả sách",
-      "description": "Mọi cuốn sách bạn có thể đọc trên Infinity Books.",
+      "description": "Mọi cuốn sách bạn có thể đọc trên Infinity Books Press.",
       "filtersTitle": "Lọc sách",
       "topic": "Chủ đề",
       "author": "Tác giả",
@@ -170,22 +185,23 @@
       "countOther": "{count} đánh giá",
       "average": "Điểm trung bình",
       "write": "Viết đánh giá",
-      "ask": "Hỏi tác giả",
-      "authorReply": "Phản hồi từ tác giả:",
+      "ask": "Hỏi ban biên tập",
+      "authorReply": "Phản hồi từ ban biên tập:",
       "anonymousReader": "Độc giả",
       "empty": "Chưa có đánh giá."
     },
     "bundle": {
       "eyebrow": "Gói sách",
-      "itemCountOne": "{count} cuốn sách",
-      "itemCountOther": "{count} cuốn sách",
+      "itemCountOne": "{count} ấn bản",
+      "itemCountOther": "{count} ấn bản",
       "includes": "Trong gói này",
-      "priceNote": "Một mức giá cho cả gói. Giá không đổi nếu bạn đã có sẵn một vài cuốn.",
-      "ownedSome": "Bạn đã có {owned} trong {total} cuốn của gói này.",
-      "ownedAll": "Bạn đã có tất cả sách trong gói này.",
+      "priceNote": "Một mức giá cho cả bộ. Giá không đổi nếu bạn đã sở hữu một vài ấn bản trong bộ.",
+      "ownedSome": "Bạn đã sở hữu {owned} trong {total} ấn bản của bộ này.",
+      "ownedAll": "Bạn đã sở hữu mọi ấn bản trong bộ này.",
       "buy": "Mua gói sách",
       "library": "Tới thư viện của bạn",
-      "empty": "Gói này hiện chưa có sách nào để hiển thị."
+      "empty": "Hiện bộ này chưa có ấn bản nào để hiển thị.",
+      "languages": "Ngôn ngữ trong bộ này: {languages}."
     },
     "actions": {
       "read": "Đọc ngay",
@@ -201,6 +217,9 @@
       "no-free-offer": "Sách này hiện không còn miễn phí.",
       "payments-unavailable": "Chức năng mua ebook chưa sẵn sàng.",
       "not-purchasable": "Hiện chưa thể mua sách này.",
+      "currency-unavailable": "Bản này chưa thể thanh toán bằng chuyển khoản ngân hàng.",
+      "choose-edition": "Hãy chọn một ấn bản để mua.",
+      "price-changed": "Giá đã thay đổi. Hãy xem giá mới và thử lại.",
       "unexpected": "Đã có lỗi xảy ra. Vui lòng thử lại."
     },
     "entity": {
@@ -213,7 +232,7 @@
     },
     "search": {
       "title": "Tìm kiếm",
-      "description": "Tìm sách, tác giả, ý tưởng, bài viết, bộ sách và chủ đề trên Infinity Books.",
+      "description": "Tìm sách, tác giả, ý tưởng, bài viết, bộ sách và chủ đề trên Infinity Books Press.",
       "label": "Tìm sách, tác giả, ý tưởng, bài viết, bộ sách và chủ đề",
       "placeholder": "Tên sách, tác giả hoặc chủ đề",
       "submit": "Tìm",
@@ -250,7 +269,7 @@
       "relatedBooks": "Sách liên quan",
       "relatedIdeas": "Ý tưởng liên quan",
       "topics": "Chủ đề",
-      "ask": "Hỏi tác giả về điều này"
+      "ask": "Hỏi ban biên tập về điều này"
     },
     "article": {
       "eyebrow": "Bài viết",
@@ -265,7 +284,7 @@
   "checkout": {
     "eyebrow": "Thanh toán",
     "title": "Xem lại đơn hàng",
-    "description": "Bạn đang mua một ebook cho tài khoản Infinity Books của mình.",
+    "description": "Bạn đang mua một ebook cho tài khoản Infinity Books Press của mình.",
     "total": "Tổng cộng",
     "account": "Tài khoản",
     "pay": "Thanh toán",
@@ -301,12 +320,6 @@
       "invalid": "Không thể dùng mã này.",
       "rateLimited": "Bạn đã thử quá nhiều mã. Vui lòng đợi vài phút rồi thử lại.",
       "unavailable": "Đơn hàng này hiện không nhận mã khuyến mãi."
-    },
-    "sepay": {
-      "eyebrow": "Thanh toán",
-      "title": "Đang chuyển bạn đến SePay",
-      "description": "Bạn sẽ thanh toán bằng cách quét mã VietQR trong ứng dụng ngân hàng. Nếu trang không tự chuyển, hãy bấm nút bên dưới.",
-      "continue": "Tiếp tục đến SePay"
     },
     "simulate": {
       "eyebrow": "Trình giả lập thanh toán",
@@ -400,17 +413,35 @@
   },
   "account": {
     "eyebrow": "Tài khoản của bạn",
-    "title": "Chào mừng đến với Infinity Books",
-    "description": "Tài khoản bảo mật của bạn đã sẵn sàng. Thư viện và các tính năng đọc sẽ xuất hiện tại đây khi Infinity Books phát triển.",
+    "title": "Chào mừng đến với Infinity Books Press",
+    "description": "Tài khoản bảo mật của bạn đã sẵn sàng. Thư viện và các tính năng đọc sẽ xuất hiện tại đây khi Infinity Books Press phát triển.",
     "detailsTitle": "Thông tin tài khoản",
     "detailsDescription": "Email được liên kết với tài khoản của bạn."
   },
   "library": {
+    "report": {
+      "title": "Báo lỗi bản dịch",
+      "intro": "Cho ban biên tập biết điều gì có vẻ sai trong {title}. Báo cáo do ban biên tập đọc, không gửi tới tác giả.",
+      "place": "Vị trí bạn đang đọc",
+      "messageLabel": "Có gì chưa đúng?",
+      "counter": "{count}/2000",
+      "send": "Gửi báo cáo",
+      "sent": "Cảm ơn bạn. Ban biên tập sẽ xem xét.",
+      "back": "Về thư viện của bạn",
+      "errors": {
+        "empty": "Hãy mô tả vấn đề trước.",
+        "tooLong": "Tối đa 2000 ký tự.",
+        "markup": "Vui lòng dùng văn bản thuần.",
+        "notAllowed": "Ấn bản này không có trong thư viện của bạn.",
+        "tooMany": "Gần đây bạn đã gửi nhiều báo cáo. Vui lòng thử lại sau.",
+        "failed": "Đã có lỗi xảy ra. Vui lòng thử lại."
+      }
+    },
     "eyebrow": "Thư viện của bạn",
     "title": "Tiếp tục đọc từ nơi bạn dừng lại",
     "description": "Những cuốn sách bạn mở khóa sẽ xuất hiện tại đây.",
     "emptyStateTitle": "Chưa có sách nào",
-    "emptyStateDescription": "Khi bạn mở khóa một cuốn sách, nó sẽ xuất hiện trong thư viện của bạn. Danh mục sách sẽ ra mắt trong giai đoạn tiếp theo của Infinity Books.",
+    "emptyStateDescription": "Khi bạn mở khóa một cuốn sách, nó sẽ xuất hiện trong thư viện của bạn.",
     "continueReading": "Tiếp tục đọc",
     "progressLabel": "đã đọc",
     "states": {
@@ -435,6 +466,7 @@
     },
     "reviews": {
       "eyebrow": "Đánh giá của bạn",
+      "chooseEdition": "Bạn muốn đánh giá ấn bản nào?",
       "ratingLabel": "Số sao",
       "bodyLabel": "Nhận xét",
       "counter": "{count}/1000",
@@ -447,7 +479,7 @@
         "published": "Đã đăng",
         "rejected": "Không được đăng"
       },
-      "authorReply": "Phản hồi từ tác giả",
+      "authorReply": "Phản hồi từ ban biên tập",
       "errors": {
         "notEntitled": "Bạn cần sở hữu cuốn sách này để đánh giá.",
         "failed": "Không lưu được. Thử lại.",
@@ -457,12 +489,12 @@
       "saved": "Đã lưu. Đánh giá sẽ hiện sau khi được duyệt."
     },
     "questions": {
-      "title": "Hỏi tác giả",
+      "title": "Hỏi ban biên tập",
       "about": "Về: {title}",
       "bodyLabel": "Câu hỏi của bạn",
       "counter": "{count}/500",
       "send": "Gửi câu hỏi",
-      "sent": "Đã gửi. Nếu tác giả trả lời, bạn sẽ nhận được email.",
+      "sent": "Đã gửi. Nếu ban biên tập trả lời, bạn sẽ nhận được email.",
       "mineTitle": "Câu hỏi của bạn",
       "readAnswer": "Đọc câu trả lời",
       "states": {
@@ -471,7 +503,7 @@
         "archived": "Đã lưu trữ"
       },
       "errors": {
-        "tooMany": "Bạn đang có 5 câu hỏi chờ trả lời. Hãy đợi tác giả trả lời trước.",
+        "tooMany": "Bạn đang có 5 câu hỏi chờ trả lời. Hãy đợi ban biên tập trả lời trước.",
         "targetMissing": "Nội dung này không còn tồn tại.",
         "failed": "Không gửi được. Thử lại.",
         "body": "Hãy viết câu hỏi (tối đa 500 ký tự, không dùng HTML).",
@@ -600,7 +632,12 @@
     "relatedBooks": "Đọc tiếp",
     "noRelatedBooks": "Chưa có gợi ý sách.",
     "rateBook": "Đánh giá sách",
-    "askAuthor": "Hỏi tác giả"
+    "askAuthor": "Hỏi ban biên tập",
+    "reportError": "Báo lỗi bản dịch",
+    "chooseEdition": {
+      "title": "Chọn bản để đọc",
+      "description": "Bạn sở hữu nhiều bản ngôn ngữ của tác phẩm này."
+    }
   },
   "forbidden": {
     "title": "Không có quyền truy cập",
@@ -613,42 +650,42 @@
       "subjectGeneric": "Cuốn sách mới của bạn đã sẵn sàng",
       "greetingNamed": "Chào {name},",
       "greetingGeneric": "Xin chào,",
-      "readyWithTitle": "“{title}” đã có trong thư viện Infinity Books của bạn và sẵn sàng để đọc.",
-      "readyGeneric": "Cuốn sách mới đã có trong thư viện Infinity Books của bạn và sẵn sàng để đọc.",
+      "readyWithTitle": "“{title}” đã có trong thư viện Infinity Books Press của bạn và sẵn sàng để đọc.",
+      "readyGeneric": "Cuốn sách mới đã có trong thư viện Infinity Books Press của bạn và sẵn sàng để đọc.",
       "openLibrary": "Mở thư viện của bạn",
-      "signOff": "Chúc bạn đọc sách vui vẻ,\nInfinity Books"
+      "signOff": "Chúc bạn đọc sách vui vẻ,\nInfinity Books Press"
     },
     "giftClaim": {
-      "subjectFromName": "{name} đã gửi tặng bạn một món quà trên Infinity Books",
-      "subjectGeneric": "Bạn được tặng một món quà trên Infinity Books",
+      "subjectFromName": "{name} đã gửi tặng bạn một món quà trên Infinity Books Press",
+      "subjectGeneric": "Bạn được tặng một món quà trên Infinity Books Press",
       "greeting": "Xin chào,",
-      "introNamed": "{name} đã gửi tặng bạn một món quà trên Infinity Books.",
-      "introGeneric": "Một người đã gửi tặng bạn một món quà trên Infinity Books.",
+      "introNamed": "{name} đã gửi tặng bạn một món quà trên Infinity Books Press.",
+      "introGeneric": "Một người đã gửi tặng bạn một món quà trên Infinity Books Press.",
       "messageLabel": "Lời nhắn:",
       "includesLabel": "Món quà của bạn gồm:",
       "claim": "Mở món quà của bạn",
       "claimHint": "Mở liên kết và đăng nhập - hoặc tạo tài khoản - để thêm sách vào thư viện của bạn. Liên kết chỉ dùng được một lần.",
-      "signOff": "Chúc bạn đọc sách vui vẻ,\nInfinity Books"
+      "signOff": "Chúc bạn đọc sách vui vẻ,\nInfinity Books Press"
     },
     "questionAnswered": {
-      "subject": "Tác giả đã trả lời câu hỏi của bạn",
+      "subject": "Ban biên tập đã trả lời câu hỏi của bạn",
       "greetingNamed": "Chào {name},",
       "greetingGeneric": "Chào bạn,",
-      "body": "Câu hỏi bạn gửi trên Infinity Books đã được trả lời trong bài: “{title}”.",
+      "body": "Câu hỏi bạn gửi trên Infinity Books Press đã được trả lời trong bài: “{title}”.",
       "read": "Đọc câu trả lời",
-      "signOff": "Chúc bạn đọc vui,\nInfinity Books"
+      "signOff": "Chúc bạn đọc vui,\nInfinity Books Press"
     },
     "reviewReplied": {
-      "subjectWithTitle": "Tác giả đã phản hồi đánh giá của bạn về “{title}”",
-      "subjectGeneric": "Tác giả đã phản hồi đánh giá của bạn",
+      "subjectWithTitle": "Ban biên tập đã phản hồi đánh giá của bạn về “{title}”",
+      "subjectGeneric": "Ban biên tập đã phản hồi đánh giá của bạn",
       "greetingNamed": "Chào {name},",
       "greetingGeneric": "Chào bạn,",
-      "introWithTitle": "Tác giả đã phản hồi đánh giá bạn viết về “{title}” trên Infinity Books.",
-      "introGeneric": "Tác giả đã phản hồi đánh giá bạn viết trên Infinity Books.",
+      "introWithTitle": "Ban biên tập đã phản hồi đánh giá bạn viết về “{title}” trên Infinity Books Press.",
+      "introGeneric": "Ban biên tập đã phản hồi đánh giá bạn viết trên Infinity Books Press.",
       "yourReview": "Đánh giá của bạn ({rating}/5):",
-      "authorReply": "Phản hồi từ tác giả:",
+      "authorReply": "Phản hồi từ ban biên tập:",
       "open": "Mở đánh giá của bạn",
-      "signOff": "Chúc bạn đọc vui,\nInfinity Books"
+      "signOff": "Chúc bạn đọc vui,\nInfinity Books Press"
     }
   }
 }

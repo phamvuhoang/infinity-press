@@ -44,7 +44,7 @@ function card(bookId: string, slug: string, title: string): CatalogBookCard {
     cover: null,
     offer: { priceMinor: 129000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,
@@ -56,13 +56,17 @@ function card(bookId: string, slug: string, title: string): CatalogBookCard {
 const bundle: PublicBundleDTO = {
   bundleId: BUNDLE_ID,
   slug: "starter-bundle",
-  alternateSlug: "goi-khoi-dau",
+  alternateSlugs: { vi: "goi-khoi-dau" },
+  metadataLocale: "en",
   title: "Starter Bundle",
   subtitle: "Two books to begin with",
   description: "A set of two.",
   cover: null,
   offer: { priceMinor: 199000, currency: "VND" },
-  members: [card("book-1", "book-one", "Book One"), card("book-2", "book-two", "Book Two")],
+  members: [
+    { ...card("book-1", "book-one", "Book One"), editionId: "edition-1", languageCode: "en", languageLabel: "English" },
+    { ...card("book-2", "book-two", "Book Two"), editionId: "edition-2", languageCode: "en", languageLabel: "English" },
+  ],
 };
 
 const params = Promise.resolve({ lang: "en", slug: "starter-bundle" });
@@ -139,7 +143,7 @@ describe("BundlePage", () => {
     render(await BundlePage({ params }));
 
     expect(screen.getByRole("heading", { level: 1, name: "Starter Bundle" })).toBeInTheDocument();
-    expect(screen.getByText("This bundle has no books to show right now.")).toBeInTheDocument();
+    expect(screen.getByText("This bundle has no editions to show right now.")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "In this bundle" })).queryAllByRole("link")).toHaveLength(0);
     expect(screen.queryByText(/₫/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Buy bundle" })).not.toBeInTheDocument();
@@ -171,13 +175,13 @@ describe("generateMetadata", () => {
       languages: {
         en: "https://books.example/en/bundles/starter-bundle",
         vi: "https://books.example/vi/bundles/goi-khoi-dau",
-        "x-default": "https://books.example/vi/bundles/goi-khoi-dau",
+        "x-default": "https://books.example/en/bundles/starter-bundle",
       },
     });
   });
 
   it("names no alternate for a bundle localized in one locale only", async () => {
-    vi.mocked(getPublicBundle).mockResolvedValue({ ...bundle, alternateSlug: null });
+    vi.mocked(getPublicBundle).mockResolvedValue({ ...bundle, alternateSlugs: {} });
 
     const metadata = await generateMetadata({ params });
 

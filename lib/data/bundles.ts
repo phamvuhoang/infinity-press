@@ -1,4 +1,5 @@
 import "server-only";
+import { type Locale } from "@/lib/i18n/config";
 
 import { notFound } from "next/navigation";
 
@@ -66,7 +67,7 @@ function assertUuid(value: string) {
 
 export type AdminBundleLocalizationDTO = {
   id: string;
-  locale: "vi" | "en";
+  locale: Locale;
   slug: string;
   title: string;
   subtitle: string | null;
@@ -74,7 +75,10 @@ export type AdminBundleLocalizationDTO = {
 };
 
 export type AdminBundleMemberDTO = {
+  // A member is an EDITION: the language is part of what the bundle sells.
+  editionId: string;
   bookId: string;
+  languageCode: string;
   position: number;
   title: string;
   canonicalKey: string;
@@ -132,6 +136,15 @@ type MemberBookRow = {
   localizations: { locale: string; title: string }[];
 };
 
+type MemberEditionRow = {
+  id: string;
+  language_code: string;
+  status: string;
+  editorial_state: string;
+  active_publication_id: string | null;
+  book: MemberBookRow | MemberBookRow[] | null;
+};
+
 type BundleRow = {
   id: string;
   status: AdminBundleDTO["status"];
@@ -139,15 +152,15 @@ type BundleRow = {
   updated_at: string;
   localizations: {
     id: string;
-    locale: "vi" | "en";
+    locale: Locale;
     slug: string;
     title: string;
     subtitle: string | null;
     description: string | null;
   }[];
-  // `book` is a to-one embed; PostgREST returns it as an object or a one-element array depending
-  // on how it resolves the relationship, so oneOrNull() accepts both.
-  members: { position: number; book: MemberBookRow | MemberBookRow[] | null }[];
+  // `edition` and `book` are to-one embeds; PostgREST returns an object or a one-element array
+  // depending on how it resolves the relationship, so oneOrNull() accepts both.
+  members: { position: number; edition: MemberEditionRow | MemberEditionRow[] | null }[];
   offers: OfferRow[];
 };
 
@@ -157,7 +170,7 @@ const bundleSelect = `
   created_at,
   updated_at,
   localizations:bundle_localizations ( id, locale, slug, title, subtitle, description ),
-  members:bundle_books ( position, book:books ( id, canonical_key, status, localizations:book_localizations ( locale, title ) ) ),
+  members:bundle_editions ( position, edition:editions ( id, language_code, status, editorial_state, active_publication_id, book:books ( id, canonical_key, status, localizations:book_localizations ( locale, title ) ) ) ),
   offers ( id, market_code, currency, price_minor, active, starts_at, ends_at )
 `;
 
@@ -199,15 +212,24 @@ function sortedMembers(row: BundleRow): AdminBundleMemberDTO[] {
   return [...row.members]
     .sort((a, b) => a.position - b.position)
     .flatMap((member) => {
-      const book = oneOrNull(member.book);
-      if (!book) return [];
+      const edition = oneOrNull(member.edition);
+      const book = edition ? oneOrNull(edition.book) : null;
+      if (!edition || !book) return [];
       return [
         {
+          editionId: edition.id,
           bookId: book.id,
+          languageCode: edition.language_code,
           position: member.position,
-          title: memberTitle(book),
+          title: `${memberTitle(book)} (${edition.language_code})`,
           canonicalKey: book.canonical_key,
-          published: book.status === "published",
+          // The same rule the database applies (edition_is_sellable): published, not blocked, live
+          // publication, published work.
+          published:
+            edition.status === "published" &&
+            edition.editorial_state !== "blocked" &&
+            edition.active_publication_id !== null &&
+            book.status === "published",
         },
       ];
     });
@@ -350,7 +372,7 @@ export async function setBundleMembers(bundleId: string, input: BundleMembersInp
   const supabase = await createClient();
   const { error } = await supabase.rpc("admin_set_bundle_members", {
     p_bundle_id: bundleId,
-    p_book_ids: input.bookIds,
+    p_edition_ids: input.editionIds,
   });
 
   if (error) throw failure("setBundleMembers", error);

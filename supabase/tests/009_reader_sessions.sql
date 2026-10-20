@@ -48,9 +48,9 @@ insert into public.ebook_assets (id, edition_id, source_storage_key, version, st
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status) values
   ('a8000000-0000-0000-0000-000000000050', 'a8000000-0000-0000-0000-000000000040', 1, 'ed/asset-v1/manifest.json', 'published');
 
-update public.books
-set active_publication_id = 'a8000000-0000-0000-0000-000000000050'
-where id = 'a8000000-0000-0000-0000-000000000020';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'a8000000-0000-0000-0000-000000000050' and (b.id = 'a8000000-0000-0000-0000-000000000020');
 
 insert into public.ebook_resources (publication_id, href, media_type, storage_key, byte_size, sha256, access_class) values
   ('a8000000-0000-0000-0000-000000000050', 'OEBPS/text/chapter1.xhtml', 'application/xhtml+xml', 'ed/asset-v1/OEBPS/text/chapter1.xhtml', 100, 'sha1', 'sample'),
@@ -280,20 +280,21 @@ select throws_ok(
 reset role;
 update public.ebook_publications set status = 'published' where id = 'a8000000-0000-0000-0000-000000000050';
 
--- (23) The book's active pointer. The publication stays 'published' and the book stays
+-- (23) The edition's active pointer. The publication stays 'published' and the book stays
 -- 'published' - only the pointer moves away, which is the rollback case: a superseded-but-still-
 -- published-looking publication must not remain openable after the book points elsewhere.
-update public.books set active_publication_id = null where id = 'a8000000-0000-0000-0000-000000000020';
+update public.editions set active_publication_id = null where id = 'a8000000-0000-0000-0000-000000000030';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a8000000-0000-0000-0000-000000000001', true);
 select throws_ok(
   $$select * from public.create_reader_session('a8000000-0000-0000-0000-000000000050', 900)$$,
   'EB008', null,
-  'an entitled reader cannot mint a session for a publication the book no longer points at'
+  'an entitled reader cannot mint a session for a publication its edition no longer points at'
 );
 reset role;
-update public.books set active_publication_id = 'a8000000-0000-0000-0000-000000000050'
-where id = 'a8000000-0000-0000-0000-000000000020';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'a8000000-0000-0000-0000-000000000050' and (b.id = 'a8000000-0000-0000-0000-000000000020');
 
 -- (24) The book's own status (Ruling BL: a published book is the condition for the catalog being
 -- visible at all). The publication stays published and actively pointed at.

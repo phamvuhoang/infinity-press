@@ -63,7 +63,7 @@ function staleEpubJobs(snapshot: OperationsSnapshot, now: number): OpsFinding[] 
         ? SUMMARIES.staleQueued
         : SUMMARIES.staleProcessing
       : SUMMARIES.expiredLease;
-    findings.push(finding("stale_epub_job", job.id, job.updatedAt, summary, `/admin/books/${job.bookId}#epub`));
+    findings.push(finding("stale_epub_job", job.id, job.updatedAt, summary, `/admin/books/${job.bookId}/editions/${job.editionId}#epub`));
   }
   return findings;
 }

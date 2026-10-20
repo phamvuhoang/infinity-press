@@ -5,6 +5,8 @@ import {
   fieldErrorsFrom,
   formatFaq,
   formatKeyIdeas,
+  formatContributors,
+  parseContributors,
   parseFaq,
   parseKeyIdeas,
   readBoolean,
@@ -62,5 +64,21 @@ describe("key ideas and FAQ text formats", () => {
     const items = [{ question: "Ebook đọc ở đâu?", answer: "Trên trình duyệt." }];
     expect(parseFaq(formatFaq(items))).toEqual(items);
     expect(parseFaq("Q: No answer\n\nQ: Complete\nA: Yes")).toEqual([{ question: "Complete", answer: "Yes" }]);
+  });
+});
+
+describe("edition credits", () => {
+  it("reads one 'role: name' credit per line and formats it back", () => {
+    const credits = [
+      { role: "translator", name: "T. Translator" },
+      { role: "editor", name: "E. Editor" },
+    ];
+    expect(parseContributors(formatContributors(credits))).toEqual(credits);
+  });
+
+  it("skips blank and malformed lines, keeping a name that contains a colon", () => {
+    expect(parseContributors("\ntranslator: A: B\nno colon here\n: nobody\neditor:   \n")).toEqual([
+      { role: "translator", name: "A: B" },
+    ]);
   });
 });

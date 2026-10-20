@@ -18,7 +18,7 @@ function makeCard(bookId: string, slug: string, title: string): CatalogBookCard 
     cover: { url: `http://127.0.0.1:54321/storage/v1/object/public/covers/books/${bookId}/cover.png`, alt: `Cover of ${title}` },
     offer: null,
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,

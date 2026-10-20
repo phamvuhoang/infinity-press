@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkoutAmounts, checkoutStatusView, customerOrderStatus } from "@/lib/commerce/checkout-view";
+import { checkoutAmounts, checkoutStatusView, customerOrderStatus, editionLanguageLabel, readHrefOf } from "@/lib/commerce/checkout-view";
 import type { OrderState } from "@/lib/commerce/order-state";
 
 const rows: [OrderState, ReturnType<typeof checkoutStatusView>, ReturnType<typeof customerOrderStatus>][] = [
@@ -73,5 +73,26 @@ describe("checkoutAmounts", () => {
       discountMinor: 25800,
       couponCode: "TWENTY",
     });
+  });
+});
+
+describe("readHrefOf", () => {
+  it("opens the edition that was bought", () => {
+    expect(readHrefOf("en", { bookId: "b1", editionId: "e1" })).toBe("/en/read/editions/e1");
+  });
+
+  it("falls back to the work link for an order that predates editions", () => {
+    expect(readHrefOf("en", { bookId: "b1", editionId: null })).toBe("/en/read/b1");
+  });
+});
+
+describe("editionLanguageLabel", () => {
+  it.each([
+    ["ja", "日本語"],
+    ["en", "English"],
+    ["fr", "FR"],
+    [null, null],
+  ])("labels %s as %s", (code, label) => {
+    expect(editionLanguageLabel(code)).toBe(label);
   });
 });

@@ -17,9 +17,9 @@ beforeEach(() => {
       id: "4a1b2c3d-0000-4000-8000-000000000001",
       canonicalKey: "the-golden-book",
       title: "The Golden Book",
-      authorName: "Phương Bùi",
+      authorName: "Jane Austen",
       status: "draft",
-      hasActivePublication: false,
+      hasActivePublication: false, editions: [],
       readinessIssues: ["missing_cover", "missing_publication"],
     },
   ]);
@@ -38,7 +38,7 @@ it("lists the searched books with publication and readiness state", async () => 
   expect(screen.getByText("None")).toBeInTheDocument();
   expect(screen.getByText("2 to fix")).toHaveAttribute(
     "title",
-    "Upload a cover image.\nPublish an EPUB version.",
+    "Upload a cover image.\nPublish an EPUB for at least one edition.",
   );
 });
 

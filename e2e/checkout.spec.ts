@@ -69,7 +69,7 @@ test("a reader buys a paid ebook on the simulator and opens it", async ({ page, 
   await expect(page.getByRole("heading", { level: 1, name: "Payment complete" })).toBeVisible();
 
   await page.getByRole("link", { name: "Read now" }).click();
-  await expect(page).toHaveURL(new RegExp(`/en/read/${bookId}$`));
+  await expect(page).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { level: 1, name: title })).toBeAttached();
   expect(await activeEntitlementCount(profileId, bookId)).toBe(1);
 
@@ -121,7 +121,7 @@ test("a reader gets a free ebook and goes straight to the reader", async ({ page
   await signInAs(page, reader.email, `/en/books/${slug}`);
 
   await page.getByRole("button", { name: "Get free" }).click();
-  await expect(page).toHaveURL(new RegExp(`/en/read/${bookId}$`));
+  await expect(page).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
   expect(await activeEntitlementCount(reader.profileId, bookId)).toBe(1);
 
   await page.goto(`/en/books/${slug}`);

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   checkBookReadiness,
+  readinessIssueCodes,
+  parsePublicationReadinessError,
   parseReadinessError,
   readinessIssueMessage,
   readinessIssueSection,
@@ -12,8 +14,7 @@ const ready: BookReadinessSnapshot = {
   localizations: [{ title: "Quan sát tỉnh biết", slug: "quan-sat-tinh-biet", description: "Một cuốn sách." }],
   hasAuthor: true,
   hasCover: true,
-  hasActiveOffer: true,
-  hasPublishedActivePublication: true,
+  hasPublishedEdition: true,
 };
 
 describe("checkBookReadiness", () => {
@@ -46,14 +47,17 @@ describe("checkBookReadiness", () => {
         localizations: [],
         hasAuthor: false,
         hasCover: false,
-        hasActiveOffer: false,
-        hasPublishedActivePublication: false,
+        hasPublishedEdition: false,
       }),
-    ).toEqual(["missing_localization", "missing_author", "missing_cover", "missing_offer", "missing_publication"]);
+    ).toEqual(["missing_localization", "missing_author", "missing_cover", "missing_publication"]);
+  });
+
+  it("never asks for an offer: an edition without one is browsable, just not for sale", () => {
+    expect(readinessIssueCodes).not.toContain("missing_offer");
   });
 
   it("maps every issue to an editor section and a message", () => {
-    for (const code of checkBookReadiness({ ...ready, localizations: [], hasAuthor: false, hasCover: false, hasActiveOffer: false, hasPublishedActivePublication: false })) {
+    for (const code of checkBookReadiness({ ...ready, localizations: [], hasAuthor: false, hasCover: false, hasPublishedEdition: false })) {
       expect(readinessIssueSection[code]).toBeTruthy();
       expect(readinessIssueMessage[code]).toBeTruthy();
     }
@@ -62,14 +66,29 @@ describe("checkBookReadiness", () => {
 
 describe("parseReadinessError", () => {
   it("reads the codes out of publish_book's EB010 message", () => {
-    expect(parseReadinessError("publish_book: book is not ready: missing_cover,missing_offer")).toEqual([
+    expect(parseReadinessError("publish_book: book is not ready: missing_cover,missing_publication")).toEqual([
       "missing_cover",
-      "missing_offer",
+      "missing_publication",
     ]);
   });
 
   it("ignores unknown codes and unrelated messages", () => {
     expect(parseReadinessError("publish_book: book is not ready: missing_cover,drop_table")).toEqual(["missing_cover"]);
     expect(parseReadinessError("something else")).toBeNull();
+  });
+});
+
+describe("parsePublicationReadinessError", () => {
+  it("reads the codes out of publish_publication's EB012 message", () => {
+    expect(
+      parsePublicationReadinessError("publish_publication: publication is not ready: epub_language_mismatch"),
+    ).toEqual(["epub_language_mismatch"]);
+  });
+
+  it("drops unknown codes and ignores other messages", () => {
+    expect(parsePublicationReadinessError("publication is not ready: epub_language_unverified,x")).toEqual([
+      "epub_language_unverified",
+    ]);
+    expect(parsePublicationReadinessError("nope")).toBeNull();
   });
 });

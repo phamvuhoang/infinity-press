@@ -1,5 +1,6 @@
 import { escapeHtml, fill, singleLine } from "@/lib/email/text";
 import en from "@/lib/i18n/dictionaries/en.json";
+import ja from "@/lib/i18n/dictionaries/ja.json";
 import vi from "@/lib/i18n/dictionaries/vi.json";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -30,6 +31,7 @@ export type GiftClaimEmailInput = {
 const copy: Record<Locale, typeof en.email.giftClaim> = {
   en: en.email.giftClaim,
   vi: vi.email.giftClaim,
+  ja: ja.email.giftClaim,
 };
 
 export function buildGiftClaimEmail(input: GiftClaimEmailInput): { subject: string; text: string; html: string } {

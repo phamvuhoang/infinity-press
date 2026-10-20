@@ -12,8 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 // own authorization model (Ruling AO) and its own RPC
 // (supabase/migrations/20260911190000_entitlement_rpcs.sql):
 //
-// - acquireFreeOffer: an ordinary signed-in customer, gated on requireUser - never requireAdmin.
-//   acquire_free_ebook derives the profile from auth.uid() itself; this function never accepts or
+// - acquireFreeEdition: an ordinary signed-in customer, gated on requireUser - never requireAdmin.
+//   acquire_free_edition derives the profile from auth.uid() itself; this function never accepts or
 //   forwards a caller-supplied profile id.
 // - grantComplimentaryEntitlement: an admin mutation on the Ruling W pattern - the user-session
 //   client, gated on requireAdmin, with grant_complimentary_entitlement's own is_admin() check as
@@ -48,7 +48,7 @@ export class MissingGrantReasonError extends Error {
 
 export class GrantTargetNotFoundError extends Error {
   constructor() {
-    super("That reader or book could not be found.");
+    super("That reader or edition could not be found.");
     this.name = "GrantTargetNotFoundError";
   }
 }
@@ -81,23 +81,21 @@ export class OrderEntitlementNotFoundError extends Error {
   }
 }
 
-// Free acquisition (spec 6.2). Idempotent: acquire_free_ebook uses
-// entitlements_active_subject_key (a partial unique index, not a hand-rolled check-then-insert)
-// so a retried request resolves to the same entitlement instead of erroring or duplicating
-// access - the opposite of admin_create_ebook's deliberate reject-on-duplicate.
-export async function acquireFreeOffer(locale: Locale, bookId: string): Promise<{ entitlementId: string }> {
+// Free acquisition of ONE named edition (spec 6.2 and section 8). The edition is explicit: there is no
+// search across the work's languages. Idempotent through the (profile, edition) unique index.
+export async function acquireFreeEdition(locale: Locale, editionId: string): Promise<{ entitlementId: string }> {
   await requireUser(locale);
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("acquire_free_ebook", { p_book_id: bookId });
+  const { data, error } = await supabase.rpc("acquire_free_edition", { p_edition_id: editionId });
 
   if (error) {
     if (error.code === "EB005") throw new EmailNotVerifiedError();
     if (error.code === "EB006") throw new NoFreeOfferError();
-    throw new Error(`acquireFreeOffer: acquire_free_ebook failed: ${error.message}`);
+    throw new Error(`acquireFreeEdition: acquire_free_edition failed: ${error.message}`);
   }
   if (typeof data !== "string" || data.length === 0) {
-    throw new Error("acquireFreeOffer: acquire_free_ebook returned no entitlement id");
+    throw new Error("acquireFreeEdition: acquire_free_edition returned no entitlement id");
   }
 
   return { entitlementId: data };
@@ -110,7 +108,7 @@ export async function acquireFreeOffer(locale: Locale, bookId: string): Promise<
 // write is not available if the two were ever split).
 export async function grantComplimentaryEntitlement(
   profileId: string,
-  bookId: string,
+  editionId: string,
   reason: string,
 ): Promise<{ entitlementId: string }> {
   await requireAdmin();
@@ -118,7 +116,7 @@ export async function grantComplimentaryEntitlement(
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("grant_complimentary_entitlement", {
     p_profile_id: profileId,
-    p_book_id: bookId,
+    p_edition_id: editionId,
     p_reason: reason,
   });
 

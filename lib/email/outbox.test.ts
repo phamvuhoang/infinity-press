@@ -11,7 +11,7 @@ type Query = { table: string; calls: Call[] };
 const LEASE = "11111111-1111-4111-8111-111111111111";
 const REQUEST_ID = "req_outbox_test_1234";
 const SITE = "https://books.example.com";
-const FROM = "Infinity Books <books@example.com>";
+const FROM = "Infinity Books Press <books@example.com>";
 
 type Fixture = {
   entitlements: Record<string, { id: string; book_id: string; profile_id: string; status: string } | null>;
@@ -551,7 +551,7 @@ describe("deliverNotificationBatch", () => {
       to: "friend@example.com",
       // The payload path is /vi/..., so the message is Vietnamese and the link it carries is the
       // same path made absolute against the site URL.
-      subject: "Ada đã gửi tặng bạn một món quà trên Infinity Books",
+      subject: "Ada đã gửi tặng bạn một món quà trên Infinity Books Press",
       idempotencyKey: "gift-claim/outbox-1",
     });
     expect(sent[0].html).toContain('href="https://books.example.com/vi/gifts/claim/secret-token-value"');
@@ -601,7 +601,7 @@ describe("deliverNotificationBatch", () => {
 
     await run(client, provider);
 
-    expect(sent[0].subject).toBe("Bạn được tặng một món quà trên Infinity Books");
+    expect(sent[0].subject).toBe("Bạn được tặng một món quà trên Infinity Books Press");
   });
 
   // The purchaser's profile is a courtesy, not a precondition: a missing one costs the name, not
@@ -613,7 +613,7 @@ describe("deliverNotificationBatch", () => {
     const { provider, sent } = recordingProvider(async () => ({ messageId: "m" }));
 
     await expect(run(client, provider)).resolves.toMatchObject({ sent: 1, failed: 0 });
-    expect(sent[0].subject).toBe("Bạn được tặng một món quà trên Infinity Books");
+    expect(sent[0].subject).toBe("Bạn được tặng một món quà trên Infinity Books Press");
   });
 
   it.each([
@@ -775,7 +775,7 @@ describe("deliverNotificationBatch", () => {
       expect(result).toEqual({ claimed: 1, sent: 1, failed: 0, leaseLost: 0 });
       expect(sent[0]).toMatchObject({
         to: "minh@example.com",
-        subject: "Tác giả đã trả lời câu hỏi của bạn",
+        subject: "Ban biên tập đã trả lời câu hỏi của bạn",
         idempotencyKey: "question-answered/outbox-2/2",
       });
       expect(sent[0].text).toContain("https://books.example.com/vi/ideas/tai-sao");
@@ -791,7 +791,7 @@ describe("deliverNotificationBatch", () => {
       // profile-2 is vi; the question was asked in en.
       const { sent } = await runOne(questionRow(2, { question_id: "question-3" }));
       expect(sent[0].text).toContain("https://books.example.com/en/ideas/why");
-      expect(sent[0].subject).toBe("The author answered your question");
+      expect(sent[0].subject).toBe("The editors answered your question");
       expect(sent[0].text).toContain("Why still read?");
     });
 
@@ -806,7 +806,7 @@ describe("deliverNotificationBatch", () => {
         f.ideaLocalizations![IDEA_ID] = f.ideaLocalizations![IDEA_ID].filter((l) => l.locale === "en");
       });
       expect(sent[0].text).toContain("https://books.example.com/en/ideas/why");
-      expect(sent[0].subject).toBe("The author answered your question");
+      expect(sent[0].subject).toBe("The editors answered your question");
     });
 
     it("fails with recipient_unverified when there is no verified identity, and the batch continues", async () => {
@@ -887,7 +887,7 @@ describe("deliverNotificationBatch", () => {
       expect(result).toEqual({ claimed: 1, sent: 1, failed: 0, leaseLost: 0 });
       expect(sent[0]).toMatchObject({
         to: "minh@example.com",
-        subject: "Tác giả đã phản hồi đánh giá của bạn về “Sách S15”",
+        subject: "Ban biên tập đã phản hồi đánh giá của bạn về “Sách S15”",
         idempotencyKey: "review-replied/outbox-2/1",
       });
       expect(sent[0].text).toContain("Cảm ơn bạn đã đọc.");
@@ -909,7 +909,7 @@ describe("deliverNotificationBatch", () => {
         delete f.titles[`${BOOK_ID}/vi`];
         f.titles[`${BOOK_ID}/en`] = "Book S15";
       });
-      expect(sent[0].subject).toBe("The author replied to your review of “Book S15”");
+      expect(sent[0].subject).toBe("The editors replied to your review of “Book S15”");
       expect(sent[0].text).toContain(`https://books.example.com/en/library/reviews/${BOOK_ID}`);
     });
 

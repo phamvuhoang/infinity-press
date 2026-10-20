@@ -43,7 +43,7 @@ function card(bookId: string, slug: string): CatalogBookCard {
     cover: null,
     offer: null,
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,
@@ -65,7 +65,8 @@ function ideaRow(
     short_answer: `${question} answer`,
     created_at: "2026-02-01T00:00:00+00:00",
     updated_at: "2026-02-02T00:00:00+00:00",
-    alternate_slug: null,
+    alternate_slugs: {},
+    metadata_locale: "vi",
     topics,
   };
 }
@@ -96,7 +97,8 @@ function ideaPageData(overrides: Record<string, unknown> = {}) {
     seoDescription: "SEO",
     createdAt: "2026-02-01T00:00:00+00:00",
     updatedAt: "2026-02-02T00:00:00+00:00",
-    alternateSlug: "y-tuong-mot",
+    alternateSlugs: { vi: "y-tuong-mot" },
+    metadataLocale: "vi",
     bookIds: [BOOK_GONE, BOOK_A],
     relatedIdeaIds: [IDEA_2, IDEA_GONE],
     topics: [{ slug: "habits", name: "Habits" }],
@@ -115,7 +117,8 @@ function articlePageData(overrides: Record<string, unknown> = {}) {
     seoDescription: null,
     publishedAt: "2026-01-01T00:00:00+00:00",
     updatedAt: "2026-01-02T00:00:00+00:00",
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "vi",
     author: { name: "An Author", slug: null },
     bookIds: [BOOK_B, BOOK_A],
     ideaIds: [IDEA_3, IDEA_1],
@@ -179,7 +182,8 @@ describe("getPublishedIdeas", () => {
       shortAnswer: "Alpha? answer",
       createdAt: "2026-02-01T00:00:00+00:00",
       updatedAt: "2026-02-02T00:00:00+00:00",
-      alternateSlug: null,
+      alternateSlugs: {},
+      metadataLocale: "vi",
       topics: [
         { slug: "habits", name: "Habits" },
         { slug: "focus", name: "Focus" },
@@ -243,7 +247,8 @@ describe("getArticleIndex", () => {
             excerpt: "N",
             published_at: "2026-03-01T00:00:00+00:00",
             updated_at: "2026-03-02T00:00:00+00:00",
-            alternate_slug: "moi-hon",
+            alternate_slugs: { vi: "moi-hon" },
+            metadata_locale: "vi",
             author: { name: "An Author", slug: "an-author" },
           },
           {
@@ -253,7 +258,8 @@ describe("getArticleIndex", () => {
             excerpt: "O",
             published_at: "2026-01-01T00:00:00+00:00",
             updated_at: "2026-01-02T00:00:00+00:00",
-            alternate_slug: null,
+            alternate_slugs: {},
+            metadata_locale: "vi",
             author: { name: "Someone", slug: null },
           },
         ],
@@ -272,7 +278,8 @@ describe("getArticleIndex", () => {
       excerpt: "N",
       publishedAt: "2026-03-01T00:00:00+00:00",
       updatedAt: "2026-03-02T00:00:00+00:00",
-      alternateSlug: "moi-hon",
+      alternateSlugs: { vi: "moi-hon" },
+      metadataLocale: "vi",
       author: { name: "An Author", slug: "an-author" },
     });
   });
@@ -286,7 +293,8 @@ describe("getKnowledgeSitemapEntries", () => {
     excerpt: "E",
     published_at: "2026-03-01T00:00:00+00:00",
     updated_at: "2026-03-02T00:00:00+00:00",
-    alternate_slug: null,
+    alternate_slugs: {},
+    metadata_locale: "vi",
     author: { name: "An Author", slug: null },
   };
 
@@ -377,7 +385,7 @@ describe("getIdeaPage", () => {
 
     expect(page?.question).toBe("Alpha?");
     expect(page?.shortAnswer).toBe("Alpha answer");
-    expect(page?.alternateSlug).toBe("y-tuong-mot");
+    expect(page?.alternateSlugs).toEqual({ vi: "y-tuong-mot" });
     expect(page?.createdAt).toBe("2026-02-01T00:00:00+00:00");
     expect(page?.updatedAt).toBe("2026-02-02T00:00:00+00:00");
     expect(page?.topics).toEqual([{ slug: "habits", name: "Habits" }]);

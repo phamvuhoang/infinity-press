@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
-import { defaultLocale, withLocale } from "@/lib/i18n/config";
+import { defaultLocale, withLocale, type Locale } from "@/lib/i18n/config";
 
 // not-found.tsx receives no props (unlike a page or layout, it gets no `params`), and it is part of
 // the render tree Next has to be able to produce while prerendering every route in this segment -
@@ -16,13 +16,14 @@ import { defaultLocale, withLocale } from "@/lib/i18n/config";
 // unproven; this is the actual cause. See
 // docs/runbooks/storefront-caching.md ("The bug that cost the longest bisection") for the
 // bisection. So this renders the default locale's copy always, not the visitor's: a visitor on /en
-// who hits a 404 sees Vietnamese heading text, a small and deliberate price for the whole segment
+// who hits a 404 sees the default-locale heading text, a small and deliberate price for the whole segment
 // staying static. Pulling the dictionaries in for two strings is not worth it, so the copy lives
 // inline here rather than in lib/i18n/dictionaries; there is no `notFound` key in the dictionaries.
-const copy = {
+const copy: Record<Locale, { heading: string; backHome: string }> = {
   vi: { heading: "Không tìm thấy trang", backHome: "Về trang chủ" },
   en: { heading: "Page not found", backHome: "Return home" },
-} as const;
+  ja: { heading: "ページが見つかりません", backHome: "ホームに戻る" },
+};
 
 export default function NotFound() {
   const locale = defaultLocale;

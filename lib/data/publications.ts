@@ -3,6 +3,7 @@ import "server-only";
 import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { parsePublicationReadinessError, publicationIssueMessage } from "@/lib/catalog/readiness";
 import { deriveLifecycleState, type PublicationLifecycleState } from "@/lib/publishing/state";
 import { createClient } from "@/lib/supabase/server";
 
@@ -57,9 +58,9 @@ export type PublicationOverviewDTO = {
 type EditionRow = {
   id: string;
   book_id: string;
+  active_publication_id: string | null;
   books: {
     id: string;
-    active_publication_id: string | null;
     book_localizations: { locale: string; slug: string; title: string }[];
   } | null;
 };
@@ -97,7 +98,7 @@ export async function getPublicationOverview(assetId: string): Promise<Publicati
 
   const { data: edition, error: editionError } = await supabase
     .from("editions")
-    .select("id, book_id, books ( id, active_publication_id, book_localizations ( locale, slug, title ) )")
+    .select("id, book_id, active_publication_id, books ( id, book_localizations ( locale, slug, title ) )")
     .eq("id", asset.edition_id)
     .maybeSingle()
     .overrideTypes<EditionRow, { merge: false }>();
@@ -169,7 +170,8 @@ export async function getPublicationOverview(assetId: string): Promise<Publicati
         }
       : null,
     publicationId: publication?.id ?? null,
-    isActivePublication: Boolean(publication && edition.books.active_publication_id === publication.id),
+    // The edition's own pointer: another language's live publication never makes this one active.
+    isActivePublication: Boolean(publication && edition.active_publication_id === publication.id),
     resources,
     toc: (publication?.toc_json as TocNode[] | null) ?? [],
   };
@@ -251,6 +253,17 @@ export class PublicationNotFoundError extends Error {
   }
 }
 
+// publish_publication refused (EB012): the publication is not ready, with the codes that say why.
+export class PublicationNotReadyError extends Error {
+  readonly issues: string[];
+
+  constructor(issues: string[]) {
+    super(issues.map((issue) => publicationIssueMessage[issue]).join(" ") || "This version is not ready to publish.");
+    this.name = "PublicationNotReadyError";
+    this.issues = issues;
+  }
+}
+
 export class PublicationTransitionRejectedError extends Error {
   constructor(message: string) {
     super(message);
@@ -285,6 +298,7 @@ export async function publishPublication(publicationId: string): Promise<void> {
     if (error.code === "EB002") {
       throw new PublicationTransitionRejectedError("This version cannot be published in its current state.");
     }
+    if (error.code === "EB012") throw new PublicationNotReadyError(parsePublicationReadinessError(error.message) ?? []);
     throw new Error(`publishPublication: publish_publication failed: ${error.message}`);
   }
 }

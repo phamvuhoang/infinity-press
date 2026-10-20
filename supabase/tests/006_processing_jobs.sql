@@ -23,8 +23,8 @@ insert into public.editions (id, book_id, language_code, edition_number) values
 -- throws_ok on a live call would look identical whether the grant or the guard rejected it.
 select is(has_function_privilege('anon', 'public.claim_processing_job(text, integer, uuid)', 'EXECUTE'), false, 'anon holds no EXECUTE on claim_processing_job');
 select is(has_function_privilege('authenticated', 'public.claim_processing_job(text, integer, uuid)', 'EXECUTE'), false, 'authenticated holds no EXECUTE on claim_processing_job');
-select is(has_function_privilege('anon', 'public.complete_processing_job(uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb)', 'EXECUTE'), false, 'anon holds no EXECUTE on complete_processing_job');
-select is(has_function_privilege('authenticated', 'public.complete_processing_job(uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb)', 'EXECUTE'), false, 'authenticated holds no EXECUTE on complete_processing_job');
+select is(has_function_privilege('anon', 'public.complete_processing_job(uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb, text)', 'EXECUTE'), false, 'anon holds no EXECUTE on complete_processing_job');
+select is(has_function_privilege('authenticated', 'public.complete_processing_job(uuid, text, text, jsonb, jsonb, jsonb, jsonb, jsonb, text)', 'EXECUTE'), false, 'authenticated holds no EXECUTE on complete_processing_job');
 select is(has_function_privilege('anon', 'public.fail_processing_job(uuid, text, text, text)', 'EXECUTE'), false, 'anon holds no EXECUTE on fail_processing_job');
 select is(has_function_privilege('authenticated', 'public.fail_processing_job(uuid, text, text, text)', 'EXECUTE'), false, 'authenticated holds no EXECUTE on fail_processing_job');
 

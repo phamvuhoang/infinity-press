@@ -1,10 +1,11 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
+import { LocaleSelector } from "@/components/locale-selector";
 import { SiteHeaderAccountNav } from "@/components/site-header-account-nav";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { getKnowledgeRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
-import { type Locale, locales } from "@/lib/i18n/config";
+import type { Locale } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
 
 // The quiet text link used across the header (board 1e): Ink, medium weight, underlined only to
@@ -27,7 +28,6 @@ export async function SiteHeader({
   const routes = getLocaleRoutes(locale);
   const knowledgeRoutes = getKnowledgeRoutes(locale);
   const copy = dictionary.navigation;
-  const otherLocale = locales.find((candidate) => candidate !== locale) ?? locale;
 
   return (
     <header className="border-b border-hairline bg-ivory">
@@ -37,14 +37,7 @@ export async function SiteHeader({
       >
         <Logo href={routes.home} />
         <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 sm:gap-x-6">
-          <Link
-            aria-label={copy.switchLocale}
-            className={cn(navLink, "text-sage-text")}
-            href={alternates?.[otherLocale] ?? getLocaleRoutes(otherLocale).home}
-            hrefLang={otherLocale}
-          >
-            {copy.switchLocaleShort}
-          </Link>
+          <LocaleSelector alternates={alternates} label={copy.switchLocale} locale={locale} />
           <Link
             aria-current={current === "books" ? "page" : undefined}
             className={cn(navLink, current === "books" && "underline")}

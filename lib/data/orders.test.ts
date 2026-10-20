@@ -2,13 +2,13 @@
 import { headers } from "next/headers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getActiveEntitlementBookIds } from "@/lib/data/catalog";
+import { getActiveEntitlementBookIds, getActiveEntitlementEditionIds } from "@/lib/data/catalog";
 import { getCustomerOrder, listCustomerOrders } from "@/lib/data/orders";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { recordingChain } from "@/lib/data/supabase-test-client";
 import { createClient } from "@/lib/supabase/server";
 
-vi.mock("@/lib/data/catalog", () => ({ getActiveEntitlementBookIds: vi.fn() }));
+vi.mock("@/lib/data/catalog", () => ({ getActiveEntitlementBookIds: vi.fn(), getActiveEntitlementEditionIds: vi.fn() }));
 vi.mock("@/lib/data/profiles", () => ({ getCurrentProfile: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/headers", () => ({ headers: vi.fn() }));
@@ -33,7 +33,7 @@ const row = {
   created_at: "2026-09-15T00:00:00+00:00",
   bundle_id: null,
   title_snapshot: null,
-  items: [{ book_id: BOOK_ID, title_snapshot: "A Book", position: 1 }],
+  items: [{ book_id: BOOK_ID, edition_id: null, language_code: null, title_snapshot: "A Book", position: 1 }],
   // The provider is a column on the order, not an embed. A reader cannot read public.payments at
   // all - it carries one policy, "admin reads payments" - so a payments embed comes back empty for
   // the very reader every manual state is rendered for. No `payments` key here on purpose: if the
@@ -54,7 +54,36 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getCurrentProfile).mockResolvedValue({ id: PROFILE_ID, auth_user_id: "u1", display_name: null, locale: "en" });
   vi.mocked(getActiveEntitlementBookIds).mockResolvedValue(new Set());
+  vi.mocked(getActiveEntitlementEditionIds).mockResolvedValue(new Set());
   vi.mocked(headers).mockResolvedValue(new Headers() as unknown as Awaited<ReturnType<typeof headers>>);
+});
+
+const EDITION_EN = "50000000-0000-4000-8000-000000000001";
+const EDITION_JA = "50000000-0000-4000-8000-000000000002";
+
+describe("ownership of an order line is per edition", () => {
+  const japaneseOrder = {
+    ...row,
+    items: [{ book_id: BOOK_ID, edition_id: EDITION_JA, language_code: "ja", title_snapshot: "二つの言語", position: 1 }],
+  };
+
+  it("does not treat owning the English edition as owning the Japanese line", async () => {
+    mockOrders({ data: japaneseOrder, error: null });
+    vi.mocked(getActiveEntitlementBookIds).mockResolvedValue(new Set([BOOK_ID]));
+    vi.mocked(getActiveEntitlementEditionIds).mockResolvedValue(new Set([EDITION_EN]));
+
+    const order = await getCustomerOrder(ORDER_ID);
+    expect(order?.items).toEqual([
+      { bookId: BOOK_ID, editionId: EDITION_JA, languageCode: "ja", title: "二つの言語", hasActiveEntitlement: false },
+    ]);
+    expect(order?.hasAllActiveEntitlements).toBe(false);
+  });
+
+  it("recognises the line once that very edition is held", async () => {
+    mockOrders({ data: japaneseOrder, error: null });
+    vi.mocked(getActiveEntitlementEditionIds).mockResolvedValue(new Set([EDITION_JA]));
+    expect((await getCustomerOrder(ORDER_ID))?.hasAllActiveEntitlements).toBe(true);
+  });
 });
 
 describe("getCustomerOrder", () => {
@@ -77,7 +106,7 @@ describe("getCustomerOrder", () => {
       id: ORDER_ID,
       bundleId: null,
       title: "A Book",
-      items: [{ bookId: BOOK_ID, title: "A Book", hasActiveEntitlement: true }],
+      items: [{ bookId: BOOK_ID, editionId: null, languageCode: null, title: "A Book", hasActiveEntitlement: true }],
       status: "pending",
       paymentStatus: "failed",
       totalMinor: 129000,

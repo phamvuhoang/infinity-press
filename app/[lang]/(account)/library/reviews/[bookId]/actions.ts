@@ -18,14 +18,15 @@ export type { ReviewFormState };
 export async function submitBookReviewAction(
   locale: Locale,
   bookId: string,
+  editionId: string | undefined,
   _previous: ReviewFormState,
   formData: FormData,
 ): Promise<ReviewFormState> {
-  await requireUser(locale, getCatalogRoutes(locale).review(bookId));
+  await requireUser(locale, getCatalogRoutes(locale).review(bookId, editionId));
   const parsed = reviewInputSchema.safeParse({ rating: readText(formData, "rating"), body: readText(formData, "body") });
   if (!parsed.success) return { fieldErrors: fieldErrorsFrom(parsed.error), formError: null, savedAt: null };
   try {
-    await submitBookReview(bookId, parsed.data, locale);
+    await submitBookReview(bookId, parsed.data, locale, editionId);
   } catch (error) {
     if (error instanceof NotEntitledToReviewError) return { fieldErrors: {}, formError: "not_entitled", savedAt: null };
     return { fieldErrors: {}, formError: "failed", savedAt: null };
@@ -36,9 +37,9 @@ export async function submitBookReviewAction(
   return { fieldErrors: {}, formError: null, savedAt: Date.now() };
 }
 
-export async function deleteBookReviewAction(locale: Locale, bookId: string): Promise<void> {
-  await requireUser(locale, getCatalogRoutes(locale).review(bookId));
-  await deleteBookReview(bookId);
+export async function deleteBookReviewAction(locale: Locale, bookId: string, editionId?: string): Promise<void> {
+  await requireUser(locale, getCatalogRoutes(locale).review(bookId, editionId));
+  await deleteBookReview(bookId, editionId);
   revalidateStorefront();
   revalidatePath(getCatalogRoutes(locale).review(bookId));
   redirect(getLocaleRoutes(locale).library);

@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getBookAcceptsQuestions, getBookCards } from "@/lib/data/catalog";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getServerEnv } from "@/lib/config/server-env";
-import { type Locale, withLocale } from "@/lib/i18n/config";
+import { type Locale, locales, withLocale } from "@/lib/i18n/config";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
 import { FINISHED_TOTAL_PROGRESSION } from "@/lib/reader/completion";
 import { isReaderLocator, parseReaderLocator } from "@/lib/reader/engine";
@@ -27,6 +27,10 @@ export type LibraryState = "unread" | "reading" | "completed";
 // came to be entitled to it - and never anything addressable in the private bucket.
 export type LibraryItemDTO = {
   bookId: string;
+  // The edition (translation) this item is: ownership, progress and the reader are all per edition,
+  // so owning English and Japanese of one work are two items that share a bookId.
+  editionId: string;
+  languageCode: string;
   title: string;
   slug: string;
   // Cover art comes from the existing marketing data in media_assets, not from inside the EPUB
@@ -40,7 +44,7 @@ export type LibraryItemDTO = {
   coverUrl: string | null;
   state: LibraryState;
   // Whole percent, 0-100, derived from reading_progress.total_progression (a 0-1 numeric giving
-  // the reader's position in the WHOLE BOOK) for the book's currently active publication, falling
+  // the reader's position in the WHOLE BOOK) for the edition's currently active publication, falling
   // back to `progression` for rows written before migration 20260916100000. A book with no
   // progress row reads 0. Pinned to 100 whenever `state` is 'completed', even if the raw figure
   // (0.99 and up) would otherwise round down to 99 - see deriveLibraryState and its caller.
@@ -50,14 +54,15 @@ export type LibraryItemDTO = {
 
 type LibraryRow = {
   book_id: string;
+  edition_id: string;
   added_at: string;
   // Written by save_reading_progress (migration 20260916100000) and never downgraded from
   // 'completed'. Read here so that guarantee is actually visible to a reader - see getLibrary.
   state: LibraryState;
   entitlements: { status: "active" | "revoked" } | null;
+  editions: { id: string; language_code: string; status: string; active_publication_id: string | null } | null;
   books: {
     id: string;
-    active_publication_id: string | null;
     book_localizations: { locale: string; slug: string; title: string }[];
   } | null;
 };
@@ -139,20 +144,38 @@ function relatedBooks(source: CatalogBookCard, cards: CatalogBookCard[], locale:
     }));
 }
 
-// What the reader page needs to open one book: the active publication to read, and the title to
-// render. Returns null when the caller holds no active entitlement, when the book or its
-// localization is not publicly published, or when the book has no active publication - the page
-// turns all of those into one notFound(), so an unentitled reader cannot distinguish "you do not
-// own this" from "no such book", matching the API handlers' own 404 model.
+
+type ReadableEditionRow = {
+  id: string;
+  book_id: string;
+  language_code: string;
+  status: string;
+  active_publication_id: string | null;
+  books: {
+    id: string;
+    status: string;
+    author: { display_name: string; author_localizations: { locale: string; name: string }[] } | null;
+    book_localizations: { locale: string; slug: string; title: string }[];
+  } | null;
+};
+
+// What the reader page needs to open ONE edition: its live publication to read, and the title to
+// render. Returns null when the caller holds no active entitlement for THIS edition, when the work
+// or edition is not readable, or when the edition has no live publication - the page turns all of
+// those into one notFound(), so an unentitled reader cannot distinguish "you do not own this" from
+// "no such edition", matching the API handlers' own 404 model. Owning English never opens Japanese:
+// the entitlement lookup is by (profile, edition), and the publication comes from the edition.
 //
-// Reads through the session client only: entitlements are owner-scoped by RLS and books are
-// gated on 'published', so an unentitled caller genuinely resolves no row rather than being
-// filtered in application code.
-export async function getReadableBook(
+// Nothing here depends on the interface locale. The title falls back across localizations rather
+// than requiring one in `locale`, so a reader browsing in Japanese can open the English edition
+// they own; the catalog cards only enrich it (related books) when they exist for the locale.
+export async function getReadableEdition(
   locale: Locale,
-  bookId: string,
+  editionId: string,
 ): Promise<{
   bookId: string;
+  editionId: string;
+  languageCode: string;
   title: string;
   authorName: string;
   acceptsQuestions: boolean;
@@ -164,14 +187,12 @@ export async function getReadableBook(
   // after mount would show the opening page first and then jump, which reads as a bug.
   initialLocator: ReaderLocator | null;
 } | null> {
-  await requireUser(locale, withLocale(locale, `/read/${bookId}`));
+  await requireUser(locale, withLocale(locale, `/read/editions/${editionId}`));
 
   // RLS is the floor here, not the filter. Every owner-scoped read below also filters on the
-  // caller's own profile ID, the rule lib/data/orders.ts already states: an admin's session can
-  // read EVERY row of entitlements (migration 20260913100000, "admin reads entitlements"), so an
-  // un-scoped read is both a wrong answer and, through `maybeSingle()`, a crash. That is the
-  // /read/[bookId] 500: once a second reader held an active entitlement to the same book, an
-  // admin opening it selected two rows and PostgREST answered PGRST116.
+  // caller's own profile ID: an admin's session can read EVERY row of entitlements ("admin reads
+  // entitlements"), so an un-scoped read is both a wrong answer and, through `maybeSingle()`, a
+  // crash once a second reader holds the same edition.
   const profile = await getCurrentProfile();
   if (!profile) return null;
 
@@ -181,69 +202,151 @@ export async function getReadableBook(
     .from("entitlements")
     .select("id")
     .eq("profile_id", profile.id)
-    .eq("book_id", bookId)
+    .eq("edition_id", editionId)
     .eq("status", "active")
     .maybeSingle();
 
   if (entitlementError) {
-    throw new Error(`getReadableBook: failed to load entitlement: ${entitlementError.message}`);
+    throw new Error(`getReadableEdition: failed to load entitlement: ${entitlementError.message}`);
   }
   if (!entitlement) return null;
 
-  const { data: book, error: bookError } = await supabase
-    .from("books")
-    .select("id, active_publication_id")
-    .eq("id", bookId)
+  const { data: edition, error: editionError } = await supabase
+    .from("editions")
+    .select(
+      `id, book_id, language_code, status, active_publication_id,
+       books ( id, status, author:authors ( display_name, author_localizations ( locale, name ) ), book_localizations ( locale, slug, title ) )`,
+    )
+    .eq("id", editionId)
     .maybeSingle()
-    .overrideTypes<
-      { id: string; active_publication_id: string | null },
-      { merge: false }
-    >();
+    .overrideTypes<ReadableEditionRow, { merge: false }>();
 
-  if (bookError) {
-    throw new Error(`getReadableBook: failed to load book: ${bookError.message}`);
+  if (editionError) {
+    throw new Error(`getReadableEdition: failed to load edition: ${editionError.message}`);
   }
-  if (!book || !book.active_publication_id) return null;
+  // Published, or archived (an owner keeps an edition that is no longer sold): the same rule
+  // reader_edition_for_publication enforces in SQL for every reader route.
+  if (
+    !edition ||
+    !edition.books ||
+    edition.books.status !== "published" ||
+    !["published", "archived"].includes(edition.status) ||
+    !edition.active_publication_id
+  ) {
+    return null;
+  }
 
-  // This is the same published, locale-specific card set that powers the catalog. It supplies
-  // the localized book title, author localization with display-name fallback, and public cover
-  // URL without projecting any private publication fields into the reader.
+  const localization = pickLocalization(edition.books.book_localizations, locale);
+  if (!localization) return null;
+  const author = edition.books.author;
+  const authorName =
+    author?.author_localizations.find((entry) => entry.locale === locale)?.name ?? author?.display_name ?? "";
+
+  // The same published, locale-specific card set that powers the catalog, used only for what the
+  // reader shows beyond the title: recommendations. A work with no card in this locale simply has
+  // none.
   const cards = await getBookCards(locale);
-  const card = cards.find((candidate) => candidate.bookId === book.id);
-  if (!card) return null;
-  const acceptsQuestions = await getBookAcceptsQuestions(book.id);
+  const card = cards.find((candidate) => candidate.bookId === edition.book_id);
+  const acceptsQuestions = await getBookAcceptsQuestions(edition.book_id);
 
-  // Owner-scoped by RLS ("owner reads own reading progress"), so this stays on the session client
-  // like every other read here - no privileged client is constructed to open a book. The explicit
-  // profile filter is the same defence as above: no admin policy exposes this table today, and
-  // the day one does it must not silently hand this reader someone else's position.
+  // Owner-scoped by RLS ("owner reads own reading progress"), keyed on THIS edition's publication.
   const { data: progress, error: progressError } = await supabase
     .from("reading_progress")
     .select("locator_json")
     .eq("profile_id", profile.id)
-    .eq("publication_id", book.active_publication_id)
+    .eq("publication_id", edition.active_publication_id)
     .maybeSingle();
 
   if (progressError) {
-    throw new Error(`getReadableBook: failed to load reading progress: ${progressError.message}`);
+    throw new Error(`getReadableEdition: failed to load reading progress: ${progressError.message}`);
   }
 
+  // The slug belongs to the localization's own locale, so its URL is built for that locale.
+  const canonicalLocale = (
+    edition.books.book_localizations.find((entry) => entry.slug === localization.slug)?.locale ?? locale
+  ) as Locale;
+
   return {
-    bookId: book.id,
-    title: card.title,
-    authorName: card.author.name,
+    bookId: edition.book_id,
+    editionId: edition.id,
+    languageCode: edition.language_code,
+    title: localization.title,
+    authorName,
     acceptsQuestions,
-    canonicalBookUrl: absoluteUrl(getServerEnv().siteUrl, getCatalogRoutes(locale).book(card.slug)),
-    relatedBooks: relatedBooks(card, cards, locale),
-    publicationId: book.active_publication_id,
+    canonicalBookUrl: absoluteUrl(getServerEnv().siteUrl, getCatalogRoutes(canonicalLocale).book(localization.slug)),
+    relatedBooks: card ? relatedBooks(card, cards, locale) : [],
+    publicationId: edition.active_publication_id,
     // Validated, not cast. locator_json is jsonb with no shape constraint, so a malformed row
-    // degrades to "open at the beginning" rather than taking the whole reader page down - the
-    // opposite of saveProgress, which throws, because there a bad value means a bad request
-    // whereas here it only means this reader loses a position they can immediately re-establish.
+    // degrades to "open at the beginning" rather than taking the whole reader page down.
     initialLocator: isReaderLocator(progress?.locator_json)
       ? parseReaderLocator(progress.locator_json)
       : null,
   };
+}
+
+// The editions of ONE work the caller owns, for the legacy `/read/{bookId}` deep link. One edition
+// redirects, several open a chooser, none is a 404: the interface locale never picks a language,
+// because switching it must not change which book a reader is reading.
+export async function getOwnedEditionsOfBook(
+  locale: Locale,
+  bookId: string,
+): Promise<{ editionId: string; languageCode: string; title: string }[]> {
+  await requireUser(locale, withLocale(locale, `/read/${bookId}`));
+
+  const profile = await getCurrentProfile();
+  if (!profile) return [];
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("entitlements")
+    .select("edition_id, editions!inner ( language_code, status, active_publication_id, books!inner ( status, book_localizations ( locale, slug, title ) ) )")
+    .eq("profile_id", profile.id)
+    .eq("book_id", bookId)
+    .eq("status", "active")
+    .overrideTypes<
+      {
+        edition_id: string | null;
+        editions: {
+          language_code: string;
+          status: string;
+          active_publication_id: string | null;
+          books: { status: string; book_localizations: { locale: string; slug: string; title: string }[] } | null;
+        } | null;
+      }[],
+      { merge: false }
+    >();
+
+  if (error) throw new Error(`getOwnedEditionsOfBook: failed to load entitlements: ${error.message}`);
+
+  return (data ?? [])
+    .flatMap((row) => {
+      const edition = row.editions;
+      if (!row.edition_id || !edition?.books || edition.books.status !== "published") return [];
+      if (!["published", "archived"].includes(edition.status) || !edition.active_publication_id) return [];
+      const localization = pickLocalization(edition.books.book_localizations, locale);
+      return localization
+        ? [{ editionId: row.edition_id, languageCode: edition.language_code, title: localization.title }]
+        : [];
+    })
+    .sort((left, right) => left.languageCode.localeCompare(right.languageCode));
+}
+
+// Works together: a reader who owns English and Japanese of one work sees the two side by side,
+// each tagged with its language, rather than scattered by the date each was added. Works keep
+// their first-seen order; editions within a work follow the interface-locale registry order.
+export function groupLibraryByWork(items: LibraryItemDTO[]): LibraryItemDTO[] {
+  const order = new Map<string, number>();
+  for (const item of items) if (!order.has(item.bookId)) order.set(item.bookId, order.size);
+  const languageRank = (code: string) => {
+    const rank = (locales as readonly string[]).indexOf(code);
+    return rank === -1 ? locales.length : rank;
+  };
+  return [...items].sort(
+    (left, right) =>
+      (order.get(left.bookId) ?? 0) - (order.get(right.bookId) ?? 0) ||
+      languageRank(left.languageCode) - languageRank(right.languageCode) ||
+      left.languageCode.localeCompare(right.languageCode),
+  );
 }
 
 export async function getLibrary(locale: Locale): Promise<LibraryItemDTO[]> {
@@ -251,25 +354,27 @@ export async function getLibrary(locale: Locale): Promise<LibraryItemDTO[]> {
   // calling page already did - matching every other DAL in this repo.
   await requireUser(locale, withLocale(locale, "/library"));
 
-  // Same rule as getReadableBook: "admin reads library items" lets an admin's session read every
+  // Same rule as getReadableEdition: "admin reads library items" lets an admin's session read every
   // reader's shelf, so the caller's own profile ID does the scoping and RLS only backs it up.
   const profile = await getCurrentProfile();
   if (!profile) return [];
 
   const supabase = await createClient();
 
-  // `books!inner` drops any library item whose book is not publicly published: the "public read
-  // published books" policy already hides those rows, and an inner join makes that filtering
-  // explicit rather than leaving a null-book entry to be dropped later.
+  // One row per owned edition. `books!inner` drops any item whose work is not publicly published
+  // (the policy already hides those rows; the inner join makes the filtering explicit). Every owned
+  // edition is listed whatever the interface locale: switching language never hides a purchase.
   const { data: rows, error } = await supabase
     .from("library_items")
     .select(
       `
       book_id,
+      edition_id,
       added_at,
       state,
       entitlements!inner ( status ),
-      books!inner ( id, active_publication_id, book_localizations ( locale, slug, title ) )
+      editions!inner ( id, language_code, status, active_publication_id ),
+      books!inner ( id, book_localizations ( locale, slug, title ) )
       `,
     )
     .eq("profile_id", profile.id)
@@ -282,19 +387,25 @@ export async function getLibrary(locale: Locale): Promise<LibraryItemDTO[]> {
   }
 
   const items = (rows ?? []).filter(
-    (row): row is LibraryRow & { books: NonNullable<LibraryRow["books"]> } =>
-      row.entitlements?.status === "active" && Boolean(row.books),
+    (row): row is LibraryRow & {
+      books: NonNullable<LibraryRow["books"]>;
+      editions: NonNullable<LibraryRow["editions"]>;
+    } =>
+      row.entitlements?.status === "active" &&
+      Boolean(row.books) &&
+      Boolean(row.editions) &&
+      // The edition is still offered to its owners (published, or archived after being sold).
+      ["published", "archived"].includes(row.editions?.status ?? ""),
   );
 
   if (items.length === 0) return [];
 
   const publicationIds = items
-    .map((row) => row.books.active_publication_id)
+    .map((row) => row.editions.active_publication_id)
     .filter((id): id is string => typeof id === "string");
 
   // The progress read is skipped entirely when it would have nothing to match: `.in()` with an
-  // empty array is rejected by PostgREST as malformed rather than returning no rows (the same trap
-  // lib/data/publications.ts documents).
+  // empty array is rejected by PostgREST as malformed rather than returning no rows.
   const [progressRows, cards] = await Promise.all([
     publicationIds.length > 0
       ? supabase
@@ -312,14 +423,6 @@ export async function getLibrary(locale: Locale): Promise<LibraryItemDTO[]> {
   // total_progression is null for rows written before migration 20260916100000. Falling back to
   // `progression` keeps a reader's existing card roughly where it was rather than resetting it to
   // zero; the value corrects itself on their next save.
-  //
-  // Ruling CQ's original point stands: the state and the percentage are two halves of one
-  // sentence and must never disagree. The 0.99 threshold below is fixed at the raw figure to
-  // match save_reading_progress's SQL exactly, which means a book can cross into 'completed' at,
-  // say, 0.992 - a value that would otherwise round to "99%". Rather than let the threshold drift
-  // from the SQL to chase the display, the display is reconciled to the state instead: once a book
-  // is 'completed', the percentage rendered beside it is pinned to 100. See where progressPercent
-  // is computed below.
   const progressByPublication = new Map(
     (
       (progressRows.data ?? []) as {
@@ -331,55 +434,49 @@ export async function getLibrary(locale: Locale): Promise<LibraryItemDTO[]> {
   );
   const cardByBook = new Map(cards.map((card) => [card.bookId, card]));
 
-  return items.flatMap((row) => {
+  const dtos = items.flatMap((row): LibraryItemDTO[] => {
     const localization = pickLocalization(row.books.book_localizations, locale);
-    // A book with no localization at all has no title or slug to render and no honest URL to
+    // A work with no localization at all has no title or slug to render and no honest URL to
     // link to, so it is omitted rather than shown as a blank card.
     if (!localization) return [];
 
-    const activePublicationId = row.books.active_publication_id;
-    // `undefined` when the book has no active publication, and when it has one but this reader
+    const activePublicationId = row.editions.active_publication_id;
+    // `undefined` when the edition has no live publication, and when it has one but this reader
     // holds no progress row against it. Both mean "never opened", which deriveLibraryState reads
     // as 'unread'.
-    const totalProgression = activePublicationId
-      ? progressByPublication.get(activePublicationId)
-      : undefined;
+    const totalProgression = activePublicationId ? progressByPublication.get(activePublicationId) : undefined;
     // The stored column LEADS once it says 'completed', and the derivation only fills in behind it.
     // save_reading_progress refuses to downgrade `library_items.state` from 'completed', and that
     // promise is invisible unless something reads the column: a reader who finishes a book and then
     // pages back to chapter 2 saves total_progression 0.2, and a purely derived state would flip
     // their card from "Finished" to "In progress, 20%" while the database still, correctly, says
-    // completed. The spec (§4.4) says a completed book stays completed.
-    //
-    // This also decides the post-republish case, and decides it the same way: progress is keyed on
-    // books.active_publication_id, so a rollback or a republish leaves a reader who finished the
-    // old publication with a stored 'completed' and no progress row against the new one. §4.4
-    // again - the book stays finished rather than resetting to "Not started".
-    //
-    // The derivation is kept for every other row. Nothing wrote this column before migration
-    // 20260916100000, so a reader with real pre-migration progress still has 'unread' stored beside
-    // it; trusting the column in that direction would reset their card to "Not started".
+    // completed. It also decides the post-republish case: progress is keyed on the edition's live
+    // publication, so a rollback or republish leaves a stored 'completed' and no progress row
+    // against the new one - the book stays finished rather than resetting to "Not started".
     const state = row.state === "completed" ? "completed" : deriveLibraryState(totalProgression);
-    // Reconciled to the state, not the other way around: deriveLibraryState's 0.99 threshold must
-    // match the SQL exactly, so a book can be 'completed' at a raw figure that would otherwise
-    // round down to "99%". Pinning the percentage to 100 once the state says 'completed' is what
-    // keeps the two halves of the card's sentence from disagreeing.
+    // Reconciled to the state, not the other way around: the 0.99 threshold must match the SQL
+    // exactly, so an edition can be 'completed' at a raw figure that would otherwise round down to
+    // "99%". Pinning the percentage to 100 once the state says 'completed' keeps the two halves of
+    // the card's sentence from disagreeing.
     const progressPercent = state === "completed" ? 100 : toProgressPercent(totalProgression);
 
     return [
       {
         bookId: row.book_id,
+        editionId: row.edition_id,
+        languageCode: row.editions.language_code,
         title: localization.title,
         slug: localization.slug,
         coverAltText: cardByBook.get(row.book_id)?.cover?.alt ?? null,
         coverUrl: cardByBook.get(row.book_id)?.cover?.url ?? null,
         state,
         progressPercent,
-        // Keyed by book id, matching the existing /read/[bookId] route: the reader page resolves
-        // the book's active publication itself, so a rollback between renders cannot leave this
-        // URL pointing at a version that is no longer being served.
-        continueReadingUrl: withLocale(locale, `/read/${row.book_id}`),
+        // Keyed by EDITION: the reader page resolves the edition's live publication itself, so a
+        // rollback between renders cannot leave this URL pointing at a version no longer served.
+        continueReadingUrl: withLocale(locale, `/read/editions/${row.edition_id}`),
       },
     ];
   });
+
+  return groupLibraryByWork(dtos);
 }

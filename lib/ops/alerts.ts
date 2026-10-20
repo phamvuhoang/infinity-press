@@ -134,7 +134,7 @@ function absolute(path: string, siteUrl: string): string {
 // carries the same payload as its idempotency key.
 export function buildOperationsAlertEmail(plans: AlertPlan[], siteUrl: string): { subject: string; text: string; html: string } {
   const count = plans.length;
-  const subject = `Infinity Books operations: ${count} ${count === 1 ? "rule needs" : "rules need"} attention`;
+  const subject = `Infinity Books Press operations: ${count} ${count === 1 ? "rule needs" : "rules need"} attention`;
   const overview = absolute("/admin/operations", siteUrl);
 
   const sections = plans.map((plan) => {

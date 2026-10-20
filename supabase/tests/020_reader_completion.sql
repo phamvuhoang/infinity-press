@@ -34,8 +34,9 @@ values ('74000000-0000-0000-0000-000000000001', '73000000-0000-0000-0000-0000000
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
 values ('75000000-0000-0000-0000-000000000001', '74000000-0000-0000-0000-000000000001', 1, 's4/1/manifest.json', 'published');
 
-update public.books set active_publication_id = '75000000-0000-0000-0000-000000000001'
-where id = '72000000-0000-0000-0000-000000000001';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = '75000000-0000-0000-0000-000000000001' and (b.id = '72000000-0000-0000-0000-000000000001');
 
 -- Reader A owns the book and has it on their shelf. Reader B owns nothing.
 -- admin_grant carries an actor and a reason, like every admin grant elsewhere in these tests.

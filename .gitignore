@@ -52,5 +52,5 @@ fixtures/epub/manifest.local.json
 # superpowers SDD workspace (ledgers, briefs, review packages, scratch configs)
 .superpowers/
 
-ibcmd.txt
+cmd.txt
 

@@ -30,7 +30,7 @@ function card(overrides: Partial<CatalogBookCard> & { slug: string }): CatalogBo
     cover: null,
     offer: null,
     hasActivePublication: true,
-    hasSample: true,
+    hasSample: true, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,
@@ -40,7 +40,7 @@ function card(overrides: Partial<CatalogBookCard> & { slug: string }): CatalogBo
   };
 }
 
-const cards: Record<Locale, CatalogBookCard[]> = {
+const cards: Record<Exclude<Locale, "ja">, CatalogBookCard[]> = {
   vi: [
     card({
       slug: "sach-mot",
@@ -66,7 +66,10 @@ const cards: Record<Locale, CatalogBookCard[]> = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getServerEnv).mockReturnValue({ siteUrl: SITE } as ReturnType<typeof getServerEnv>);
-  vi.mocked(getBookCards).mockImplementation(async (locale: Locale) => cards[locale]);
+  // Each locale's cards carry that locale's own copy; a fallback card is added by the test that needs one.
+  vi.mocked(getBookCards).mockImplementation(async (locale: Locale) =>
+    (cards[locale as keyof typeof cards] ?? []).map((entry) => ({ ...entry, metadataLocale: locale })),
+  );
   vi.mocked(getPublishedIdeas).mockImplementation(async (locale: Locale) => [
     {
       ideaId: `idea-${locale}`,
@@ -75,7 +78,8 @@ beforeEach(() => {
       shortAnswer: "Because\nattention.",
       createdAt: "2026-09-01T00:00:00Z",
       updatedAt: "2026-09-02T00:00:00Z",
-      alternateSlug: null,
+      alternateSlugs: {},
+      metadataLocale: "en",
       topics: [],
     },
   ]);
@@ -87,7 +91,8 @@ beforeEach(() => {
       excerpt: "An excerpt.",
       publishedAt: "2026-09-01T00:00:00Z",
       updatedAt: "2026-09-02T00:00:00Z",
-      alternateSlug: null,
+      alternateSlugs: {},
+      metadataLocale: "en",
       author: { name: "Mai Tran", slug: "mai-tran" },
     } as Awaited<ReturnType<typeof getArticleIndex>>[number],
   ]);
@@ -111,14 +116,15 @@ describe("GET /llms.txt", () => {
     expect(text).toContain("- [Book one](https://books.example/en/books/book-one)\n");
     expect(text).toContain("https://books.example/en/ideas/why-read-slowly");
     expect(text).toContain("https://books.example/en/articles/autumn-reading");
-    expect(text.indexOf("# Infinity Books")).toBeLessThan(text.indexOf("## English"));
+    expect(text.startsWith("# Infinity Books Press")).toBe(true);
+    expect(text.indexOf("# Infinity Books Press")).toBeLessThan(text.indexOf("## Tiếng Việt"));
   });
 
   it("prints a book's price, with the list price and last day while a sale runs", async () => {
     vi.mocked(getBookCards).mockImplementation(async (locale: Locale) =>
       locale === "en"
-        ? [card({ slug: "book-one", title: "Book one", offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null } })]
-        : cards.vi,
+        ? [card({ slug: "book-one", title: "Book one", offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null }, metadataLocale: "en" })]
+        : cards.vi.map((entry) => ({ ...entry, metadataLocale: "vi" as const })),
     );
     const text = await (await GET()).text();
     expect(text).toContain("- [Sách một](https://books.example/vi/books/sach-mot): Mô tả hai dòng");
@@ -136,12 +142,27 @@ describe("GET /llms.txt", () => {
 
   it("emits exactly one line per entity, even with a multi-line description", async () => {
     const text = await (await GET()).text();
-    // vi: 2 books, author, series, topic, idea, article; en: book, topic, idea, article.
-    expect(text.split("\n").filter((l) => l.startsWith("- ["))).toHaveLength(11);
+    // vi: 2 books, author, series, topic, idea, article; en: book, topic, idea, article; ja: idea, article.
+    expect(text.split("\n").filter((l) => l.startsWith("- ["))).toHaveLength(13);
   });
 
   it("fails rather than serving a partial index when a read fails", async () => {
     vi.mocked(getArticleIndex).mockRejectedValueOnce(new Error("getArticleIndex failed."));
     await expect(GET()).rejects.toThrow("getArticleIndex failed.");
+  });
+});
+
+describe("works shown under another locale's copy", () => {
+  it("are listed once, under their own locale, and not repeated under the fallback one", async () => {
+    vi.mocked(getBookCards).mockImplementation(async (locale: Locale) =>
+      locale === "ja"
+        ? [card({ slug: "english-only", title: "English only", metadataLocale: "en", isLanguageFallback: true })]
+        : locale === "en"
+          ? [card({ slug: "english-only", title: "English only", metadataLocale: "en" })]
+          : [],
+    );
+    const body = await (await GET()).text();
+    expect(body.match(/\/en\/books\/english-only/g)).toHaveLength(1);
+    expect(body).not.toContain("/ja/books/english-only");
   });
 });

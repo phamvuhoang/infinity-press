@@ -17,9 +17,9 @@ afterEach(() => {
 
 describe("RetailLinkButton", () => {
   it("is an outbound sponsored link that reports the click and keeps its href", async () => {
-    render(<RetailLinkButton bookId="b1" href="https://shopee.vn/x?utm_source=infinitybooks" label="Shopee" locale="vi" retailer="shopee" />);
+    render(<RetailLinkButton bookId="b1" href="https://shopee.vn/x?utm_source=infinitybookspress" label="Shopee" locale="vi" retailer="shopee" />);
     const link = screen.getByRole("link", { name: "Shopee" });
-    expect(link).toHaveAttribute("href", "https://shopee.vn/x?utm_source=infinitybooks");
+    expect(link).toHaveAttribute("href", "https://shopee.vn/x?utm_source=infinitybookspress");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "nofollow noopener sponsored");
     await userEvent.setup().click(link);

@@ -6,7 +6,7 @@ import type { AdminFormState } from "@/lib/catalog/form";
 
 afterEach(cleanup);
 
-const atlas: RelatedBookOption = { id: "b1000000-0000-4000-8000-000000000001", title: "Atlas of quiet", authorName: "Phuong Bui", status: "published" };
+const atlas: RelatedBookOption = { id: "b1000000-0000-4000-8000-000000000001", title: "Atlas of quiet", authorName: "Jane Austen", status: "published" };
 const bright: RelatedBookOption = { id: "b1000000-0000-4000-8000-000000000002", title: "Bright mornings", authorName: "Linh Tran", status: "published" };
 const chasing: RelatedBookOption = { id: "b1000000-0000-4000-8000-000000000003", title: "Chasing rivers", authorName: "Minh Le", status: "draft" };
 const books = [atlas, bright, chasing];

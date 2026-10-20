@@ -1,5 +1,6 @@
 import { escapeHtml, fill, singleLine } from "@/lib/email/text";
 import en from "@/lib/i18n/dictionaries/en.json";
+import ja from "@/lib/i18n/dictionaries/ja.json";
 import vi from "@/lib/i18n/dictionaries/vi.json";
 import type { Locale } from "@/lib/i18n/config";
 import { splitGraphemes } from "@/lib/reader/quote";
@@ -22,6 +23,7 @@ const CONTEXT_GRAPHEMES = 120;
 const copy: Record<Locale, typeof en.email.reviewReplied> = {
   en: en.email.reviewReplied,
   vi: vi.email.reviewReplied,
+  ja: ja.email.reviewReplied,
 };
 
 function context(body: string): string {

@@ -5,6 +5,8 @@ import { strToU8, zipSync, type Zippable } from "fflate";
 
 import { seedCatalogBook } from "./catalog";
 import { createAnonClient, createServiceRoleClient } from "./supabase";
+import { japaneseEpub } from "../../scripts/fixtures/create-test-epub";
+import { approveEditionDirectly, soleEditionId } from "./editions";
 
 // ================================================================================================
 // The fixture EPUB
@@ -256,8 +258,11 @@ async function signedInAdmin() {
 // path and keeps doing it through the browser; every other spec only needs the artefact.
 export async function seedProcessedBook(options: {
   suffix: string;
-  localizations: Partial<Record<"vi" | "en", { slug: string; title: string }>>;
+  localizations: Partial<Record<"vi" | "en" | "ja", { slug: string; title: string }>>;
   priceMinor?: number;
+  // A Japanese-language EPUB (kanji, kana, ruby, spaceless text). The edition language must be "ja",
+  // so the localizations must name ja first.
+  japanese?: boolean;
   // Fixture shape - see buildFixtureEpub for what each variant is for.
   shortFinalChapter?: boolean;
   onlyShortChapter?: boolean;
@@ -267,7 +272,7 @@ export async function seedProcessedBook(options: {
 
   const service = createServiceRoleClient();
   const { suffix, localizations } = options;
-  const locale = (localizations.en ? "en" : "vi") as "vi" | "en";
+  const locale = (localizations.en ? "en" : localizations.ja ? "ja" : "vi") as "vi" | "en" | "ja";
   const { slug, title } = localizations[locale]!;
 
   // Step 1 - the catalog half. Everything publish_book's readiness check wants (localized copy, a
@@ -285,7 +290,9 @@ export async function seedProcessedBook(options: {
   // Step 2 - the source EPUB in the private bucket, and the ebook_assets row pointing at it. The
   // storage key has the same shape admin_reserve_ebook_asset derives, and the version follows the
   // placeholder asset's so complete_processing_job's stale-version check sees this as the newest.
-  const bytes = buildFixtureEpub({
+  const bytes = options.japanese
+    ? Buffer.from(japaneseEpub())
+    : buildFixtureEpub({
     title,
     shortFinalChapter: options.shortFinalChapter,
     onlyShortChapter: options.onlyShortChapter,
@@ -369,6 +376,8 @@ export async function seedProcessedBook(options: {
   // active pointer (superseding the placeholder publication); publish_book is what makes the book
   // and its author public.
   const admin = await signedInAdmin();
+  // After the admin exists, which gives the approval a reviewer to record.
+  await approveEditionDirectly(edition.id);
   const { error: publishPublicationError } = await admin.rpc("publish_publication", {
     p_publication_id: publicationId,
   });
@@ -408,7 +417,7 @@ export async function grantEntitlement(bookId: string, email: string): Promise<v
   const admin = await signedInAdmin();
   const { error } = await admin.rpc("grant_complimentary_entitlement", {
     p_profile_id: profile.profile_id,
-    p_book_id: bookId,
+    p_edition_id: await soleEditionId(bookId),
     p_reason: "E2E reader journey",
   });
   if (error) throw error;

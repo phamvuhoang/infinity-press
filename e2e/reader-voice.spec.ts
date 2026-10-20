@@ -146,7 +146,7 @@ test("a reader asks from an idea, the admin answers with a new idea, and publish
   const askBody = `Làm sao để đọc chậm hơn ${suffix}?`;
 
   await signInAs(page, reader.email, `/vi/ideas/${ideaSlug}`);
-  await page.getByRole("link", { name: "Hỏi tác giả về điều này" }).click();
+  await page.getByRole("link", { name: "Hỏi ban biên tập về điều này" }).click();
   await expect(page).toHaveURL(new RegExp(`/vi/ask\\?idea=${ideaId}$`));
   await page.getByLabel("Câu hỏi của bạn").fill(askBody);
   await page.getByRole("button", { name: "Gửi câu hỏi" }).click();
@@ -288,7 +288,7 @@ for (const first of ["claim", "reply"] as const) {
     let second: Promise<string> | undefined;
     try {
       const reviewId = await observer.query(
-        `insert into public.book_reviews (book_id, profile_id, rating, body, locale) values ('${bookId}', '${reader.profileId}', 5, 'Race.', 'vi') returning id`,
+        `insert into public.book_reviews (book_id, edition_id, profile_id, rating, body, locale) values ('${bookId}', (select id from public.editions where book_id = '${bookId}'), '${reader.profileId}', 5, 'Race.', 'vi') returning id`,
       );
       await observer.query(`update public.book_reviews set author_reply = 'A', author_reply_at = now(), status = 'published' where id = '${reviewId}'`);
       const rowId = await observer.query(`select id from public.notification_outbox where review_id = '${reviewId}'`);

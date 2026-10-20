@@ -5,6 +5,9 @@ export const BOOK_ACTION_ERROR_CODES = [
   "no-free-offer",
   "payments-unavailable",
   "not-purchasable",
+  "currency-unavailable",
+  "choose-edition",
+  "price-changed",
   "unexpected",
 ] as const;
 

@@ -2,6 +2,7 @@ import { type APIRequestContext, type Page, expect, test } from "@playwright/tes
 
 import { seedBundle, seedCatalogBook } from "./support/catalog";
 import {
+  activeEditionEntitlementCount,
   activeEntitlementBookIds,
   activeEntitlementCount,
   activeEntitlementRowCount,
@@ -12,8 +13,10 @@ import {
 } from "./support/commerce";
 import { readGiftDelivery } from "./support/database";
 import { countMessagesFor, readLatestLink } from "./support/mailpit";
+import { addPublishedEdition, soleEditionId } from "./support/editions";
 import { grantEntitlement } from "./support/publication";
 import { serverEnvironmentValue } from "./support/server-env";
+import { createAnonClient, createServiceRoleClient } from "./support/supabase";
 
 // S9 acceptance, the gift half of the two golden paths (spec 9-10), plus the one cross-feature
 // branch the two golden paths do not reach: a bundle bought AS a gift, paid with a 100% code.
@@ -165,7 +168,7 @@ test("a purchaser gifts a book, and the recipient signs in, claims it, and reads
   expect(claimed.claimPath).toBeNull();
 
   await recipientPage.getByRole("link", { name: title }).click();
-  await expect(recipientPage).toHaveURL(new RegExp(`/en/read/${bookId}$`));
+  await expect(recipientPage).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
   await expect(recipientPage.getByRole("heading", { level: 1, name: title })).toBeAttached();
   await recipientContext.close();
 });
@@ -259,16 +262,17 @@ test("a fully discounted bundle gift adds only the books the recipient is missin
   await expect(alreadyOwned.getByRole("link", { name: owned.title })).toBeVisible();
   await expect(alreadyOwned.getByRole("link", { name: missing.title })).toHaveCount(0);
 
-  expect([...(await activeEntitlementBookIds(recipient.profileId))].sort()).toEqual(
+  expect([...new Set(await activeEntitlementBookIds(recipient.profileId))].sort()).toEqual(
     [ownedBook.bookId, missingBook.bookId].sort(),
   );
-  // Two books, two rows: the pre-owned one was not duplicated by the claim.
-  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(2);
-  expect(await activeEntitlementCount(recipient.profileId, ownedBook.bookId)).toBe(1);
+  // Two books, three rows: the gift grants its own entitlement beside the recipient's complimentary
+  // one for the pre-owned book, so revoking either leaves the other.
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(3);
+  expect(await activeEntitlementCount(recipient.profileId, ownedBook.bookId)).toBe(2);
 
   await recipientPage.reload();
   await expect(recipientPage.getByRole("heading", { level: 1, name: "Your gift" })).toBeVisible();
-  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(2);
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(3);
 
   // A bundle is never a library item, however it was paid for or given.
   await recipientPage.goto("/en/library");
@@ -281,5 +285,94 @@ test("a fully discounted bundle gift adds only the books the recipient is missin
   await expect(shelf.getByRole("listitem").filter({ hasText: missing.title })).toHaveCount(1);
   await expect(recipientPage.getByText(bundleTitle)).toHaveCount(0);
   expect((await recipientPage.goto(`/en/read/${bundleId}`))?.status()).toBe(404);
+  await recipientContext.close();
+});
+
+// Press: a bundle holds editions, and a gift keeps the editions it was bought with. The bundle here is
+// English + Japanese of one work; the recipient already owns the English edition; the admin then
+// replaces the bundle's membership before the gift is claimed. The claim must still add exactly the
+// Japanese edition - the snapshot - and nothing from the edited bundle.
+test("a gift keeps the editions it was bought with, however the bundle is edited before it is claimed", async ({ browser, page, request }) => {
+  test.setTimeout(180_000);
+  const suffix = unique();
+  const bundleSlug = `pair-gift-${suffix}`;
+  const bundleTitle = `Pair Gift ${suffix}`;
+  const code = `PAIR-${suffix.replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase()}`;
+  const work = { slug: `pair-work-${suffix}`, title: `Pair Work ${suffix}` };
+  const other = { slug: `pair-other-${suffix}`, title: `Pair Other ${suffix}` };
+  const japaneseTitle = `対の作品 ${suffix}`;
+
+  const workBook = await seedCatalogBook({ suffix: `${suffix}-w`, localizations: { en: work }, priceMinor: 129000 });
+  const otherBook = await seedCatalogBook({ suffix: `${suffix}-x`, localizations: { en: other }, priceMinor: 99000 });
+  // The recipient owns the English edition before a second edition of the work exists.
+  const recipient = await createReader("pair-recipient");
+  await grantEntitlement(workBook.bookId, recipient.email);
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(1);
+  const english = await soleEditionId(workBook.bookId);
+  const japanese = await addPublishedEdition(workBook.bookId, "ja", suffix, [["VN", "VND", 150000]], japaneseTitle);
+  const otherEdition = await soleEditionId(otherBook.bookId);
+  const { bundleId } = await seedBundle({
+    suffix,
+    bookIds: [],
+    editionIds: [english, japanese.editionId],
+    localizations: { en: { slug: bundleSlug, title: bundleTitle } },
+    priceMinor: 189000,
+  });
+
+  const admin = await createReader("pair-admin", { admin: true });
+  const adminContext = await browser.newContext();
+  const adminPage = await adminContext.newPage();
+  await signInAs(adminPage, admin.email, "/admin/coupons");
+  await adminPage.getByRole("link", { name: "New coupon" }).click();
+  await adminPage.getByLabel("Code").fill(code);
+  await adminPage.getByLabel("Percentage off").fill("100");
+  await adminPage.getByRole("group", { name: "Bundles" }).getByLabel(bundleTitle, { exact: true }).check();
+  await adminPage.getByRole("button", { name: "Create coupon" }).click();
+  await expect(adminPage.getByRole("heading", { name: code })).toBeVisible();
+  await adminContext.close();
+
+  const purchaser = await createReader("pair-purchaser");
+  await signInAs(page, purchaser.email, `/en/bundles/${bundleSlug}`);
+  // The page says plainly that this is an English + Japanese bundle.
+  await expect(page.getByText("Languages in this bundle: English, 日本語.")).toBeVisible();
+  await page.getByRole("button", { name: "Buy bundle" }).click();
+  await expect(page).toHaveURL(checkoutUrl);
+  const orderId = checkoutUrl.exec(page.url())![1];
+  await page.getByLabel("Recipient email").fill(recipient.email);
+  await page.getByRole("button", { name: "Save gift" }).click();
+  await page.getByLabel("Enter a code").fill(code.toLowerCase());
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(page).toHaveURL(/\/en\/library$/);
+
+  // Edit the bundle after the purchase: a different single edition altogether.
+  const editor = createAnonClient();
+  const { data: link, error: linkError } = await createServiceRoleClient().auth.admin.generateLink({ type: "magiclink", email: admin.email });
+  if (linkError) throw linkError;
+  const { error: otpError } = await editor.auth.verifyOtp({ token_hash: link.properties.hashed_token, type: "email" });
+  if (otpError) throw otpError;
+  const { error: editError } = await editor.rpc("admin_set_bundle_members", { p_bundle_id: bundleId, p_edition_ids: [otherEdition] });
+  if (editError) throw editError;
+
+  await runOperationsWorker(request);
+  const claimPath = readGiftDelivery(orderId)!.claimPath!;
+  const recipientContext = await browser.newContext();
+  const recipientPage = await recipientContext.newPage();
+  await signInAs(recipientPage, recipient.email, claimPath);
+
+  await expect(recipientPage.getByRole("heading", { level: 1, name: "Your gift" })).toBeVisible();
+  await expect(claimGroup(recipientPage, "Added to your library").getByRole("link", { name: japaneseTitle })).toBeVisible();
+  await expect(claimGroup(recipientPage, "Already in your library").getByRole("link", { name: work.title })).toBeVisible();
+  await expect(recipientPage.getByText(other.title)).toHaveCount(0);
+
+  // Exactly the snapshot: English (held already by a grant, and now by the gift too) and Japanese.
+  // Nothing from the edit.
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(3);
+  expect(await activeEditionEntitlementCount(recipient.profileId, english)).toBe(2);
+  expect(await activeEditionEntitlementCount(recipient.profileId, japanese.editionId)).toBe(1);
+  expect(await activeEditionEntitlementCount(recipient.profileId, otherEdition)).toBe(0);
+
+  // Claiming again changes nothing.
+  await recipientPage.reload();
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(3);
   await recipientContext.close();
 });

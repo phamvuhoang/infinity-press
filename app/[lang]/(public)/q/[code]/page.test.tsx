@@ -8,8 +8,8 @@ import { getBookCardById } from "@/lib/data/catalog";
 import { getSharedQuote } from "@/lib/data/shared-quotes";
 
 const viewer = vi.hoisted(() => ({ props: null as Record<string, unknown> | null }));
-vi.mock("@/components/catalog/viewer-book-action", () => ({
-  ViewerBookAction: (props: Record<string, unknown>) => {
+vi.mock("@/components/catalog/book-edition-panel", () => ({
+  BookEditionPanel: (props: Record<string, unknown>) => {
     viewer.props = props;
     return <p data-testid="viewer-action" />;
   },
@@ -30,7 +30,14 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("next/og", () => ({ ImageResponse: class {} }));
 vi.mock("@/lib/config/server-env", () => ({ getServerEnv: () => ({ siteUrl: "https://books.example" }) }));
-vi.mock("@/lib/data/catalog", () => ({ getBookCardById: vi.fn(), publicBookAction: vi.fn(() => ({ kind: "buy" })) }));
+vi.mock("@/lib/data/catalog", () => ({ getBookCardById: vi.fn() }));
+vi.mock("@/lib/data/editions", () => ({
+  getBookEditions: vi.fn(async () => [
+    { editionId: "edition-1", languageCode: "en", epubLanguage: "en", isDefault: true, offer: null, hasSample: false },
+    { editionId: "edition-2", languageCode: "ja", epubLanguage: "ja", isDefault: false, offer: null, hasSample: false },
+  ]),
+}));
+vi.mock("@/lib/commerce/payment-provider", () => ({ arePaymentsEnabled: vi.fn(() => true) }));
 vi.mock("@/lib/data/shared-quotes", () => ({ getSharedQuote: vi.fn() }));
 
 const card = {
@@ -51,7 +58,7 @@ const book: CatalogBookCard = {
   cover: null,
   offer: { priceMinor: 99000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
   hasActivePublication: true,
-  hasSample: true,
+  hasSample: true, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
   series: null,
   topics: [],
   featured: false,
@@ -71,8 +78,9 @@ describe("quote card page", () => {
     render(await QuoteCardPage({ params: Promise.resolve({ lang: "en", code: "AbCdEfGh12" }) }));
     expect(screen.getByText("“Một câu đáng nhớ.”")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sách S16" })).toHaveAttribute("href", "/vi/books/sach-s16");
-    expect(screen.getByRole("link", { name: "Đọc thử" })).toHaveAttribute("href", "/vi/read-sample/sach-s16");
-    expect(viewer.props).toMatchObject({ bookId: card.bookId, locale: "vi" });
+    // The sample link is the edition panel's, built from the slug and the edition it sells.
+    expect(viewer.props).toMatchObject({ bookId: card.bookId, bookSlug: "sach-s16", locale: "vi", selectable: false });
+    expect((viewer.props!.editions as { editionId: string }[]).map((edition) => edition.editionId)).toEqual(["edition-1"]);
     expect(analytics.props).toEqual({ eventName: "view_quote", sharedQuoteId: card.id, bookId: card.bookId, locale: "vi" });
     // The card loads the book in ITS locale, not the path's.
     expect(getBookCardById).toHaveBeenCalledWith("vi", card.bookId);

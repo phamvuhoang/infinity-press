@@ -21,7 +21,7 @@ const order: CustomerOrderDTO = {
   id: ORDER_ID,
   bundleId: null,
   title: "A Book",
-  items: [{ bookId: "30000000-0000-4000-8000-000000000001", title: "A Book", hasActiveEntitlement: false }],
+  items: [{ bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "A Book", hasActiveEntitlement: false }],
   status: "pending",
   paymentStatus: "pending",
   totalMinor: 129000,
@@ -47,9 +47,9 @@ const bundleOrder: CustomerOrderDTO = {
   totalMinor: 300000,
   subtotalMinor: 300000,
   items: [
-    { bookId: "30000000-0000-4000-8000-000000000001", title: "First", hasActiveEntitlement: false },
-    { bookId: "30000000-0000-4000-8000-000000000002", title: "Second", hasActiveEntitlement: false },
-    { bookId: "30000000-0000-4000-8000-000000000003", title: "Third", hasActiveEntitlement: false },
+    { bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "First", hasActiveEntitlement: false },
+    { bookId: "30000000-0000-4000-8000-000000000002", editionId: null, languageCode: null, title: "Second", hasActiveEntitlement: false },
+    { bookId: "30000000-0000-4000-8000-000000000003", editionId: null, languageCode: null, title: "Third", hasActiveEntitlement: false },
   ],
 };
 
@@ -102,7 +102,7 @@ describe("OrderPage", () => {
     render(await OrderPage({ params }));
 
     expect(screen.getByRole("heading", { level: 1, name: "The Starter Bundle" })).toBeInTheDocument();
-    expect(screen.getByText("3 books")).toBeInTheDocument();
+    expect(screen.getByText("3 editions")).toBeInTheDocument();
   });
 
   it("sends a completed bundle order to the library, and a completed single book to the reader", async () => {
@@ -127,7 +127,7 @@ describe("OrderPage", () => {
       "href",
       "/en/read/30000000-0000-4000-8000-000000000001",
     );
-    expect(screen.queryByText("3 books")).not.toBeInTheDocument();
+    expect(screen.queryByText("3 editions")).not.toBeInTheDocument();
   });
 
   it("renders the admin's decline reason", async () => {

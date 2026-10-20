@@ -309,6 +309,7 @@ describe("SupabaseJobStore.complete", () => {
         },
       ],
       p_positions: publication.positions,
+      p_epub_language: "en",
     });
   });
 

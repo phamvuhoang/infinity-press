@@ -45,13 +45,13 @@ function toActionResult(error: unknown): EntitlementActionResult {
 // requireAdmin() again internally as its own library-boundary guarantee.
 export async function grantComplimentaryEntitlementAction(
   profileId: string,
-  bookId: string,
+  editionId: string,
   reason: string,
 ): Promise<EntitlementActionResult> {
   await requireAdmin({ next: `/admin/users/${profileId}` });
 
   try {
-    const { entitlementId } = await grantComplimentaryEntitlement(profileId, bookId, reason);
+    const { entitlementId } = await grantComplimentaryEntitlement(profileId, editionId, reason);
     revalidatePath(`/admin/users/${profileId}`);
     return { ok: true, entitlementId };
   } catch (error) {

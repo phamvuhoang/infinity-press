@@ -30,7 +30,8 @@ function idea(slug: string, question: string): KnowledgeIdeaSummary {
     shortAnswer: `Answer to ${question}`,
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-02T00:00:00+00:00",
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "en",
     topics: [],
   };
 }
@@ -85,7 +86,7 @@ describe("IdeasPage", () => {
 });
 
 describe("generateMetadata", () => {
-  it("uses the fixed index copy and both locale paths", async () => {
+  it("uses the fixed index copy and every locale path", async () => {
     const metadata = await generateMetadata({ params });
 
     expect(metadata.title).toBe("Ideas");
@@ -95,7 +96,8 @@ describe("generateMetadata", () => {
       languages: {
         vi: "https://books.example/vi/ideas",
         en: "https://books.example/en/ideas",
-        "x-default": "https://books.example/vi/ideas",
+        ja: "https://books.example/ja/ideas",
+        "x-default": "https://books.example/en/ideas",
       },
     });
   });

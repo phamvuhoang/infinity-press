@@ -78,11 +78,33 @@ already sent against it has to be reconciled by hand (section 7).
 The cloud Supabase project is shared with production, so turning `payments_enabled` on there turns
 real buying on. Do it as a deliberate step, not as part of a deployment.
 
+## Press specifics
+
+Infinity Books Press differs from the shop this runbook was written for in four ways. Everything else
+below applies unchanged.
+
+- **The payee is Press's own account.** The four `BANK_TRANSFER_*` values are the account Press
+  receives money in. Never copy another business's account, and do not reuse the values from any other
+  deployment. They come from the person who owns the bank account, not from the repository.
+- **VND only.** `commerce_settings.payable_currencies` is `{VND}`. `create_edition_order` refuses an
+  offer in any other currency (`EB041`) and the transfer page never prints bank details for one.
+  USD and JPY editions can be listed and given free; they cannot be bought until a payment method for
+  them exists. No exchange rate is applied anywhere.
+- **One order per edition.** English and Japanese of one work are separate products with separate
+  orders, references, confirmations and entitlements. Confirming the Japanese order grants Japanese
+  only. The order page shows the language. Press has no SePay provider.
+- **One bank line, one order.** Confirming with a bank reference that another order already carries
+  (ignoring case and padding) is refused (`EB043`). It is almost always one transfer being applied
+  twice.
+
+The database default provider is `manual`. Payments stay **off** until the release procedure turns
+`payments_enabled` on, after one real order has been walked from Buy to Read in the target environment.
+
 ## 3. What the reader sees
 
 | Step | URL | What happens |
 | --- | --- | --- |
-| Buy | Book page → **Buy ebook** | `create_ebook_order` creates or reuses a pending order. |
+| Buy | Book page → **Buy ebook** | `create_edition_order` creates or reuses a pending order for one edition. |
 | Checkout | `/{locale}/checkout/<orderId>` | The ebook, the total, the account email, and **Pay**. |
 | Transfer | `/{locale}/checkout/<orderId>/transfer` | Bank details, the amount, the order reference, and a VietQR image. **I have transferred** reports the transfer. |
 | Status | `/{locale}/checkout/<orderId>/status` | Waiting for your transfer → Awaiting confirmation → Payment complete. |

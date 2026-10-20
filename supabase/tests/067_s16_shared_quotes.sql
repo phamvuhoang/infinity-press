@@ -26,7 +26,9 @@ insert into public.ebook_assets (id, edition_id, source_storage_key, version, st
 values ('e1660000-0000-0000-0000-000000000001', 'e1610000-0000-0000-0000-000000000001', 's16/live.epub', 1, 'published');
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
 values ('e1640000-0000-0000-0000-000000000001', 'e1660000-0000-0000-0000-000000000001', 1, 's16/live.json', 'published');
-update public.books set active_publication_id = 'e1640000-0000-0000-0000-000000000001' where id = 'e1620000-0000-0000-0000-000000000001';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'e1640000-0000-0000-0000-000000000001' and (b.id = 'e1620000-0000-0000-0000-000000000001');
 insert into public.entitlements (id, profile_id, book_id, source_type, actor_profile_id, reason, status)
 select 'e1650000-0000-0000-0000-000000000001', p.id, 'e1620000-0000-0000-0000-000000000001', 'admin_grant', p.id, 'fixture', 'active'
 from public.profiles p where p.auth_user_id = 'e1600000-0000-0000-0000-000000000001';
@@ -48,7 +50,7 @@ select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-00
 select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', '<b>x</b>', 'vi')$$, 'EB039', null, 'html is refused');
 select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', repeat('x', 1201), 'vi')$$, 'EB039', null, 'an over-long quote is refused');
 select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', repeat('x', 301), 'vi')$$, 'EB039', null, 'a direct call cannot skip the 300-grapheme rule');
-select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', 'x', 'ja')$$, 'EB039', null, 'an unknown locale is refused');
+select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-000000000001', 'x', 'fr')$$, 'EB039', null, 'an unknown locale is refused');
 select throws_ok($$select public.create_shared_quote('e1640000-0000-0000-0000-0000000000ff', 'x', 'vi')$$, 'EB039', null, 'an unknown publication is refused with the same code');
 
 create temporary table t_created as

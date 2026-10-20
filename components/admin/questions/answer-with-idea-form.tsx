@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { localeRegistry, locales } from "@/lib/i18n/config";
 
 import { answerWithIdeaAction } from "@/app/admin/questions/actions";
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
@@ -28,9 +29,10 @@ export function AnswerWithIdeaForm({ question }: { question: AdminQuestionDTO })
     <form action={formAction} className="mt-3 w-full max-w-md space-y-3">
       <div className="space-y-2">
         <Label htmlFor={`${base}-locale`}>Locale</Label>
-        <NativeSelect defaultValue={question.locale === "en" ? "en" : "vi"} id={`${base}-locale`} name="locale">
-          <option value="vi">Vietnamese (vi)</option>
-          <option value="en">English (en)</option>
+        <NativeSelect defaultValue={question.locale} id={`${base}-locale`} name="locale">
+          {locales.map((code) => (
+<option key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</option>
+))}
         </NativeSelect>
         <FieldError id={`${base}-locale-error`} message={state.fieldErrors.locale} />
       </div>

@@ -30,12 +30,13 @@ export type CreateEpubUploadActionResult =
 // one inside the library function it happens to call today.
 export async function createEpubUploadAction(
   bookId: string,
+  editionId: string,
   file: { fileName: string; mimeType: string; sizeBytes: number },
 ): Promise<CreateEpubUploadActionResult> {
-  await requireAdmin({ next: `/admin/books/${bookId}` });
+  await requireAdmin({ next: `/admin/books/${bookId}/editions/${editionId}` });
 
   try {
-    const result = await createEpubUpload({ bookId, ...file });
+    const result = await createEpubUpload({ bookId, editionId, ...file });
     return { ok: true, ...result };
   } catch (error) {
     // Validation and "no edition yet" failures are safe, specific messages for the admin to act

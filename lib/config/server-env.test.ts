@@ -122,74 +122,10 @@ describe("parseServerEnv", () => {
     expect(env.simulatorSecret).toBeNull();
   });
 
-  const sepay = {
-    PAYMENT_PROVIDER: "sepay",
-    SEPAY_MERCHANT_ID: "MERCHANT_TEST",
-    SEPAY_SECRET_KEY: "secret_test_key",
-    SEPAY_ENV: "sandbox",
-  };
-
-  it("accepts sepay with all three settings", () => {
-    const env = parseServerEnv({ ...base, ...sepay });
-    expect(env.paymentProvider).toBe("sepay");
-    expect(env.sepay).toEqual({ merchantId: "MERCHANT_TEST", secretKey: "secret_test_key", env: "sandbox" });
-  });
-
-  it.each(["simulator", "manual"])("accepts blank optional settings with %s", (provider) => {
-    // Use the existing valid fixture for this provider, including its required settings.
-    const values = { ...base, ...sepay, PAYMENT_PROVIDER: provider };
-    if (provider === "manual") Object.assign(values, {
-      BANK_TRANSFER_BANK_CODE: "970436", BANK_TRANSFER_BANK_NAME: "Vietcombank",
-      BANK_TRANSFER_ACCOUNT_NUMBER: "123456789", BANK_TRANSFER_ACCOUNT_HOLDER: "TEST",
-    });
-    expect(parseServerEnv({ ...values, SEPAY_MERCHANT_ID: "", SEPAY_SECRET_KEY: "", SEPAY_ENV: "" }).sepay).toBeNull();
-  });
-
-  it("rejects blank settings when sepay is selected", () => {
-    expect(() => parseServerEnv({ ...base, PAYMENT_PROVIDER: "sepay", SEPAY_MERCHANT_ID: "", SEPAY_SECRET_KEY: "", SEPAY_ENV: "" }))
-      .toThrow("SEPAY_MERCHANT_ID, SEPAY_SECRET_KEY, and SEPAY_ENV are required when PAYMENT_PROVIDER=sepay");
-  });
-
-  it("has no sepay configuration when none is set", () => {
-    expect(parseServerEnv(base).sepay).toBeNull();
-  });
-
-  it.each(["SEPAY_MERCHANT_ID", "SEPAY_SECRET_KEY", "SEPAY_ENV"])("rejects sepay without %s", (name) => {
-    expect(() => parseServerEnv({ ...base, ...sepay, [name]: undefined })).toThrow(
-      "SEPAY_MERCHANT_ID, SEPAY_SECRET_KEY, and SEPAY_ENV must be set together",
-    );
-  });
-
-  it("rejects PAYMENT_PROVIDER=sepay with no sepay settings", () => {
-    expect(() => parseServerEnv({ ...base, PAYMENT_PROVIDER: "sepay" })).toThrow(
-      "SEPAY_MERCHANT_ID, SEPAY_SECRET_KEY, and SEPAY_ENV are required when PAYMENT_PROVIDER=sepay",
-    );
-  });
-
-  // Keeps the IPN route alive after a switch back to manual (spec 6.3).
-  it("keeps sepay settings when another provider is active", () => {
-    expect(parseServerEnv({ ...base, ...sepay, PAYMENT_PROVIDER: "simulator" }).sepay?.merchantId).toBe("MERCHANT_TEST");
-  });
-
-  it("rejects sandbox credentials in production", () => {
-    expect(() =>
-      parseServerEnv({
-        ...base,
-        ...sepay,
-        APP_ENV: "production",
-        EMAIL_PROVIDER: "resend",
-        RESEND_API_KEY: "re_test",
-        EMAIL_FROM: "books@example.com",
-        OPS_ALERT_EMAIL: "ops@example.com",
-        OPS_WORKER_SECRET: "worker-secret-0123456789abcdef0123456789",
-      }),
-    ).toThrow("SEPAY_ENV must be production when APP_ENV=production");
-  });
-
-  it.each(["local", "test"])("rejects production credentials when APP_ENV=%s", (appEnv) => {
-    expect(() => parseServerEnv({ ...base, ...sepay, APP_ENV: appEnv, SEPAY_ENV: "production" })).toThrow(
-      "SEPAY_ENV=production is not allowed when APP_ENV is local or test",
-    );
+  // Press takes payments by manual bank transfer only. A leftover SePay setting must stop the app
+  // from starting rather than quietly opening a checkout nothing can confirm.
+  it("refuses PAYMENT_PROVIDER=sepay", () => {
+    expect(() => parseServerEnv({ ...base, PAYMENT_PROVIDER: "sepay" })).toThrow();
   });
 
   describe("email and operations variables", () => {

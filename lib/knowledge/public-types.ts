@@ -1,5 +1,6 @@
 import type { CatalogBookCard, CatalogTopicRef } from "@/lib/catalog/public-types";
 import type { KnowledgeBlock, KnowledgeIdeaReference } from "@/lib/knowledge/blocks";
+import type { AlternateSlugs } from "@/lib/i18n/alternates";
 
 // Shapes that public knowledge pages render. Everything here is published and localized in the
 // requested locale; lib/data/knowledge.ts drops any reference that is not. Timestamps are ISO
@@ -16,7 +17,9 @@ export type KnowledgeIdeaSummary = KnowledgeIdeaReference & {
   createdAt: string;
   // The localization's last edit.
   updatedAt: string;
-  alternateSlug: string | null;
+  alternateSlugs: AlternateSlugs;
+  // The locale of the copy shown: the requested one, else the platform default metadata locale.
+  metadataLocale: string;
   // Every published topic with a public page in this locale, ordered by name.
   topics: KnowledgeTopicRef[];
 };
@@ -36,7 +39,8 @@ export type KnowledgeArticleSummary = {
   // Set on the first publish and preserved across unpublish/republish.
   publishedAt: string;
   updatedAt: string;
-  alternateSlug: string | null;
+  alternateSlugs: AlternateSlugs;
+  metadataLocale: string;
   author: KnowledgeAuthorRef;
 };
 
@@ -57,7 +61,8 @@ export type KnowledgeIdeaPage = KnowledgeRenderContext & {
   seoDescription: string | null;
   createdAt: string;
   updatedAt: string;
-  alternateSlug: string | null;
+  alternateSlugs: AlternateSlugs;
+  metadataLocale: string;
   // Editorial order; unpublished or unlocalized targets are already dropped.
   books: CatalogBookCard[];
   relatedIdeas: KnowledgeIdeaSummary[];
@@ -73,7 +78,8 @@ export type KnowledgeArticlePage = KnowledgeRenderContext & {
   seoDescription: string | null;
   publishedAt: string;
   updatedAt: string;
-  alternateSlug: string | null;
+  alternateSlugs: AlternateSlugs;
+  metadataLocale: string;
   author: KnowledgeAuthorRef;
   books: CatalogBookCard[];
   ideas: KnowledgeIdeaSummary[];

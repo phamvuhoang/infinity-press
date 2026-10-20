@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { type Locale } from "@/lib/i18n/config";
 
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -63,7 +64,7 @@ export function EntityBaseForm({
           <Label htmlFor="acceptsQuestions">
             Accepts reader questions
             <span className="mt-1 block text-[0.8125rem] font-normal text-ink-soft">
-              Off hides &ldquo;Ask the author&rdquo; on this author&rsquo;s books and refuses new questions. Use it when an author declines or has passed away.
+              Off by default for new authors. Off hides &ldquo;Ask the editors&rdquo; on this author&rsquo;s books and refuses new questions; turn it on only when the editors will answer. Replies are shown as the editors&rsquo;, never as the author&rsquo;s.
             </span>
           </Label>
         </div>
@@ -81,7 +82,7 @@ export function EntityLocalizationForm({
   showQuote = false,
 }: {
   action: FormAction;
-  locale: "vi" | "en";
+  locale: Locale;
   defaults: { slug: string; name: string; description: string | null; quote: string | null } | null;
   // Authors only: board 1e sets a pull quote above the description in the home page band.
   showQuote?: boolean;

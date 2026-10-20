@@ -94,7 +94,9 @@ begin
     insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
     values (v_publication_id, v_asset_id, 1, 'manifest/' || p_key || '.json', p_publication_status);
     if p_activate then
-      update public.books set active_publication_id = v_publication_id where id = p_id;
+      update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = v_publication_id and (b.id = p_id);
     end if;
   end if;
 end;
@@ -219,13 +221,15 @@ select pg_temp.seed_book('51000000-0000-4000-8000-000000000084', 's11-b-dbundle'
 select pg_temp.seed_book('51000000-0000-4000-8000-000000000085', 's11-b-draft-seed', '52000000-0000-4000-8000-00000000001b', 'draft', 'en', 'published', true, '2025-01-01');
 select pg_temp.seed_book('51000000-0000-4000-8000-000000000086', 's11-b-draft-mate', '52000000-0000-4000-8000-00000000001b', 'published', 'en', 'published', true, '2025-01-01');
 
-insert into public.bundle_books (bundle_id, book_id, position) values
+insert into public.bundle_editions (bundle_id, edition_id, position)
+select v.bundle_id::uuid, (select e.id from public.editions e where e.book_id = v.book_id::uuid order by e.id limit 1), v.position
+from (values
   ('55000000-0000-4000-8000-000000000001', '51000000-0000-4000-8000-000000000080', 1),
   ('55000000-0000-4000-8000-000000000001', '51000000-0000-4000-8000-000000000081', 2),
   ('55000000-0000-4000-8000-000000000002', '51000000-0000-4000-8000-000000000080', 1),
   ('55000000-0000-4000-8000-000000000002', '51000000-0000-4000-8000-000000000081', 2),
   ('55000000-0000-4000-8000-000000000003', '51000000-0000-4000-8000-000000000080', 1),
-  ('55000000-0000-4000-8000-000000000003', '51000000-0000-4000-8000-000000000084', 2);
+  ('55000000-0000-4000-8000-000000000003', '51000000-0000-4000-8000-000000000084', 2)) as v(bundle_id, book_id, position);
 
 insert into public.book_series (book_id, series_id, position) values
   ('51000000-0000-4000-8000-000000000080', '53000000-0000-4000-8000-000000000004', 1),
@@ -456,8 +460,8 @@ select results_eq(
 select results_eq(
   $$select book_id from public.recommend_books(
       array['51000000-0000-4000-8000-000000000001']::uuid[], array[]::uuid[], 'vi', 6)$$,
-  $$values ('51000000-0000-4000-8000-000000000006'::uuid)$$,
-  'the locale filter selects the book localized for the requested locale, not a fixed one');
+  $$values ('51000000-0000-4000-8000-000000000002'::uuid), ('51000000-0000-4000-8000-000000000006'::uuid)$$,
+  'a locale never hides a readable work: the Vietnamese shelf also carries the English-only book, under its English copy');
 
 select is(
   (select count(*)::int from public.recommend_books(

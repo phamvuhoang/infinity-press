@@ -359,3 +359,95 @@ export function validEpubWithNcx(): Uint8Array {
     { path: "OEBPS/images/cover.jpg", content: COVER_JPEG },
   ]);
 }
+
+// ---- Japanese corpus (Press Task 9) -----------------------------------------------------------
+// Generated, never committed. The text is public-domain wording written for the test: kanji, hiragana,
+// katakana, ruby with fallback parentheses, Japanese punctuation, a long unbroken paragraph with no
+// spaces (the shape that breaks word-based search), and a Japanese table of contents.
+export const JAPANESE_CORPUS = {
+  title: "星空の手紙",
+  chapter1Heading: "第一章　星空",
+  chapter2Heading: "第二章　手紙",
+  rubyBase: "星空",
+  rubyReading: "ほしぞら",
+  searchFragment: "ほしぞら",
+  quote: "遠い町の灯りが、静かに瞬いていた。",
+  // 40 sentences with no spaces: one paragraph long enough to span several pages.
+  longParagraph: Array.from({ length: 40 }, (_, index) => `第${index + 1}の夜、少女は窓の外の星を数えながら、返事のない手紙を書き続けた。`).join(""),
+};
+
+function japaneseOpf(): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="pub-id">urn:uuid:12345678-1234-1234-1234-1234567890ab</dc:identifier>
+    <dc:title>${JAPANESE_CORPUS.title}</dc:title>
+    <dc:language>ja</dc:language>
+    <dc:creator>試験 太郎</dc:creator>
+  </metadata>
+  <manifest>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="chapter1" href="text/chapter1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="chapter2" href="text/chapter2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="style" href="styles/style.css" media-type="text/css"/>
+    <item id="cover" href="images/cover.jpg" media-type="image/jpeg"/>
+  </manifest>
+  <spine>
+    <itemref idref="chapter1"/>
+    <itemref idref="chapter2"/>
+  </spine>
+</package>
+`;
+}
+
+const JAPANESE_NAV = `<?xml version="1.0" encoding="utf-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>目次</title></head>
+<body>
+<nav epub:type="toc">
+<ol>
+<li><a href="text/chapter1.xhtml">${JAPANESE_CORPUS.chapter1Heading}</a></li>
+<li><a href="text/chapter2.xhtml">${JAPANESE_CORPUS.chapter2Heading}</a></li>
+</ol>
+</nav>
+</body>
+</html>
+`;
+
+function japaneseChapter(heading: string, body: string): string {
+  return `<?xml version="1.0" encoding="utf-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+<head><title>${heading}</title><link rel="stylesheet" href="../styles/style.css" type="text/css"/></head>
+<body>
+<h1>${heading}</h1>
+${body}
+</body>
+</html>
+`;
+}
+
+export function japaneseEpub(): Uint8Array {
+  const chapter1 = japaneseChapter(
+    JAPANESE_CORPUS.chapter1Heading,
+    `<p><ruby>${JAPANESE_CORPUS.rubyBase}<rp>（</rp><rt>${JAPANESE_CORPUS.rubyReading}</rt><rp>）</rp></ruby>の下で、${JAPANESE_CORPUS.quote}</p>\n<p>${JAPANESE_CORPUS.longParagraph}</p>`,
+  );
+  const chapter2 = japaneseChapter(JAPANESE_CORPUS.chapter2Heading, "<p>「ありがとう」と彼女は言った。『本当に？』――そして、静かに笑った。</p>");
+  return assembleEpub([
+    { path: "mimetype", content: EPUB_MIME_TYPE, store: true },
+    { path: "META-INF/container.xml", content: CONTAINER_XML },
+    { path: "OEBPS/content.opf", content: japaneseOpf() },
+    { path: "OEBPS/nav.xhtml", content: JAPANESE_NAV },
+    { path: "OEBPS/text/chapter1.xhtml", content: chapter1 },
+    { path: "OEBPS/text/chapter2.xhtml", content: chapter2 },
+    { path: "OEBPS/styles/style.css", content: "body { font-family: serif; line-height: 1.8; }\nrt { font-size: 0.5em; }\n" },
+    { path: "OEBPS/images/cover.jpg", content: COVER_JPEG },
+  ]);
+}
+
+// A stylesheet that sets vertical writing, which Press does not support at launch (horizontal only).
+// `css` overrides the sheet, so a test can hide the declaration the ways real sheets do.
+export function epubWithVerticalWriting(css = "html { writing-mode: vertical-rl; -epub-writing-mode: vertical-rl; }\n"): Uint8Array {
+  return assembleEpub(
+    validEpubEntries().map((entry) => (entry.path === "OEBPS/styles/style.css" ? { ...entry, content: css } : entry)),
+  );
+}

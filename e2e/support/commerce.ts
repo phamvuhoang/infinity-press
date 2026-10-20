@@ -32,7 +32,7 @@ export async function enablePayments(): Promise<void> {
   await setCommerceSettings("simulator");
 }
 
-async function setCommerceSettings(provider: "simulator" | "manual" | "sepay"): Promise<void> {
+async function setCommerceSettings(provider: "simulator" | "manual"): Promise<void> {
   check(
     await createServiceRoleClient()
       .from("commerce_settings")
@@ -51,18 +51,6 @@ export async function enableManualPayments(): Promise<void> {
   await setCommerceSettings("manual");
 }
 
-// The database half of the gate for SePay (S18). The app half is the third web server in
-// playwright.config.ts.
-export async function enableSepayPayments(): Promise<void> {
-  await setCommerceSettings("sepay");
-}
-
-// Switches only the database half, for a provider-switch regression. Restores through
-// enableSepayPayments in a finally.
-export async function setProviderForRegression(provider: "manual" | "sepay"): Promise<void> {
-  await setCommerceSettings(provider);
-}
-
 // The real authenticated create_ebook_order - the RPC the Buy button calls - as this reader, with
 // no browser. A session comes from a magic-link token exchanged on an anon client, so the RPC sees
 // auth.uid() exactly as it does in the app and its stale-order cancellation runs unmocked.
@@ -78,6 +66,31 @@ export async function bookEbookOrderAs(email: string, bookId: string): Promise<s
   const { data, error } = await anon.rpc("create_ebook_order", { p_book_id: bookId });
   if (error) throw new Error(error.message);
   return data as string;
+}
+
+// create_edition_order as this reader: the edition and the offer are named, as the checkout contract
+// requires. Returns the RPC error code instead of throwing when the database refuses.
+export async function bookEditionOrderAs(
+  email: string,
+  editionId: string,
+  offerId: string,
+  expectedMinor?: number,
+): Promise<{ orderId: string } | { code: string }> {
+  const { data: link, error: linkError } = await createServiceRoleClient().auth.admin.generateLink({
+    type: "magiclink",
+    email,
+  });
+  if (linkError) throw linkError;
+  const anon = createAnonClient();
+  const { error: otpError } = await anon.auth.verifyOtp({ token_hash: link.properties.hashed_token, type: "email" });
+  if (otpError) throw otpError;
+  const { data, error } = await anon.rpc("create_edition_order", {
+    p_edition_id: editionId,
+    p_offer_id: offerId,
+    ...(expectedMinor === undefined ? {} : { p_expected_minor: expectedMinor }),
+  });
+  if (error) return { code: error.code };
+  return { orderId: data as string };
 }
 
 export async function orderState(orderId: string): Promise<{ status: string; paymentStatus: string; provider: string }> {
@@ -125,7 +138,10 @@ export async function signInAs(page: Page, email: string, next: string): Promise
   if (error) throw error;
   const locale = next.startsWith("/vi") ? "vi" : "en";
   await page.goto(`/auth/callback?${new URLSearchParams({ token_hash: data.properties.hashed_token, type: "email", next, locale })}`);
-  await expect(page).toHaveURL(new RegExp(`${escapeRegExp(next)}$`));
+  // The legacy /read/{bookId} link resolves to the edition the reader owns, so the landing URL is the
+  // edition's own reader page.
+  const landing = escapeRegExp(next).replace(/\/read\/[0-9a-f-]{36}$/, "/read\/editions\/[0-9a-f-]{36}");
+  await expect(page).toHaveURL(new RegExp(`${landing}$`));
 }
 
 export async function profileIdForEmail(email: string): Promise<string> {
@@ -133,6 +149,17 @@ export async function profileIdForEmail(email: string): Promise<string> {
     await createServiceRoleClient().from("customer_identities").select("profile_id").eq("normalized_email", email.toLowerCase()).single(),
   );
   return row.profile_id as string;
+}
+
+export async function activeEditionEntitlementCount(profileId: string, editionId: string): Promise<number> {
+  const { count, error } = await createServiceRoleClient()
+    .from("entitlements")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", profileId)
+    .eq("edition_id", editionId)
+    .eq("status", "active");
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
 
 export async function activeEntitlementCount(profileId: string, bookId: string): Promise<number> {

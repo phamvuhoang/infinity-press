@@ -46,6 +46,7 @@ export type OperationsReport = {
 export type EpubJobRow = {
   id: string;
   bookId: string;
+  editionId: string;
   status: "queued" | "processing" | "failed" | "completed";
   updatedAt: string;
   leaseExpiresAt: string | null;

@@ -21,7 +21,7 @@ const order: CustomerOrderDTO = {
   id: ORDER_ID,
   bundleId: null,
   title: "A Book",
-  items: [{ bookId: "30000000-0000-4000-8000-000000000001", title: "A Book", hasActiveEntitlement: false }],
+  items: [{ bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "A Book", hasActiveEntitlement: false }],
   status: "pending",
   paymentStatus: "pending",
   totalMinor: 129000,
@@ -47,7 +47,7 @@ beforeEach(() => {
 
 describe("claimTransferAction", () => {
   it("redirects to the locale home when the locale is not supported", async () => {
-    await expect(claimTransferAction("xx", ORDER_ID, new FormData())).rejects.toThrow("NEXT_REDIRECT /vi");
+    await expect(claimTransferAction("xx", ORDER_ID, new FormData())).rejects.toThrow("NEXT_REDIRECT /en");
     expect(requireUser).not.toHaveBeenCalled();
   });
 

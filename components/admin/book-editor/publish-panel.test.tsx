@@ -16,16 +16,15 @@ beforeEach(() => {
 });
 
 it("disables publishing an incomplete draft and links each missing item to its editor section", () => {
-  render(<PublishPanel bookId={bookId} issues={["missing_localization", "missing_author", "missing_cover", "missing_offer", "missing_publication"]} status="draft" />);
+  render(<PublishPanel bookId={bookId} issues={["missing_localization", "missing_author", "missing_cover", "missing_publication"]} status="draft" />);
   expect(screen.getByRole("button", { name: "Publish book" })).toBeDisabled();
   for (const [name, href] of [
     ["Add a localization with a title, slug, and description.", "#localizations"],
     ["Set a primary author with localized copy.", "#details"],
     ["Upload a cover image.", "#cover"],
-    ["Activate the ebook offer.", "#offer"],
-    ["Publish an EPUB version.", "#epub"],
+    ["Publish an EPUB for at least one edition.", "#editions"],
   ]) expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
-  expect(screen.getAllByRole("listitem")).toHaveLength(5);
+  expect(screen.getAllByRole("listitem")).toHaveLength(4);
 });
 
 it.each(["draft", "archived"] as const)("confirms before publishing a ready %s book and announces success", async (status) => {
@@ -43,7 +42,7 @@ it.each(["draft", "archived"] as const)("confirms before publishing a ready %s b
 
 it("allows a published book to be unpublished even with missing readiness items", async () => {
   vi.mocked(unpublishBookAction).mockResolvedValue({ ok: true, message: "Book unpublished." });
-  render(<PublishPanel bookId={bookId} issues={["missing_offer"]} status="published" />);
+  render(<PublishPanel bookId={bookId} issues={["missing_publication"]} status="published" />);
   fireEvent.click(screen.getByRole("button", { name: "Unpublish book" }));
   expect(window.confirm).toHaveBeenCalledWith("Unpublish this book? It disappears from the storefront and readers can no longer open it.");
   await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Book unpublished."));

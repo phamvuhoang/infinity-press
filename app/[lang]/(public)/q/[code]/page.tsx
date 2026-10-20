@@ -5,11 +5,13 @@ import { notFound } from "next/navigation";
 import { buyEbookAction, getFreeEbookAction } from "@/app/[lang]/(public)/books/[slug]/actions";
 import { AnalyticsEvent } from "@/components/analytics/analytics-event";
 import { CoverImage } from "@/components/catalog/cover-image";
-import { ViewerBookAction } from "@/components/catalog/viewer-book-action";
+import { BookEditionPanel } from "@/components/catalog/book-edition-panel";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
-import { getBookCardById, publicBookAction } from "@/lib/data/catalog";
+import { getBookCardById } from "@/lib/data/catalog";
+import { getBookEditions } from "@/lib/data/editions";
 import { getSharedQuote } from "@/lib/data/shared-quotes";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
@@ -80,6 +82,8 @@ export default async function QuoteCardPage({ params }: Props) {
   const copy = dictionary.catalog;
   const routes = getCatalogRoutes(locale);
   const bookPath = routes.book(book.slug);
+  // The card stands for one edition; this page sells exactly that one, with no selector.
+  const editions = (await getBookEditions(book.bookId, locale)).filter((edition) => edition.editionId === book.editionId);
 
   return (
     <div className="min-h-screen bg-ivory">
@@ -110,20 +114,19 @@ export default async function QuoteCardPage({ params }: Props) {
               )}
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-4">
-              <ViewerBookAction
+              <BookEditionPanel
                 bookId={book.bookId}
                 bookPath={bookPath}
+                bookSlug={book.slug}
                 buyAction={buyEbookAction.bind(null, locale, book.bookId, book.slug)}
-                copy={copy.actions}
+                copy={copy}
+                editions={editions}
+                fallbackNotice={book.isLanguageFallback}
                 getFreeAction={getFreeEbookAction.bind(null, locale, book.bookId, book.slug)}
                 locale={locale}
-                publicAction={publicBookAction(book)}
+                paymentsEnabled={arePaymentsEnabled(getServerEnv())}
+                selectable={false}
               />
-              {book.hasSample ? (
-                <Link className={`inline-flex min-h-11 items-center ${textLink}`} href={routes.sample(book.slug)}>
-                  {copy.quoteCard.readSample}
-                </Link>
-              ) : null}
             </div>
             <p className="mt-8 text-xs text-sage-text">{copy.quoteCard.sharedFrom}</p>
           </div>

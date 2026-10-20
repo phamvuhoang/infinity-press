@@ -14,7 +14,7 @@ describe("buildBookReadyEmail", () => {
 
     expect(email.subject).toBe("Your book is ready: Deep Work");
     expect(email.text).toContain("Hi Ada,");
-    expect(email.text).toContain("“Deep Work” is now in your Infinity Books library");
+    expect(email.text).toContain("“Deep Work” is now in your Infinity Books Press library");
     expect(email.text).toContain("Open your library: https://books.example.com/en/library");
     expect(email.html).toContain('<a href="https://books.example.com/en/library">Open your library</a>');
     expect(email.html).toContain("<p>Hi Ada,</p>");
@@ -30,7 +30,7 @@ describe("buildBookReadyEmail", () => {
 
     expect(email.subject).toBe("Sách của bạn đã sẵn sàng: Nhà giả kim");
     expect(email.text).toContain("Chào Minh,");
-    expect(email.text).toContain("“Nhà giả kim” đã có trong thư viện Infinity Books của bạn");
+    expect(email.text).toContain("“Nhà giả kim” đã có trong thư viện Infinity Books Press của bạn");
     expect(email.text).toContain("Mở thư viện của bạn: https://books.example.com/vi/library");
     expect(email.html).toContain('<a href="https://books.example.com/vi/library">Mở thư viện của bạn</a>');
   });
@@ -58,7 +58,7 @@ describe("buildBookReadyEmail", () => {
 
     expect(email.subject).toBe("Cuốn sách mới của bạn đã sẵn sàng");
     expect(email.text).toContain("Xin chào,");
-    expect(email.text).toContain("Cuốn sách mới đã có trong thư viện Infinity Books của bạn");
+    expect(email.text).toContain("Cuốn sách mới đã có trong thư viện Infinity Books Press của bạn");
     expect(email.html).toContain('<a href="https://books.example.com/vi/library">');
   });
 

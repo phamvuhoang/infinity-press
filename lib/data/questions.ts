@@ -1,4 +1,5 @@
 import "server-only";
+import { locales } from "@/lib/i18n/config";
 
 import { headers } from "next/headers";
 import { z } from "zod";
@@ -41,7 +42,7 @@ const myQuestionsSchema = z.array(
   z.object({
     id: z.string(),
     body: z.string(),
-    locale: z.enum(["vi", "en"]),
+    locale: z.enum(locales),
     status: z.enum(["new", "answered", "archived"]),
     createdAt: z.string(),
     target: z.object({ kind: z.enum(["book", "idea"]), title: z.string() }),

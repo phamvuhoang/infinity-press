@@ -1,7 +1,7 @@
 {
   "llms": {
     "heading": "English",
-    "intro": "Infinity Books publishes Phuong Bui's books on awareness, love, family, money and action. Ebooks are read in the browser on this site; printed books are sold on Shopee, Fahasa and Tiki.",
+    "intro": "Infinity Books Press curates world classics and their translations. Each work can have several language editions, and ebooks are read in the browser on this site.",
     "authors": "Authors",
     "series": "Series",
     "topics": "Topics",
@@ -15,8 +15,8 @@
     "signOut": "Sign out",
     "skipToContent": "Skip to main content",
     "library": "Library",
-    "switchLocale": "Đọc bằng tiếng Việt",
-    "switchLocaleShort": "VI",
+    "switchLocale": "Choose language",
+    "switchLocaleShort": "Language",
     "books": "Books",
     "search": "Search",
     "ideas": "Ideas",
@@ -78,44 +78,59 @@
     }
   },
   "home": {
-    "eyebrow": "A lasting home for readers",
-    "title": "Keep the books that shape your world close.",
-    "description": "Infinity Books is beginning with a secure personal account, ready to become a thoughtful home for your reading life.",
+    "eyebrow": "World classics, in your language",
+    "title": "Classic works, brought closer through every language.",
+    "description": "Infinity Books Press curates the world’s classic works, presents their translations, and lets you read right in your browser. Explore a work, choose a language, and find the edition that suits you.",
     "getStarted": "Get started",
     "coverQuote": "Stories without an ending.",
     "journeyTitle": "Continue\nthe journey",
-    "journeySteps": ["If you have read", "Try", "Then"],
-    "values": {
-      "calm": {
-        "title": "Calm and steady",
-        "copy": "Not the absence of storms, but the ability to stand when they come."
+    "journeySteps": [
+      "If you have read",
+      "Try",
+      "Then"
+    ],
+    "platform": {
+      "eyebrow": "About the Press",
+      "title": "One work, many editions.",
+      "copy": "Each classic can have several language editions. Every edition has its own translation, price and reading access, so you only choose what you want to read."
+    },
+    "howItWorks": {
+      "explore": {
+        "title": "Explore a work",
+        "copy": "Browse classics by author or topic and see which language editions are available."
       },
-      "love": {
-        "title": "Love, always in abundance",
-        "copy": "Love is not something to find. It is what remains when we stop hiding it."
+      "language": {
+        "title": "Choose a language",
+        "copy": "Each edition names its language and price before you buy. Changing the site language never changes the edition you chose."
       },
-      "abundance": {
-        "title": "Abundance on every level",
-        "copy": "Money, time, relationships, health. Enough in one place is enough in the others."
+      "read": {
+        "title": "Read in your browser",
+        "copy": "Open your library and read on any device. Your progress is saved separately for every edition."
       }
     },
-    "footerTagline": "A new home for enduring stories.",
+    "footerTagline": "World classics, one language at a time.",
     "featured": {
-      "eyebrow": "Featured book",
+      "eyebrow": "Featured work",
       "sample": "Read a sample",
-      "view": "View the book"
+      "view": "View the work"
     },
-    "topicsTitle": "Explore what you are sitting with",
+    "topicsTitle": "Explore by topic",
     "topicsLink": "All topics",
-    "shelfTitle": "The Infinity\nshelf",
-    "shelfDescription": "Ordered by the reading journey, not by sales. Start at the beginning, then move on to love, family, and work.",
-    "authorEyebrow": "Author",
-    "authorLink": "Explore work by {name} →"
+    "shelfTitle": "Featured\nworks",
+    "shelfDescription": "A growing shelf of classic works. Each card names the language of the edition you will read."
   },
   "catalog": {
+    "editions": {
+      "label": "Language editions",
+      "notOnSale": "Not on sale yet",
+      "invalid": "That edition is not available. Choose one of the editions below.",
+      "ebookIn": "Ebook · {language}",
+      "fallbackNote": "There is no {requested} edition yet. This is the {language} edition.",
+      "metadataNote": "Title and description are shown in {language}."
+    },
     "quoteCard": {
       "eyebrow": "A quote from",
-      "sharedFrom": "Shared from Infinity Books",
+      "sharedFrom": "Shared from Infinity Books Press",
       "readSample": "Read a sample",
       "openBook": "About the book"
     },
@@ -131,7 +146,7 @@
     "books": {
       "eyebrow": "Catalog",
       "title": "All books",
-      "description": "Every book you can read on Infinity Books.",
+      "description": "Every book you can read on Infinity Books Press.",
       "filtersTitle": "Filter books",
       "topic": "Topic",
       "author": "Author",
@@ -170,22 +185,23 @@
       "countOther": "{count} reviews",
       "average": "Average rating",
       "write": "Write a review",
-      "ask": "Ask the author",
-      "authorReply": "Reply from the author:",
+      "ask": "Ask the editors",
+      "authorReply": "Reply from the editors:",
       "anonymousReader": "Reader",
       "empty": "No reviews yet."
     },
     "bundle": {
       "eyebrow": "Bundle",
-      "itemCountOne": "{count} book",
-      "itemCountOther": "{count} books",
+      "itemCountOne": "{count} edition",
+      "itemCountOther": "{count} editions",
       "includes": "In this bundle",
-      "priceNote": "One price for the whole bundle. It does not change if you already own some of these books.",
-      "ownedSome": "You already own {owned} of {total} books in this bundle.",
-      "ownedAll": "You already own every book in this bundle.",
+      "priceNote": "One price for the whole bundle. It does not change if you already own some of these editions.",
+      "ownedSome": "You already own {owned} of {total} editions in this bundle.",
+      "ownedAll": "You already own every edition in this bundle.",
       "buy": "Buy bundle",
       "library": "Go to your library",
-      "empty": "This bundle has no books to show right now."
+      "empty": "This bundle has no editions to show right now.",
+      "languages": "Languages in this bundle: {languages}."
     },
     "actions": {
       "read": "Read now",
@@ -201,6 +217,9 @@
       "no-free-offer": "This book is no longer free.",
       "payments-unavailable": "Buying ebooks is not available yet.",
       "not-purchasable": "This book cannot be bought right now.",
+      "currency-unavailable": "This edition cannot be paid for by bank transfer yet.",
+      "choose-edition": "Choose an edition to buy.",
+      "price-changed": "The price changed. Check the new price and try again.",
       "unexpected": "Something went wrong. Please try again."
     },
     "entity": {
@@ -213,7 +232,7 @@
     },
     "search": {
       "title": "Search",
-      "description": "Search Infinity Books for titles, authors, ideas, articles, series, and topics.",
+      "description": "Search Infinity Books Press for titles, authors, ideas, articles, series, and topics.",
       "label": "Search books, authors, ideas, articles, series, and topics",
       "placeholder": "Title, author, or topic",
       "submit": "Search",
@@ -250,7 +269,7 @@
       "relatedBooks": "Related books",
       "relatedIdeas": "Related ideas",
       "topics": "Topics",
-      "ask": "Ask the author about this"
+      "ask": "Ask the editors about this"
     },
     "article": {
       "eyebrow": "Article",
@@ -265,7 +284,7 @@
   "checkout": {
     "eyebrow": "Checkout",
     "title": "Review your order",
-    "description": "You are buying an ebook for your Infinity Books account.",
+    "description": "You are buying an ebook for your Infinity Books Press account.",
     "total": "Total",
     "account": "Account",
     "pay": "Pay",
@@ -301,12 +320,6 @@
       "invalid": "This code cannot be used.",
       "rateLimited": "Too many codes have been tried. Wait a few minutes and try again.",
       "unavailable": "This order cannot take a code right now."
-    },
-    "sepay": {
-      "eyebrow": "Payment",
-      "title": "Taking you to SePay",
-      "description": "You will pay by scanning a VietQR code with your banking app. If nothing happens, use the button below.",
-      "continue": "Continue to SePay"
     },
     "simulate": {
       "eyebrow": "Payment simulator",
@@ -400,17 +413,35 @@
   },
   "account": {
     "eyebrow": "Your account",
-    "title": "Welcome to Infinity Books",
-    "description": "Your secure account is ready. Your library and reading features will arrive here as Infinity Books grows.",
+    "title": "Welcome to Infinity Books Press",
+    "description": "Your secure account is ready. Your library and reading features will arrive here as Infinity Books Press grows.",
     "detailsTitle": "Account details",
     "detailsDescription": "The email connected to your account."
   },
   "library": {
+    "report": {
+      "title": "Report a translation error",
+      "intro": "Tell the editors what looks wrong in {title}. Reports are read by the editorial team; they are not sent to the author.",
+      "place": "Where you were reading",
+      "messageLabel": "What is wrong?",
+      "counter": "{count}/2000",
+      "send": "Send report",
+      "sent": "Thank you. The editors will look at it.",
+      "back": "Back to your library",
+      "errors": {
+        "empty": "Describe the problem first.",
+        "tooLong": "Keep it to 2000 characters.",
+        "markup": "Please use plain text.",
+        "notAllowed": "This edition is not in your library.",
+        "tooMany": "You have sent several reports recently. Please try again later.",
+        "failed": "Something went wrong. Please try again."
+      }
+    },
     "eyebrow": "Your library",
     "title": "Keep reading where you left off",
     "description": "Books you unlock will live here.",
     "emptyStateTitle": "No books yet",
-    "emptyStateDescription": "Once you unlock a book, it will appear in your library. The catalog is arriving in the next phase of Infinity Books.",
+    "emptyStateDescription": "Once you unlock a book, it will appear in your library.",
     "continueReading": "Continue reading",
     "progressLabel": "read",
     "states": {
@@ -435,6 +466,7 @@
     },
     "reviews": {
       "eyebrow": "Your review",
+      "chooseEdition": "Which edition are you reviewing?",
       "ratingLabel": "Rating",
       "bodyLabel": "Review",
       "counter": "{count}/1000",
@@ -447,7 +479,7 @@
         "published": "Published",
         "rejected": "Not published"
       },
-      "authorReply": "Reply from the author",
+      "authorReply": "Reply from the editors",
       "errors": {
         "notEntitled": "You need to own this book to review it.",
         "failed": "Could not save. Try again.",
@@ -457,12 +489,12 @@
       "saved": "Saved. Your review will appear once it is approved."
     },
     "questions": {
-      "title": "Ask the author",
+      "title": "Ask the editors",
       "about": "About: {title}",
       "bodyLabel": "Your question",
       "counter": "{count}/500",
       "send": "Send question",
-      "sent": "Sent. If the author answers, you will get an email.",
+      "sent": "Sent. If the editors answer, you will get an email.",
       "mineTitle": "Your questions",
       "readAnswer": "Read the answer",
       "states": {
@@ -471,7 +503,7 @@
         "archived": "Archived"
       },
       "errors": {
-        "tooMany": "You already have 5 questions waiting for an answer. Wait for the author to answer first.",
+        "tooMany": "You already have 5 questions waiting for an answer. Wait for the editors to answer first.",
         "targetMissing": "This content no longer exists.",
         "failed": "Could not send. Try again.",
         "body": "Write your question (up to 500 characters, no HTML).",
@@ -600,7 +632,12 @@
     "relatedBooks": "Continue reading",
     "noRelatedBooks": "No recommendations yet.",
     "rateBook": "Rate this book",
-    "askAuthor": "Ask the author"
+    "askAuthor": "Ask the editors",
+    "reportError": "Report a translation error",
+    "chooseEdition": {
+      "title": "Choose an edition to read",
+      "description": "You own more than one language edition of this work."
+    }
   },
   "forbidden": {
     "title": "Access denied",
@@ -613,42 +650,42 @@
       "subjectGeneric": "Your new book is ready",
       "greetingNamed": "Hi {name},",
       "greetingGeneric": "Hi,",
-      "readyWithTitle": "“{title}” is now in your Infinity Books library and ready to read.",
-      "readyGeneric": "Your new book is now in your Infinity Books library and ready to read.",
+      "readyWithTitle": "“{title}” is now in your Infinity Books Press library and ready to read.",
+      "readyGeneric": "Your new book is now in your Infinity Books Press library and ready to read.",
       "openLibrary": "Open your library",
-      "signOff": "Happy reading,\nInfinity Books"
+      "signOff": "Happy reading,\nInfinity Books Press"
     },
     "giftClaim": {
-      "subjectFromName": "{name} sent you a gift on Infinity Books",
-      "subjectGeneric": "You have been sent a gift on Infinity Books",
+      "subjectFromName": "{name} sent you a gift on Infinity Books Press",
+      "subjectGeneric": "You have been sent a gift on Infinity Books Press",
       "greeting": "Hi,",
-      "introNamed": "{name} has sent you a gift on Infinity Books.",
-      "introGeneric": "Someone has sent you a gift on Infinity Books.",
+      "introNamed": "{name} has sent you a gift on Infinity Books Press.",
+      "introGeneric": "Someone has sent you a gift on Infinity Books Press.",
       "messageLabel": "Their message:",
       "includesLabel": "Your gift includes:",
       "claim": "Open your gift",
       "claimHint": "Open the link and sign in - or create an account - to add these books to your library. The link can only be used once.",
-      "signOff": "Happy reading,\nInfinity Books"
+      "signOff": "Happy reading,\nInfinity Books Press"
     },
     "questionAnswered": {
-      "subject": "The author answered your question",
+      "subject": "The editors answered your question",
       "greetingNamed": "Hi {name},",
       "greetingGeneric": "Hi,",
-      "body": "The question you sent on Infinity Books has been answered in: “{title}”.",
+      "body": "The question you sent on Infinity Books Press has been answered in: “{title}”.",
       "read": "Read the answer",
-      "signOff": "Happy reading,\nInfinity Books"
+      "signOff": "Happy reading,\nInfinity Books Press"
     },
     "reviewReplied": {
-      "subjectWithTitle": "The author replied to your review of “{title}”",
-      "subjectGeneric": "The author replied to your review",
+      "subjectWithTitle": "The editors replied to your review of “{title}”",
+      "subjectGeneric": "The editors replied to your review",
       "greetingNamed": "Hi {name},",
       "greetingGeneric": "Hi,",
-      "introWithTitle": "The author replied to the review you wrote of “{title}” on Infinity Books.",
-      "introGeneric": "The author replied to the review you wrote on Infinity Books.",
+      "introWithTitle": "The editors replied to the review you wrote of “{title}” on Infinity Books Press.",
+      "introGeneric": "The editors replied to the review you wrote on Infinity Books Press.",
       "yourReview": "Your review ({rating}/5):",
-      "authorReply": "The author's reply:",
+      "authorReply": "The editors' reply:",
       "open": "Open your review",
-      "signOff": "Happy reading,\nInfinity Books"
+      "signOff": "Happy reading,\nInfinity Books Press"
     }
   }
 }

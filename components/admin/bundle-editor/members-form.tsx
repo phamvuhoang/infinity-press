@@ -31,7 +31,7 @@ export function BundleMembersForm({
   members: AdminBundleMemberDTO[];
 }) {
   const [state, formAction] = useActionState(action, initialAdminFormState);
-  const [ids, setIds] = useState(() => members.map((member) => member.bookId));
+  const [ids, setIds] = useState(() => members.map((member) => member.editionId));
   const [candidate, setCandidate] = useState("");
   const [announcement, setAnnouncement] = useState("");
   // A ref, not state: this is a one-shot instruction to the DOM after the reorder renders, and
@@ -42,12 +42,12 @@ export function BundleMembersForm({
 
   const known = new Map<string, BundleBookOption>([
     ...members.map((member): [string, BundleBookOption] => [
-      member.bookId,
-      { id: member.bookId, title: member.title, published: member.published },
+      member.editionId,
+      { id: member.editionId, title: member.title, published: member.published },
     ]),
     ...books.map((book): [string, BundleBookOption] => [book.id, book]),
   ]);
-  const titleOf = (id: string) => known.get(id)?.title ?? "Unknown book";
+  const titleOf = (id: string) => known.get(id)?.title ?? "Unknown edition";
   const available = books.filter((book) => !ids.includes(book.id));
 
   // Focus is restored after the re-render that the move caused, because the button to focus may be
@@ -84,10 +84,10 @@ export function BundleMembersForm({
   return (
     <form action={formAction} className="space-y-5">
       {ids.map((id) => (
-        <input key={id} name="bookIds" type="hidden" value={id} />
+        <input key={id} name="editionIds" type="hidden" value={id} />
       ))}
-      {ids.length === 0 ? <p className="text-sm text-sage-text">This bundle has no books yet.</p> : null}
-      <ol aria-describedby={state.fieldErrors.bookIds ? errorId : undefined} className="min-w-0 border-t border-sand">
+      {ids.length === 0 ? <p className="text-sm text-sage-text">This bundle has no editions yet.</p> : null}
+      <ol aria-describedby={state.fieldErrors.editionIds ? errorId : undefined} className="min-w-0 border-t border-sand">
         {ids.map((id, index) => {
           const book = known.get(id);
           const title = titleOf(id);
@@ -139,9 +139,9 @@ export function BundleMembersForm({
       </p>
       <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <div className="min-w-0 space-y-2">
-          <Label htmlFor="bundle-member-candidate">Add a book to the bundle</Label>
+          <Label htmlFor="bundle-member-candidate">Add an edition to the bundle</Label>
           <NativeSelect id="bundle-member-candidate" onChange={(event) => setCandidate(event.target.value)} value={candidate}>
-            <option value="">Choose a book</option>
+            <option value="">Choose an edition</option>
             {available.map((book) => (
               <option key={book.id} value={book.id}>
                 {book.published ? book.title : `${book.title} (not published)`}
@@ -162,7 +162,7 @@ export function BundleMembersForm({
           Add
         </Button>
       </div>
-      <FieldError id={errorId} message={state.fieldErrors.bookIds} />
+      <FieldError id={errorId} message={state.fieldErrors.editionIds} />
       <FormStatus state={state} />
       <SubmitButton pendingLabel="Saving…">Save members</SubmitButton>
     </form>

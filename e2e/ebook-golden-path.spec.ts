@@ -9,6 +9,7 @@ import {
   buildFixtureEpub,
 } from "./support/publication";
 import { createAnonClient, createServiceRoleClient } from "./support/supabase";
+import { soleEditionId } from "./support/editions";
 
 // The complete one-book golden path, end to end:
 //
@@ -203,6 +204,9 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
   await page.getByLabel("Author name").fill(authorName);
   await page.getByLabel("Title").fill(bookTitle);
   await page.getByLabel("Slug").fill(`gp-slug-${suffix}`);
+  // The form defaults to the platform language (English); this flow edits the Vietnamese copy.
+  await page.locator("#locale-trigger").click();
+  await page.locator('[role="listbox"]').getByRole("option", { name: "Vietnamese (vi)" }).click();
   await page.getByLabel("Market").fill("VN");
   await page.getByLabel("Currency").fill("VND");
   await page.getByLabel("Price (minor units)").fill("1500");
@@ -226,7 +230,7 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
   await page.getByLabel("Description (vi)").fill("Localized author copy for the golden path.");
   await page.getByRole("button", { name: "Save vi copy", exact: true }).click();
   await expect(page.locator("form").filter({ has: page.getByRole("button", { name: "Save vi copy", exact: true }) }).getByRole("status")).toHaveText("Saved.");
-  await page.goto(`/admin/books/${bookId}`);
+  await page.goto(`/admin/books/${bookId}/editions/${await soleEditionId(bookId)}`);
 
   // ---- upload the EPUB -------------------------------------------------------------------------
   await page.locator("#epub-file").setInputFiles({
@@ -279,6 +283,22 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
   const previewFrame = page.frameLocator("iframe[title='Preview of OEBPS/text/chapter1.xhtml']");
   await expect(previewFrame.getByText(CHAPTER_ONE_MARKER)).toBeVisible({ timeout: 15_000 });
 
+  // An edition nobody has approved cannot go live: the editor is told why.
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByTestId("publication-action-message")).toContainText("not been editorially approved");
+
+  // Record the provenance and approve it, through the supported UI.
+  await page.goto(`/admin/books/${bookId}/editions/${await soleEditionId(bookId)}`);
+  await page.getByLabel("Source of the translation").fill("Public-domain translation, 1925 (e2e fixture)");
+  await page.getByLabel("Rights note").fill("Fixture text written for the test suite.");
+  await page.getByLabel("Territories").fill("Worldwide");
+  await page.getByRole("button", { name: "Save provenance" }).click();
+  await expect(page.getByText("Saved.").first()).toBeVisible();
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  await expect(page.getByTestId("editorial-state")).toContainText("Approved");
+
+  await page.goto(`/admin/publications/${asset.id}`);
   page.once("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByTestId("publication-action-message")).toContainText("Published.");
@@ -461,7 +481,7 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
 
   const { error: grantError } = await adminClient.rpc("grant_complimentary_entitlement", {
     p_profile_id: readerProfile.id,
-    p_book_id: bookId,
+    p_edition_id: await soleEditionId(bookId),
     p_reason: "Golden path end-to-end verification",
   });
   if (grantError) throw grantError;
@@ -474,7 +494,7 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
   const libraryItem = reader.getByRole("listitem").filter({ hasText: bookTitle });
   await expect(libraryItem).toBeVisible();
   await libraryItem.getByRole("link", { name: "Continue reading" }).click();
-  await expect(reader).toHaveURL(new RegExp(`/en/read/${bookId}$`));
+  await expect(reader).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
 
   // The engine mounts only after POST /api/reader/sessions succeeds, so reaching a rendered
   // chapter proves session minting, the entitled manifest, and entitled resource delivery all

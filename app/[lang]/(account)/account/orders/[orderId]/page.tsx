@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
 import { formatPrice } from "@/lib/catalog/price";
-import { customerOrderStatus, singleBookOf } from "@/lib/commerce/checkout-view";
+import { customerOrderStatus, readHrefOf, singleBookOf } from "@/lib/commerce/checkout-view";
 import { resolveManualTransferState } from "@/lib/commerce/manual-transfer-view";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
@@ -16,7 +16,7 @@ import { getCustomerOrder } from "@/lib/data/orders";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { fillCountTemplate, fillTemplate, formatDate } from "@/lib/i18n/format";
-import { getCatalogRoutes, getCommerceRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
+import { getCommerceRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -123,7 +123,7 @@ export default async function OrderPage({ params }: Props) {
                 label says so, rather than promising a reader a book it cannot take them to. */}
             {canRead ? (
               <Button
-                render={<Link href={singleBook ? getCatalogRoutes(locale).read(singleBook.bookId) : getLocaleRoutes(locale).library} />}
+                render={<Link href={singleBook ? readHrefOf(locale, singleBook) : getLocaleRoutes(locale).library} />}
                 size="lg"
               >
                 {singleBook ? copy.read : dictionary.catalog.bundle.library}

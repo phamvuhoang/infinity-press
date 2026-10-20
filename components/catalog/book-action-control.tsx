@@ -14,30 +14,35 @@ import { getCatalogRoutes } from "@/lib/i18n/routes";
 export function BookActionControl({
   action,
   signedIn,
-  bookId,
+  readHref,
   bookPath,
   locale,
   copy,
   getFreeAction,
   buyAction,
+  disabled = false,
 }: {
   action: BookAction;
   signedIn: boolean;
-  bookId: string;
+  // Where Read now goes: the reader page of the EDITION this control is about.
+  readHref: string;
   bookPath: string;
   locale: Locale;
   copy: Dictionary["catalog"]["actions"];
   // Bound Server Actions from the book page. The control only renders them; the actions and
-  // create_ebook_order/acquire_free_ebook re-check everything.
+  // create_edition_order/acquire_free_edition re-check everything.
   getFreeAction: () => Promise<void>;
   buyAction: () => Promise<void>;
+  // The server-rendered book page does not yet know which edition `?edition=` names, so its Buy
+  // form is inert until the browser has applied the query; a click before that must not buy the default.
+  disabled?: boolean;
 }) {
   const routes = getCatalogRoutes(locale);
 
   switch (action) {
     case "read":
       return (
-        <Button render={<Link href={routes.read(bookId)} />} size="lg">
+        <Button render={<Link href={readHref} />} size="lg">
           {copy.read}
         </Button>
       );
@@ -56,7 +61,7 @@ export function BookActionControl({
       }
       return (
         <form action={action === "get_free" ? getFreeAction : buyAction}>
-          <SubmitButton className="" pendingLabel={copy.pending} size="lg">
+          <SubmitButton className="" disabled={disabled} pendingLabel={copy.pending} size="lg">
             {label}
           </SubmitButton>
         </form>

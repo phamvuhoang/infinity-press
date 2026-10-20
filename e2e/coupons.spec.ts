@@ -44,7 +44,7 @@ test("a 100% code takes a reader from the book page into the reader", async ({ p
   await page.getByLabel("Enter a code").fill(code.toLowerCase());
   await page.getByRole("button", { name: "Apply", exact: true }).click();
 
-  await expect(page).toHaveURL(new RegExp(`/en/read/${bookId}$`));
+  await expect(page).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
   expect(await activeEntitlementCount(reader.profileId, bookId)).toBe(1);
 });
 

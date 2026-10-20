@@ -1,6 +1,34 @@
 begin;
 select plan(38);
 
+-- The work-level order entry point was removed by the contract migration. This fixture stands in for
+-- it (one edition on sale -> that edition's best payable offer) so these older tests keep exercising
+-- the order machinery through create_edition_order.
+create function public.create_ebook_order(p_book_id uuid) returns uuid
+language plpgsql security definer set search_path = '' as $f$
+declare v_edition_ids uuid[]; v_offer_id uuid;
+begin
+  select array_agg(distinct s.edition_id) into v_edition_ids
+  from public.offers o join public.skus s on s.id = o.sku_id and s.active
+  join public.editions ed on ed.id = s.edition_id
+  where ed.book_id = p_book_id and ed.status = 'published' and ed.active_publication_id is not null
+    and o.active and public.offer_effective_price_minor(o) > 0
+    and (o.starts_at is null or o.starts_at <= now()) and (o.ends_at is null or o.ends_at > now());
+  if coalesce(cardinality(v_edition_ids), 0) = 0 then
+    raise exception 'create_ebook_order: book % is not purchasable', p_book_id using errcode = 'EB012';
+  end if;
+  if cardinality(v_edition_ids) > 1 then
+    raise exception 'create_ebook_order: book % has several editions on sale; name one', p_book_id using errcode = 'EB042';
+  end if;
+  select o.id into v_offer_id from public.offers o join public.skus s on s.id = o.sku_id and s.active
+  where s.edition_id = v_edition_ids[1] and o.active and public.offer_effective_price_minor(o) > 0
+    and (o.starts_at is null or o.starts_at <= now()) and (o.ends_at is null or o.ends_at > now())
+  order by public.currency_is_payable(o.currency) desc, public.offer_effective_price_minor(o), o.currency limit 1;
+  return public.create_edition_order(v_edition_ids[1], v_offer_id, null);
+end $f$;
+revoke all on function public.create_ebook_order(uuid) from public, anon;
+grant execute on function public.create_ebook_order(uuid) to authenticated;
+
 -- S9: create_bundle_order and the public read policy for a published bundle's offer
 -- (docs/superpowers/specs/2026-09-21-s9-bundles-and-gifts-design.md 5 and 6.3).
 --
@@ -58,6 +86,7 @@ insert into public.skus (id, edition_id, sku_code)
 select ('c5000000-0000-0000-0000-00000000000' || n)::uuid, ('c4000000-0000-0000-0000-00000000000' || n)::uuid, 'S9-BO-SKU-' || n
 from generate_series(1, 5) as n;
 
+
 -- Book 5's own publication and paid offer: everything create_ebook_order needs.
 insert into public.offers (id, sku_id, market_code, currency, price_minor)
 values ('c6000000-0000-0000-0000-000000000009', 'c5000000-0000-0000-0000-000000000005', 'VN', 'VND', 99000);
@@ -66,8 +95,22 @@ insert into public.ebook_assets (id, edition_id, source_storage_key, version, st
 values ('c8000000-0000-0000-0000-000000000005', 'c4000000-0000-0000-0000-000000000005', 's9-bo/5.epub', 1, 'published');
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
 values ('c9000000-0000-0000-0000-000000000005', 'c8000000-0000-0000-0000-000000000005', 1, 's9-bo/5/manifest.json', 'published');
-update public.books set active_publication_id = 'c9000000-0000-0000-0000-000000000005'
-where id = 'c2000000-0000-0000-0000-000000000005';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'c9000000-0000-0000-0000-000000000005' and (b.id = 'c2000000-0000-0000-0000-000000000005');
+
+-- Press: a bundle member is an EDITION that can be sold now, so each fixture edition of a published
+-- work gets a live publication.
+insert into public.ebook_assets (edition_id, source_storage_key, version, status)
+select e.id, 'fx/' || e.id || '.epub', 1, 'published'
+from public.editions e join public.books b on b.id = e.book_id
+where b.status = 'published' and e.active_publication_id is null;
+insert into public.ebook_publications (ebook_asset_id, version, manifest_key, status, epub_language)
+select a.id, 1, 'fx/' || a.id || '.json', 'published', 'vi' from public.ebook_assets a where a.source_storage_key like 'fx/%';
+update public.editions e set status = 'published', active_publication_id = p.id
+from public.ebook_publications p join public.ebook_assets a on a.id = p.ebook_asset_id
+where a.edition_id = e.id and a.source_storage_key like 'fx/%';
+
 
 -- Bundles: 1 sells, 2 is a draft, 3 has only an inactive offer, 4 has no published member, 5 is
 -- the price-change bundle and is localized in English only.
@@ -86,14 +129,14 @@ insert into public.bundle_localizations (bundle_id, locale, slug, title) values
   ('c7000000-0000-0000-0000-000000000004', 'vi', 's9-bo-goi-rong', 'Gói rỗng S9'),
   ('c7000000-0000-0000-0000-000000000005', 'en', 's9-bo-english-bundle', 'S9 English Bundle');
 
-insert into public.bundle_books (bundle_id, book_id, position) values
-  ('c7000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000001', 1),
-  ('c7000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000002', 2),
-  ('c7000000-0000-0000-0000-000000000001', 'c2000000-0000-0000-0000-000000000004', 3),
-  ('c7000000-0000-0000-0000-000000000002', 'c2000000-0000-0000-0000-000000000001', 1),
-  ('c7000000-0000-0000-0000-000000000003', 'c2000000-0000-0000-0000-000000000001', 1),
-  ('c7000000-0000-0000-0000-000000000004', 'c2000000-0000-0000-0000-000000000004', 1),
-  ('c7000000-0000-0000-0000-000000000005', 'c2000000-0000-0000-0000-000000000003', 1);
+insert into public.bundle_editions (bundle_id, edition_id, position) values
+  ('c7000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000001', 1),
+  ('c7000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000002', 2),
+  ('c7000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000004', 3),
+  ('c7000000-0000-0000-0000-000000000002', 'c4000000-0000-0000-0000-000000000001', 1),
+  ('c7000000-0000-0000-0000-000000000003', 'c4000000-0000-0000-0000-000000000001', 1),
+  ('c7000000-0000-0000-0000-000000000004', 'c4000000-0000-0000-0000-000000000004', 1),
+  ('c7000000-0000-0000-0000-000000000005', 'c4000000-0000-0000-0000-000000000003', 1);
 
 insert into public.offers (id, bundle_id, market_code, currency, price_minor, active) values
   ('c6000000-0000-0000-0000-000000000001', 'c7000000-0000-0000-0000-000000000001', 'VN', 'VND', 199000, true),
@@ -110,7 +153,7 @@ from t_ids, (values ('c2000000-0000-0000-0000-000000000001'::uuid), ('c2000000-0
 insert into public.entitlements (profile_id, book_id, source_type, actor_profile_id, reason, status)
 select d_id, 'c2000000-0000-0000-0000-000000000001', 'admin_grant', d_id, 's9 bundle order fixture', 'active' from t_ids;
 
-update public.commerce_settings set payments_enabled = true;
+update public.commerce_settings set payments_enabled = true, payment_provider = 'simulator';
 
 -- Privileges (1-2)
 select is(has_function_privilege('anon', 'public.create_bundle_order(uuid)', 'execute'), false, 'anon cannot create a bundle order');
@@ -146,8 +189,8 @@ select results_eq(
 );
 select is(
   (select title_snapshot from public.orders where id = (select order_id from t_orders where label = 'a-first')),
-  'Gói khởi đầu S9',
-  'the order snapshots the Vietnamese bundle title'
+  'S9 Starter Bundle',
+  'the order snapshots the bundle title in the default metadata locale (English)'
 );
 select is(
   (select count(*)::int from public.order_items where order_id = (select order_id from t_orders where label = 'a-first')),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { type Locale } from "@/lib/i18n/config";
 
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -17,7 +18,7 @@ export function KnowledgeSeoForm({
   hasLocalization,
   action,
 }: {
-  locale: "vi" | "en";
+  locale: Locale;
   defaults: { seoTitle: string | null; seoDescription: string | null };
   hasLocalization: boolean;
   action: (state: AdminFormState, formData: FormData) => Promise<AdminFormState>;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { type Locale } from "@/lib/i18n/config";
 
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import {
@@ -31,7 +32,7 @@ export function KnowledgeLocalizationForm({
 }: {
   kind: "idea" | "article";
   entityId: string;
-  locale: "vi" | "en";
+  locale: Locale;
   localization: AdminIdeaLocalizationDTO | AdminArticleLocalizationDTO | null;
   action: (state: AdminFormState, formData: FormData) => Promise<AdminFormState>;
   books: KnowledgeBookOption[];

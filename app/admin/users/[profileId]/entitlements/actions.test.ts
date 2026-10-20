@@ -23,9 +23,9 @@ const entitlementId = "80000000-0000-0000-0000-000000000001";
 
 it("grants and returns to the user detail page", async () => {
   vi.mocked(grantComplimentaryEntitlement).mockResolvedValue({ entitlementId });
-  await expect(grantComplimentaryEntitlementAction(profileId, "book-id", "Reviewer")).resolves.toEqual({ ok: true, entitlementId });
+  await expect(grantComplimentaryEntitlementAction(profileId, "edition-id", "Reviewer")).resolves.toEqual({ ok: true, entitlementId });
   expect(requireAdmin).toHaveBeenCalledWith({ next: `/admin/users/${profileId}` });
-  expect(grantComplimentaryEntitlement).toHaveBeenCalledWith(profileId, "book-id", "Reviewer");
+  expect(grantComplimentaryEntitlement).toHaveBeenCalledWith(profileId, "edition-id", "Reviewer");
   expect(revalidatePath).toHaveBeenCalledExactlyOnceWith(`/admin/users/${profileId}`);
 });
 

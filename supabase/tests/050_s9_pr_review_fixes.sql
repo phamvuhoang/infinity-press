@@ -52,6 +52,19 @@ insert into public.skus (id, edition_id, sku_code) values
   ('d5000000-0000-0000-0000-000000000001', 'd4000000-0000-0000-0000-000000000001', 'S9-PRFIX-SKU-1'),
   ('d5000000-0000-0000-0000-000000000002', 'd4000000-0000-0000-0000-000000000002', 'S9-PRFIX-SKU-2');
 
+
+-- Press: a bundle member is an EDITION that can be sold now, so each fixture edition of a published
+-- work gets a live publication.
+insert into public.ebook_assets (edition_id, source_storage_key, version, status)
+select e.id, 'fx/' || e.id || '.epub', 1, 'published'
+from public.editions e join public.books b on b.id = e.book_id
+where b.status = 'published' and e.active_publication_id is null;
+insert into public.ebook_publications (ebook_asset_id, version, manifest_key, status, epub_language)
+select a.id, 1, 'fx/' || a.id || '.json', 'published', 'vi' from public.ebook_assets a where a.source_storage_key like 'fx/%';
+update public.editions e set status = 'published', active_publication_id = p.id
+from public.ebook_publications p join public.ebook_assets a on a.id = p.ebook_asset_id
+where a.edition_id = e.id and a.source_storage_key like 'fx/%';
+
 insert into public.bundles (id, status) values
   ('d7000000-0000-0000-0000-000000000001', 'published'),
   ('d7000000-0000-0000-0000-000000000002', 'draft');
@@ -60,11 +73,11 @@ insert into public.bundle_localizations (bundle_id, locale, slug, title, descrip
   ('d7000000-0000-0000-0000-000000000001', 'vi', 's9-prfix-bo-mot', 'Bộ một', 'Mô tả'),
   ('d7000000-0000-0000-0000-000000000002', 'vi', 's9-prfix-bo-hai', 'Bộ hai', 'Mô tả');
 
-insert into public.bundle_books (bundle_id, book_id, position) values
-  ('d7000000-0000-0000-0000-000000000001', 'd2000000-0000-0000-0000-000000000001', 1),
-  ('d7000000-0000-0000-0000-000000000001', 'd2000000-0000-0000-0000-000000000002', 2),
-  ('d7000000-0000-0000-0000-000000000002', 'd2000000-0000-0000-0000-000000000001', 1),
-  ('d7000000-0000-0000-0000-000000000002', 'd2000000-0000-0000-0000-000000000002', 2);
+insert into public.bundle_editions (bundle_id, edition_id, position) values
+  ('d7000000-0000-0000-0000-000000000001', 'd4000000-0000-0000-0000-000000000001', 1),
+  ('d7000000-0000-0000-0000-000000000001', 'd4000000-0000-0000-0000-000000000002', 2),
+  ('d7000000-0000-0000-0000-000000000002', 'd4000000-0000-0000-0000-000000000001', 1),
+  ('d7000000-0000-0000-0000-000000000002', 'd4000000-0000-0000-0000-000000000002', 2);
 
 insert into public.media_assets (owner_type, owner_id, kind, storage_key, alt_text)
 values ('bundle', 'd7000000-0000-0000-0000-000000000002', 'cover', 'bundles/d7000000-0000-0000-0000-000000000002/cover.jpg', 'Bìa');
@@ -293,10 +306,14 @@ select extensions.dblink_exec('mem_setup', $stmt$delete from public.order_items 
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.payments where order_id in (select id from public.orders where bundle_id = 'db700000-0000-0000-0000-000000000001')$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.orders where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.offers where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
-select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_books where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
+select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_editions where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
+select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_editions where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_localizations where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundles where id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.skus where sku_code like 'S9-MEM-SKU-%'$stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$update public.editions set active_publication_id = null where book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')$stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.ebook_publications where ebook_asset_id in (select id from public.ebook_assets where source_storage_key like 'fx-mem/%')$stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.ebook_assets where source_storage_key like 'fx-mem/%'$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.editions where book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.book_localizations where book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.books where id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')$stmt$);
@@ -343,6 +360,20 @@ select pg_temp.uncatalogued('mem_setup', $stmt$
   from public.editions e
   where e.book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')
 $stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$
+  insert into public.ebook_assets (edition_id, source_storage_key, version, status)
+  select e.id, 'fx-mem/' || e.id || '.epub', 1, 'published'
+  from public.editions e where e.book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')
+$stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$
+  insert into public.ebook_publications (ebook_asset_id, version, manifest_key, status, epub_language)
+  select a.id, 1, 'fx-mem/' || a.id || '.json', 'published', 'vi' from public.ebook_assets a where a.source_storage_key like 'fx-mem/%'
+$stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$
+  update public.editions e set status = 'published', active_publication_id = p.id
+  from public.ebook_publications p join public.ebook_assets a on a.id = p.ebook_asset_id
+  where a.edition_id = e.id and a.source_storage_key like 'fx-mem/%'
+$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$
   insert into public.bundles (id, status) values ('db700000-0000-0000-0000-000000000001', 'published')
 $stmt$);
@@ -351,9 +382,9 @@ select extensions.dblink_exec('mem_setup', $stmt$
   values ('db700000-0000-0000-0000-000000000001', 'vi', 's9-mem-bo', 'Bo ghep', 'Mo ta')
 $stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$
-  insert into public.bundle_books (bundle_id, book_id, position) values
-    ('db700000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000001', 1),
-    ('db700000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 2)
+  insert into public.bundle_editions (bundle_id, edition_id, position)
+  select 'db700000-0000-0000-0000-000000000001', e.id, row_number() over (order by e.book_id)
+  from public.editions e where e.book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002')
 $stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$
   insert into public.offers (bundle_id, market_code, currency, price_minor, active)
@@ -366,7 +397,7 @@ select extensions.dblink_exec('mem_admin', 'set local role authenticated');
 select extensions.dblink_exec('mem_admin', 'set local "request.jwt.claim.sub" = ''db100000-0000-0000-0000-000000000001''');
 -- dblink() rather than dblink_exec(), which refuses a statement that returns rows - and an RPC
 -- returning void still returns one.
-select * from extensions.dblink('mem_admin', $stmt$select public.admin_set_bundle_members('db700000-0000-0000-0000-000000000001', array['db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003']::uuid[])$stmt$) as t(v text);
+select * from extensions.dblink('mem_admin', $stmt$select public.admin_set_bundle_members('db700000-0000-0000-0000-000000000001', array(select e.id from public.editions e where e.book_id in ('db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003') order by e.book_id))$stmt$) as t(v text);
 
 -- The buyer arrives mid-change.
 select extensions.dblink_exec('mem_buyer', 'begin');
@@ -396,10 +427,14 @@ select extensions.dblink_exec('mem_setup', $stmt$delete from public.order_items 
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.payments where order_id in (select id from public.orders where bundle_id = 'db700000-0000-0000-0000-000000000001')$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.orders where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.offers where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
-select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_books where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
+select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_editions where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
+select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_editions where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundle_localizations where bundle_id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select extensions.dblink_exec('mem_setup', $stmt$delete from public.bundles where id = 'db700000-0000-0000-0000-000000000001'$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.skus where sku_code like 'S9-MEM-SKU-%'$stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$update public.editions set active_publication_id = null where book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')$stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.ebook_publications where ebook_asset_id in (select id from public.ebook_assets where source_storage_key like 'fx-mem/%')$stmt$);
+select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.ebook_assets where source_storage_key like 'fx-mem/%'$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.editions where book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.book_localizations where book_id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')$stmt$);
 select pg_temp.uncatalogued('mem_setup', $stmt$delete from public.books where id in ('db200000-0000-0000-0000-000000000001', 'db200000-0000-0000-0000-000000000002', 'db200000-0000-0000-0000-000000000003')$stmt$);

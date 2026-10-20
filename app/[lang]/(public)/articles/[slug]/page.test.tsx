@@ -46,7 +46,7 @@ const book: CatalogBookCard = {
   cover: null,
   offer: null,
   hasActivePublication: true,
-  hasSample: false,
+  hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
   series: null,
   topics: [],
   featured: false,
@@ -61,7 +61,8 @@ const relatedIdea: KnowledgeIdeaSummary = {
   shortAnswer: "Sometimes.",
   createdAt: "2026-09-01T00:00:00+00:00",
   updatedAt: "2026-09-02T00:00:00+00:00",
-  alternateSlug: null,
+  alternateSlugs: {},
+  metadataLocale: "en",
   topics: [],
 };
 
@@ -74,7 +75,8 @@ const article: KnowledgeArticlePage = {
   seoDescription: null,
   publishedAt: "2026-09-20T03:00:00+00:00",
   updatedAt: "2026-09-21T03:00:00+00:00",
-  alternateSlug: "doc-mua-thu",
+  alternateSlugs: { vi: "doc-mua-thu" },
+  metadataLocale: "en",
   author: { name: "Mai Tran", slug: "mai-tran" },
   blocks: [
     {
@@ -280,10 +282,11 @@ describe("ArticlePage", () => {
 
     vi.mocked(getArticlePage).mockResolvedValue({
       ...article,
-      alternateSlug: null,
+      alternateSlugs: {},
+      metadataLocale: "en",
     });
     render(await ArticlePage({ params }));
-    expect(header.props?.alternates).toBeUndefined();
+    expect(header.props?.alternates).toEqual({});
   });
 
   it("emits Article and breadcrumbs, and no FAQPage", async () => {
@@ -352,14 +355,15 @@ describe("generateMetadata", () => {
     expect(metadata.alternates?.languages).toEqual({
       en: "https://books.example/en/articles/autumn-reading",
       vi: "https://books.example/vi/articles/doc-mua-thu",
-      "x-default": "https://books.example/vi/articles/doc-mua-thu",
+      "x-default": "https://books.example/en/articles/autumn-reading",
     });
   });
 
   it("prefers the SEO overrides and names only the locales that exist", async () => {
     vi.mocked(getArticlePage).mockResolvedValue({
       ...article,
-      alternateSlug: null,
+      alternateSlugs: {},
+      metadataLocale: "en",
       seoTitle: "Read this autumn",
       seoDescription: "Five picks.",
     });

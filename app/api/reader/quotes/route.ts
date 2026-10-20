@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getServerEnv } from "@/lib/config/server-env";
 import { createSharedQuote, SharedQuoteCapError, SharedQuoteRefusedError } from "@/lib/data/shared-quotes";
-import { isLocale } from "@/lib/i18n/config";
+import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
 import { getRequestId } from "@/lib/observability/request-id";
 import { truncateBookQuote } from "@/lib/reader/quote";
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return readerJsonResponse(requestId, 400, { error: "Invalid request." });
     }
     const { quote } = truncateBookQuote(body.quote);
-    const locale = body.locale as "vi" | "en";
+    const locale = body.locale as Locale;
     try {
       const card = await createSharedQuote(context.publicationId, quote, locale);
       const url = new URL(getCatalogRoutes(locale).quoteCard(card.code), getServerEnv().siteUrl).toString();

@@ -14,7 +14,8 @@ function article(slug: string, title: string, publishedAt: string, author = { na
     excerpt: `About ${title}`,
     publishedAt,
     updatedAt: publishedAt,
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "en",
     author,
   } satisfies KnowledgeArticleSummary;
 }

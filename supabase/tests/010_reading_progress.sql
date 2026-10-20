@@ -61,10 +61,12 @@ insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key
   ('ab000000-0000-0000-0000-000000000051', 'ab000000-0000-0000-0000-000000000041', 1, 'ed2/asset-v1/manifest.json', 'published'),
   ('ab000000-0000-0000-0000-000000000052', 'ab000000-0000-0000-0000-000000000042', 2, 'ed/asset-v2/manifest.json', 'superseded');
 
-update public.books set active_publication_id = 'ab000000-0000-0000-0000-000000000050'
-where id = 'ab000000-0000-0000-0000-000000000020';
-update public.books set active_publication_id = 'ab000000-0000-0000-0000-000000000051'
-where id = 'ab000000-0000-0000-0000-000000000021';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'ab000000-0000-0000-0000-000000000050' and (b.id = 'ab000000-0000-0000-0000-000000000020');
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'ab000000-0000-0000-0000-000000000051' and (b.id = 'ab000000-0000-0000-0000-000000000021');
 
 -- admin_grant rather than free_order so no order fixture is needed; the source consistency CHECK
 -- requires an actor and a reason for this source type. The entitled reader also holds a grant on

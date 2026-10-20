@@ -37,7 +37,7 @@ describe("evaluateOperations", () => {
   });
 
   describe("stale_epub_job", () => {
-    const job = { bookId: "book-1", leaseExpiresAt: null };
+    const job = { bookId: "book-1", editionId: "edition-1", leaseExpiresAt: null };
 
     it("reports a queued or processing job older than 30 minutes", () => {
       const report = evaluateOperations(
@@ -104,7 +104,7 @@ describe("evaluateOperations", () => {
         rule: "stale_epub_job",
         occurredAt: minutesBefore(31),
         summary: expect.any(String),
-        repairPath: "/admin/books/book-1#epub",
+        repairPath: "/admin/books/book-1/editions/edition-1#epub",
       });
     });
   });
@@ -411,7 +411,7 @@ describe("evaluateOperations", () => {
   it("findings carry only the ID, rule, time, safe summary, and repair path", () => {
     const report = evaluateOperations(
       snapshot({
-        epubJobs: [{ id: "j", bookId: "b", status: "queued", updatedAt: minutesBefore(40), leaseExpiresAt: null }],
+        epubJobs: [{ id: "j", bookId: "b", editionId: "e", status: "queued", updatedAt: minutesBefore(40), leaseExpiresAt: null }],
         completedOrders: [{ id: "o", createdAt: minutesBefore(40), orderEntitlementStatuses: [] }],
         paymentEvents: [{ id: "e", orderId: "o", receivedAt: minutesBefore(40), processedAt: null }],
         outbox: [{ id: "n", profileId: "p", giftId: null, orderId: null, reviewId: null, entitlementStatus: "active", attemptCount: 4, leaseExpiresAt: null, sentAt: null, createdAt: minutesBefore(40) }],

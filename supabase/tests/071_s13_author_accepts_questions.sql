@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(10);
 
 -- Ask-the-author off per author: the public read answers false and submit_reader_question
 -- refuses the book with the same P0002 an unpublished book gets. Ideas are unaffected.
@@ -15,7 +15,9 @@ insert into public.books (id, canonical_key, original_language, primary_author_i
   ('e1320000-0000-0000-0000-000000000072', 's13-aq-closed-book', 'vi', 'e1330000-0000-0000-0000-000000000072', 'published'),
   ('e1320000-0000-0000-0000-000000000073', 's13-aq-draft-book', 'vi', 'e1330000-0000-0000-0000-000000000071', 'draft');
 
-select is((select accepts_questions from public.authors where id = 'e1330000-0000-0000-0000-000000000071'), true, 'authors accept questions by default');
+select is((select accepts_questions from public.authors where id = 'e1330000-0000-0000-0000-000000000071'), true, 'an author who was switched on accepts questions');
+insert into public.authors (id, canonical_slug, display_name, status) values ('e1330000-0000-0000-0000-000000000074', 's13-aq-default', 'Default Author', 'published');
+select is((select accepts_questions from public.authors where id = 'e1330000-0000-0000-0000-000000000074'), false, 'Press: a new author takes no questions until an admin turns them on');
 select is(has_function_privilege('anon', 'public.catalog_book_accepts_questions(uuid)', 'EXECUTE'), true, 'anon can read the flag');
 select is(has_column_privilege('authenticated', 'public.authors', 'accepts_questions', 'UPDATE'), true, 'the admin editor can write the flag (column grant)');
 select is(has_table_privilege('authenticated', 'public.authors', 'UPDATE'), false, 'still no table-level update on authors');

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { locales, localeRegistry } from "@/lib/i18n/config";
+import { missingLocales } from "@/lib/i18n/completeness";
 
 import {
   saveArticleLocalizationAction,
@@ -43,7 +45,6 @@ const sections: { id: KnowledgeEditorSection; label: string }[] = [
   { id: "publish", label: "Publish" },
 ];
 
-const localeName = { vi: "Vietnamese", en: "English" } as const;
 
 function issueMessage(kind: KnowledgeKind, issue: IdeaReadinessIssueCode | ArticleReadinessIssueCode): string {
   return kind === "idea"
@@ -111,7 +112,9 @@ export async function KnowledgeListPage({ kind }: { kind: KnowledgeKind }) {
                     </Link>
                   </th>
                   <td className="px-1 py-3 wrap-anywhere">{entry.status}</td>
-                  <td className="px-1 py-3 wrap-anywhere">{entry.locales.join(", ") || "—"}</td>
+                  <td className="px-1 py-3 wrap-anywhere">{entry.locales.join(", ") || "—"}
+                    {missingLocales(entry.locales).length > 0 ? <span className="block text-[0.75rem] text-sage-text">missing {missingLocales(entry.locales).join(", ")}</span> : null}
+                  </td>
                   <td className="px-1 py-3">
                     <KnowledgeReadinessBadge issues={entry.readinessIssues} kind={kind} />
                   </td>
@@ -213,9 +216,9 @@ export async function KnowledgeEditPage({ kind, id }: { kind: KnowledgeKind; id:
 
         <AdminSection id="localizations" title="Localizations">
           <div className="space-y-12">
-            {(["vi", "en"] as const).map((locale) => (
+            {locales.map((locale) => (
               <div key={locale}>
-                <h3 className="mb-4 text-[0.6875rem] font-medium tracking-[0.08em] text-sage-text uppercase">{localeName[locale]}</h3>
+                <h3 className="mb-4 text-[0.6875rem] font-medium tracking-[0.08em] text-sage-text uppercase">{localeRegistry[locale].englishName}</h3>
                 <KnowledgeLocalizationForm
                   action={
                     entry.kind === "idea"
@@ -251,11 +254,11 @@ export async function KnowledgeEditPage({ kind, id }: { kind: KnowledgeKind; id:
 
         <AdminSection id="seo" title="SEO">
           <div className="space-y-12">
-            {(["vi", "en"] as const).map((locale) => {
+            {locales.map((locale) => {
               const localization = entry.localizations.find((value) => value.locale === locale) ?? null;
               return (
                 <div key={locale}>
-                  <h3 className="mb-4 text-[0.6875rem] font-medium tracking-[0.08em] text-sage-text uppercase">{localeName[locale]}</h3>
+                  <h3 className="mb-4 text-[0.6875rem] font-medium tracking-[0.08em] text-sage-text uppercase">{localeRegistry[locale].englishName}</h3>
                   <KnowledgeSeoForm
                     action={saveKnowledgeSeoAction.bind(null, kind, entry.id, locale)}
                     defaults={{ seoTitle: localization?.seoTitle ?? null, seoDescription: localization?.seoDescription ?? null }}

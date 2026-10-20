@@ -18,6 +18,8 @@ const adminReviewSchema = z.object({
   revision: z.number().int().positive(),
   bookId: z.string(),
   bookTitle: z.string(),
+  // The edition the review is about; null for a review that predates editions.
+  languageCode: z.string().nullable().default(null),
   reviewerName: z.string().nullable(),
   rating: z.number().int(),
   body: z.string(),

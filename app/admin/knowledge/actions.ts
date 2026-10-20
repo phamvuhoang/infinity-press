@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { type Locale } from "@/lib/i18n/config";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { fieldErrorsFrom, readList, readOptionalText, readText, type AdminFormState, type FieldErrors } from "@/lib/catalog/form";
@@ -43,7 +44,6 @@ import type { ArticleReadinessIssueCode, IdeaReadinessIssueCode } from "@/lib/kn
 // public endpoint, so they are validated like everything else. Every runtime export of a
 // "use server" module must be an async function; initial form state lives in lib/catalog/form.ts.
 
-type Locale = "vi" | "en";
 
 const genericFailure = "Something went wrong saving. Try again.";
 const genericPublishFailure = "Something went wrong. Try again.";

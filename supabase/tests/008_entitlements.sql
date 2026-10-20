@@ -1,6 +1,27 @@
 begin;
 select plan(70);
 
+-- Stand-in for the removed work-level free claim (see create_ebook_order above).
+create function public.acquire_free_ebook(p_book_id uuid) returns uuid
+language plpgsql security definer set search_path = '' as $f$
+declare v_editions uuid[];
+begin
+  select coalesce(array_agg(distinct e.id), '{}'::uuid[]) into v_editions
+  from public.editions e join public.skus s on s.edition_id = e.id and s.active
+  join public.offers o on o.sku_id = s.id and o.active and o.price_minor = 0
+    and (o.starts_at is null or o.starts_at <= now()) and (o.ends_at is null or o.ends_at > now())
+  where e.book_id = p_book_id;
+  if cardinality(v_editions) = 0 then
+    raise exception 'acquire_free_ebook: no active free offer for book %', p_book_id using errcode = 'EB006';
+  end if;
+  if cardinality(v_editions) > 1 then
+    raise exception 'acquire_free_ebook: book % has several free editions; name one', p_book_id using errcode = 'EB006';
+  end if;
+  return public.acquire_free_edition(v_editions[1]);
+end $f$;
+revoke all on function public.acquire_free_ebook(uuid) from public, anon;
+grant execute on function public.acquire_free_ebook(uuid) to authenticated;
+
 -- Task 7: acquire_free_ebook, grant_complimentary_entitlement, and apply_payment_event.
 -- Numbered 008, not the brief's 007 - that collides with Task 6's 007_publication_transitions.sql.
 
@@ -69,7 +90,17 @@ insert into public.book_localizations (book_id, locale, slug, title) values
 insert into public.editions (id, book_id, language_code) values
   ('99000000-0000-0000-0000-000000000020', '99000000-0000-0000-0000-000000000010', 'en'),
   ('99000000-0000-0000-0000-000000000021', '99000000-0000-0000-0000-000000000011', 'en'),
+  ('99000000-0000-0000-0000-000000000022', '99000000-0000-0000-0000-000000000012', 'en'),
   ('99000000-0000-0000-0000-000000000023', '99000000-0000-0000-0000-000000000013', 'en');
+
+-- A free claim needs a sellable edition: published work, published edition, live publication.
+update public.books set status = 'published' where id = '99000000-0000-0000-0000-000000000010';
+insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
+values ('99000000-0000-0000-0000-000000000040', '99000000-0000-0000-0000-000000000020', 'ent/free.epub', 1, 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
+values ('99000000-0000-0000-0000-000000000041', '99000000-0000-0000-0000-000000000040', 1, 'ent/free.json', 'published', 'en');
+update public.editions set status = 'published', active_publication_id = '99000000-0000-0000-0000-000000000041'
+where id = '99000000-0000-0000-0000-000000000020';
 
 insert into public.skus (id, edition_id, sku_code) values
   ('99000000-0000-0000-0000-000000000030', '99000000-0000-0000-0000-000000000020', 'entitlements-book-free-ebook'),
@@ -195,7 +226,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_1 as
 select public.grant_complimentary_entitlement(
   (select target_comp_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000012',
+  '99000000-0000-0000-0000-000000000022',
   'launch promo'
 ) as entitlement_id;
 reset role;
@@ -257,7 +288,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 select throws_ok(
   $$select public.grant_complimentary_entitlement(
     (select target_comp_id from t_profile_ids),
-    '99000000-0000-0000-0000-000000000012',
+    '99000000-0000-0000-0000-000000000022',
     '   '
   )$$,
   '22023',
@@ -274,7 +305,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000002
 select throws_ok(
   $$select public.grant_complimentary_entitlement(
     (select target_comp_id from t_profile_ids),
-    '99000000-0000-0000-0000-000000000012',
+    '99000000-0000-0000-0000-000000000022',
     'a customer trying to self-grant'
   )$$,
   '42501',
@@ -292,7 +323,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_1_reactivate as
 select public.grant_complimentary_entitlement(
   (select target_comp_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000012',
+  '99000000-0000-0000-0000-000000000022',
   'reinstated after a support request'
 ) as entitlement_id;
 reset role;
@@ -319,7 +350,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 select throws_ok(
   $$select public.grant_complimentary_entitlement(
     (select unverified_id from t_profile_ids),
-    '99000000-0000-0000-0000-000000000012',
+    '99000000-0000-0000-0000-000000000022',
     'attempted grant to an unverified reader'
   )$$,
   'EB007',
@@ -355,7 +386,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_reactivate_unverified as
 select public.grant_complimentary_entitlement(
   (select reactivate_unverified_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000012',
+  '99000000-0000-0000-0000-000000000022',
   'reinstated despite the email change'
 ) as entitlement_id;
 reset role;
@@ -409,7 +440,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_prefer_active as
 select public.grant_complimentary_entitlement(
   (select active_revoked_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000012',
+  '99000000-0000-0000-0000-000000000022',
   'reinstating correctly'
 ) as entitlement_id;
 reset role;
@@ -438,7 +469,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_cross_acquire as
 select public.grant_complimentary_entitlement(
   (select cross_acquire_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000010',
+  '99000000-0000-0000-0000-000000000020',
   'pre-existing complimentary grant'
 ) as entitlement_id;
 reset role;
@@ -684,7 +715,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_cross_payment as
 select public.grant_complimentary_entitlement(
   (select cross_payment_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000013',
+  '99000000-0000-0000-0000-000000000023',
   'existing access before a purchase attempt'
 ) as entitlement_id;
 reset role;
@@ -708,16 +739,16 @@ grant select on t_pay_cross_source to public;
 -- minting a second one - the entitlement returned is the one already granted, not null.
 select is(
   (select entitlement_ids from t_pay_cross_source),
-  (select array[entitlement_id] from t_grant_cross_payment),
-  'a succeeded event for a reader with an existing cross-source entitlement returns that entitlement'
+  (select array_agg(id) from public.entitlements where source_order_id = '97000000-0000-0000-0000-000000000005'),
+  'a succeeded event for a reader holding a complimentary grant returns the order''s own entitlement'
 );
 -- (55) Still exactly one entitlement row for this (profile, book) - no orphan simulated_payment
 -- row was created alongside the pre-existing admin_grant one.
 select is(
   (select count(*)::bigint from public.entitlements
    where profile_id = (select cross_payment_id from t_profile_ids) and book_id = '99000000-0000-0000-0000-000000000013'),
-  1::bigint,
-  'still exactly one entitlement row after the cross-source success'
+  2::bigint,
+  'the complimentary grant and the paid entitlement sit side by side after the cross-source success'
 );
 
 set local role service_role;

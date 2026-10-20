@@ -19,18 +19,30 @@ does not count as a saved change. Keep the request ID from an error when investi
    - **Details:** canonical key, book language, primary author. Author options include canonical
      slugs so duplicate display names remain distinguishable.
    - **Localizations:** title, slug, description, audience, key ideas (`Title | summary`, one per
-     line), FAQ (`Q:` / `A:` blocks separated by a blank line), SEO title and description. Both
-     Vietnamese and English are supported.
-   - **Edition & offer:** ISBN without dashes, edition number, publication date, and price in minor
-     units. Zero is a free ebook. Save the edition and offer separately; activate the offer.
+     line), FAQ (`Q:` / `A:` blocks separated by a blank line), SEO title and description. One form
+     per interface language (Vietnamese, English, Japanese).
+   - **Editions:** one entry per language translation, each with its own page at
+     `/admin/books/<id>/editions/<editionId>`. Add one by choosing its language. On the edition page:
+     ISBN without dashes, edition number, publication date, credits (`translator: Name`, one per
+     line), a translation introduction, and offers. A price is entered in minor units and is never
+     implied: zero is an explicit free edition, a blank price is refused, and 500 JPY is 500. A new
+     offer is prefilled from the language's pricing template when the admin has set one, and the
+     templates never change an existing offer. The first offer becomes the default; use **Make
+     default offer** to change it. **Make default** names the edition readers get for that language.
+     An edition that already has orders or readers keeps its language.
    - **Cover:** JPEG, PNG, or WebP up to 5 MB, with nonempty alt text. Wait for **Cover saved.** and
      check the preview. Uploading again replaces the selected cover, including across formats.
    - **Relations:** choose topics, optionally a series and its position, then save.
-   - **EPUB:** upload and wait for the queued job. Follow [EPUB processing](epub-processing.md)
-     to run the local worker, preview the processed resources, and publish that EPUB version.
+   - **EPUB (on the edition page):** upload and wait for the queued job. Follow
+     [EPUB processing](epub-processing.md) to run the local worker, preview the processed resources,
+     and publish that EPUB version. Publishing checks that the EPUB's own language matches the
+     edition's language (`en-GB` satisfies `en`); a mismatch, or an EPUB processed by an older worker
+     that did not record its language, is refused with the reason shown. Publishing or rolling back
+     one edition never changes another.
    - **Publish:** resolve each checklist link. **Publish book** is disabled until a localization
-     has title, slug, and description; a primary author with localized copy, cover, active ebook
-     offer, and published EPUB version are present. The database repeats this check. Confirm
+     has title, slug, and description; a primary author with localized copy, a cover, and at
+     least one published edition are present. An offer is not required: an edition with no offer is
+     visible but not for sale. The database repeats this check. Confirm
      publishing the book.
 4. Reload the editor to check saved values and status. Catalog metadata needs no manual database
    edits. EPUB processing still requires the operator CLI.
@@ -126,3 +138,41 @@ The acceptance coverage is split across `admin-catalog`, `admin-create-book`, `a
 catalog journey creates localized entities and a complete book through the UI, uploads/processes
 its EPUB, checks readiness at the UI and RPC, replaces a cover, publishes, renames twice without
 a redirect chain, and unpublishes. It also checks every S1 page's non-admin HTTP 403 response.
+
+## Editorial review before an edition goes on sale
+
+Each edition (the edition page, **Provenance & editorial review**) carries evidence and a decision:
+
+- **Provenance**: source of the original text, source of the translation, rights note, territories.
+  Notes of up to 2000 characters. This records evidence; it is not a legal opinion that a work is free
+  to use.
+- **Decision**: Not reviewed, Approved, or Blocked. Approving needs the translation source, the rights
+  note and the territories (the form says what is missing). Blocking needs a reason. The reviewer and
+  the date are recorded.
+- **Gate**: a new EPUB version of an edition cannot be published unless the edition is Approved
+  (`editorial_unreviewed` / `editorial_blocked` on the version page say why). Rolling back to an
+  earlier version of an approved edition is unaffected.
+- **Changing the evidence after approval withdraws the approval** (and its reviewer and date).
+  Editions that existed when this was introduced were marked approved with a note saying so.
+
+## Translation reports
+
+Readers flag a translation error from the reader menu; the place they were reading travels with it.
+**Admin > Translation reports** lists them (New / Resolved / Dismissed). Resolve or dismiss with a
+note; reopen if needed. Reports are limited to 5 an hour and 20 a day per reader, plain text, 2000
+characters, and only for editions the reader holds. They go to the editors; nothing is emailed to the
+original author.
+
+### Blocking, and access beside access
+
+- **Blocked** stops the edition being listed, ordered, claimed free or sold in a bundle. Readers who
+  already hold it keep reading; remove their access explicitly (revoke the order or the grant) if the
+  rights problem requires it.
+- Withdrawing approval (editing the evidence, or changing an approved edition's language) does not stop a
+  live edition selling; it makes the next publish need a fresh approval.
+- A **complimentary grant** is a separate entitlement beside a bought or free one. Revoking the grant
+  leaves what the reader bought, and revoking the order leaves the grant. The shelf entry follows
+  whichever remains.
+- A language default must be a published, unblocked edition (a draft or archived default would hide the
+  work from that language), and an archived edition cannot be rolled
+  back to life.

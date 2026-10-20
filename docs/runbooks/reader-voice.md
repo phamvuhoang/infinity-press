@@ -18,9 +18,10 @@ shows a moderation change.
 | Action | Who | Where |
 | --- | --- | --- |
 | Rate and review a book | A reader with an **active** entitlement for it. Finishing the book is not required. | `/{locale}/library/reviews/<book-id>`, linked as **Đánh giá / Review** from the library, as **Viết đánh giá / Write a review** from the book page, and from the reader's completion card. |
-| Ask the author | Any signed-in reader, owner or not. | `/{locale}/ask?book=<book-id>` from the book page and the completion card, or `/{locale}/ask?idea=<idea-id>` from **Hỏi tác giả về điều này / Ask the author about this** on an idea page. |
+| Ask the editors | Any signed-in reader, owner or not. **Off by default for authors** (Press publishes classics; see below). | `/{locale}/ask?book=<book-id>` from the book page and the completion card, or `/{locale}/ask?idea=<idea-id>` from **Ask the editors about this** on an idea page. |
 
-- **One review per reader per book.** It carries both a 1–5 star rating and a plain-text body of up
+- **One review per reader per edition.** A review says which translation was read; a reader who holds English and Japanese can review each, and one who holds a single edition need not say which. A work's rating is the roll-up of its editions' published reviews, and every public review is labelled with its language.
+- **(old rule, now per edition)** One review per reader per book. It carries both a 1–5 star rating and a plain-text body of up
   to 1,000 characters; neither can be sent alone. Saving again edits the same review. The reader can
   delete it from the same page, including after their entitlement is revoked.
 - **Questions are capped at 5 open.** A reader who already has 5 questions in `new` is refused
@@ -68,10 +69,10 @@ review shows **Publish** and **Reject**, a published one **Reject**, a rejected 
 In a review's row, choose **Reply**, write the reply, and **Save reply**. Save it blank to remove the
 reply. A reply can be written in any state, and it is kept when the reviewer edits the review.
 
-- The reply is **public**: it appears under the review on the book page as *Phản hồi từ tác giả /
-  Author's reply*, and on the reviewer's own review page.
-- Plain text, up to 1,000 characters. It is written by an admin on the author's behalf; there is no
-  separate author account.
+- The reply is **public**: it appears under the review on the book page as *Phản hồi từ ban biên tập /
+  Reply from the editors*, and on the reviewer's own review page.
+- Plain text, up to 1,000 characters. It is written by an admin as the editors; there is no
+  separate author account, and it is never presented as the author's own words.
 - The reviewer **is emailed** once per distinct reply text, but only while the review is
   **published**: a reply saved on a pending review is mailed when the review is published, and a
   reply changed before the worker runs replaces the pending email rather than adding one. Clearing
@@ -198,3 +199,11 @@ publication delivers exactly one `question_answered` email and links the answer 
 Playwright sends mail through the no-network adapter (`EMAIL_PROVIDER=test`), so the email is
 asserted on its outbox row (`provider_message_id` `test/question-answered/<outbox-id>`), not in
 Mailpit. The spec creates users and admins with no teardown; **never** point it at the cloud project.
+
+## Reader questions are an editorial channel
+
+Press publishes classic works and their translations. `authors.accepts_questions` defaults to **off**;
+turn it on in **Admin > Authors** only when the editors (or a rights holder who has agreed) will
+answer. The reader sees "Ask the editors", the answer is attributed to the editors, and the emails
+say so. Never switch it on to imply a deceased author is replying. Translation errors are reported
+through the same channel until the dedicated report form exists (Task 9).

@@ -5,12 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getServerEnv } from "@/lib/config/server-env";
 import {
   getActiveEntitlementBookIds,
+  getActiveEntitlementEditionIds,
   getBookActionState,
   getBookCardById,
   getBookCards,
   getBookPage,
   getEntityPage,
   getSampleReaderBook,
+  listEntitySlugs,
   publicBookAction,
   searchCatalog,
 } from "@/lib/data/catalog";
@@ -34,6 +36,7 @@ vi.mock("@/lib/reader/session", () => ({
 }));
 
 const BOOK_ID = "30000000-0000-4000-8000-000000000001";
+const EDITION_ID = "50000000-0000-4000-8000-000000000001";
 const OTHER_ID = "30000000-0000-4000-8000-000000000002";
 const PROFILE_ID = "10000000-0000-4000-8000-000000000001";
 
@@ -61,6 +64,10 @@ function cardRow(overrides: Record<string, unknown> = {}) {
     created_at: "2026-09-01T00:00:00+00:00",
     list_price_minor: null,
     sale_ends_at: null,
+    edition_id: "edition-1",
+    language_code: "en",
+    is_language_fallback: false,
+    metadata_locale: "en",
     ...overrides,
   };
 }
@@ -76,7 +83,7 @@ function mockRpc(results: Record<string, { data: unknown; error: unknown }>) {
 }
 
 function mockEntitlements(
-  rows: { book_id: string }[] | null,
+  rows: { book_id?: string; edition_id?: string }[] | null,
   error: unknown = null,
 ) {
   const builder: Record<string, unknown> = {};
@@ -128,7 +135,7 @@ describe("getBookCards", () => {
       },
       offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null },
       hasActivePublication: true,
-      hasSample: true,
+      hasSample: true, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
       series: { slug: "harbour", name: "Harbour", position: 2 },
       topics: [{ slug: "habits", name: "Habits" }],
       featured: false,
@@ -329,7 +336,9 @@ describe("getBookPage", () => {
           faq: [{ question: "Why?", answer: "Because." }],
           seoTitle: null,
           seoDescription: null,
-          alternateSlug: "mot-cuon-sach",
+          alternateSlugs: { vi: "mot-cuon-sach" },
+          metadataLocale: "en",
+          editions: [],
         },
         error: null,
       },
@@ -339,7 +348,41 @@ describe("getBookPage", () => {
     expect(page?.description).toBe("Long");
     expect(page?.keyIdeas).toEqual([]);
     expect(page?.faq).toEqual([{ question: "Why?", answer: "Because." }]);
-    expect(page?.alternateSlug).toBe("mot-cuon-sach");
+    expect(page?.alternateSlugs).toEqual({ vi: "mot-cuon-sach" });
+  });
+
+  it("lists the readable editions and drops a malformed one", async () => {
+    const edition = {
+      editionId: "edition-ja",
+      languageCode: "ja",
+      epubLanguage: "ja",
+      isDefault: false,
+      offerId: "offer-ja",
+      priceMinor: 500,
+      currency: "JPY",
+      listPriceMinor: null,
+      saleEndsAt: null,
+      hasSample: false,
+    };
+    mockRpc({
+      catalog_book_cards: { data: [cardRow()], error: null },
+      catalog_book_page: {
+        data: bookPageData({ editions: [edition, { editionId: 7 }, { ...edition, editionId: "edition-none", offerId: null, priceMinor: null, currency: null }] }),
+        error: null,
+      },
+    });
+    const page = await getBookPage("en", "a-book");
+    expect(page?.editions).toEqual([
+      {
+        editionId: "edition-ja",
+        languageCode: "ja",
+        epubLanguage: "ja",
+        isDefault: false,
+        offer: { offerId: "offer-ja", priceMinor: 500, currency: "JPY", listPriceMinor: null, saleEndsAt: null },
+        hasSample: false,
+      },
+      { editionId: "edition-none", languageCode: "ja", epubLanguage: "ja", isDefault: false, offer: null, hasSample: false },
+    ]);
   });
 
   it("keeps https retail links and drops the whole list when one url is not https", async () => {
@@ -385,7 +428,8 @@ describe("getEntityPage", () => {
     id: "40000000-0000-4000-8000-000000000001",
     name: "Harbour",
     description: null,
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "en",
   };
 
   it("returns the series with its books in order", async () => {
@@ -411,6 +455,33 @@ describe("getEntityPage", () => {
     });
     expect(await getEntityPage("series", "en", "harbour")).toBeNull();
   });
+
+  // Metadata fallback (spec section 5): the RPC chose the platform default's copy; the page says so.
+  it("reports the locale of the copy the database chose", async () => {
+    mockRpc({
+      catalog_book_cards: { data: [cardRow({ series_slug: "harbour" })], error: null },
+      catalog_entity_page: { data: { ...entity, metadataLocale: "en" }, error: null },
+    });
+    expect((await getEntityPage("series", "ja", "harbour"))?.metadataLocale).toBe("en");
+  });
+});
+
+describe("listEntitySlugs", () => {
+  it("groups the locale's own entity pages by kind and ignores an unknown kind", async () => {
+    const rpc = mockRpc({
+      catalog_entity_slugs: {
+        data: [
+          { kind: "author", slug: "mai-tran" },
+          { kind: "topic", slug: "habits" },
+          { kind: "series", slug: "harbour" },
+          { kind: "bundle", slug: "ignored" },
+        ],
+        error: null,
+      },
+    });
+    expect(await listEntitySlugs("vi")).toEqual({ author: ["mai-tran"], series: ["harbour"], topic: ["habits"] });
+    expect(rpc).toHaveBeenCalledWith("catalog_entity_slugs", { p_locale: "vi" });
+  });
 });
 
 function bookPageData(overrides: Record<string, unknown> = {}) {
@@ -422,7 +493,9 @@ function bookPageData(overrides: Record<string, unknown> = {}) {
     faq: [],
     seoTitle: null,
     seoDescription: null,
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "en",
+    editions: [],
     ...overrides,
   };
 }
@@ -438,13 +511,17 @@ describe("getSampleReaderBook", () => {
     expect(resolveSamplePublicationId).not.toHaveBeenCalled();
   });
 
-  it("returns null when the book has no sample", async () => {
+  // The sample belongs to an edition: the default one, or the one `?edition=` names.
+  const english = {
+    editionId: "edition-1", languageCode: "en", epubLanguage: "en", isDefault: true,
+    offerId: "offer-en", priceMinor: 100, currency: "VND", listPriceMinor: null, saleEndsAt: null, hasSample: true,
+  };
+  const japanese = { ...english, editionId: "edition-ja", languageCode: "ja", epubLanguage: "ja", isDefault: false, offerId: "offer-ja", priceMinor: 500, currency: "JPY" };
+
+  it("returns null when the edition has no sample", async () => {
     mockRpc({
-      catalog_book_cards: {
-        data: [cardRow({ has_sample: false })],
-        error: null,
-      },
-      catalog_book_page: { data: bookPageData(), error: null },
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [{ ...english, hasSample: false }] }), error: null },
     });
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toBeNull();
@@ -453,32 +530,54 @@ describe("getSampleReaderBook", () => {
 
   it("returns null when no publication can be resolved", async () => {
     mockRpc({
-      catalog_book_cards: {
-        data: [cardRow({ has_sample: true })],
-        error: null,
-      },
-      catalog_book_page: { data: bookPageData(), error: null },
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [english] }), error: null },
     });
     vi.mocked(resolveSamplePublicationId).mockResolvedValue(null);
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toBeNull();
   });
 
-  it("returns the publication and the book's action", async () => {
+  it("returns the default edition's publication and action", async () => {
     mockRpc({
-      catalog_book_cards: {
-        data: [cardRow({ has_sample: true })],
-        error: null,
-      },
-      catalog_book_page: { data: bookPageData(), error: null },
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [english, japanese] }), error: null },
     });
     vi.mocked(resolveSamplePublicationId).mockResolvedValue("pub-1");
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toMatchObject({
       publicationId: "pub-1",
       slug: "a-book",
+      editionId: "edition-1",
+      offer: { offerId: "offer-en", priceMinor: 100 },
     });
-    expect(resolveSamplePublicationId).toHaveBeenCalledWith(BOOK_ID);
+    expect(resolveSamplePublicationId).toHaveBeenCalledWith("edition-1");
+  });
+
+  it("opens the sample of the edition the reader selected, with that edition's offer", async () => {
+    mockRpc({
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [english, japanese] }), error: null },
+    });
+    vi.mocked(resolveSamplePublicationId).mockResolvedValue("pub-ja");
+
+    await expect(getSampleReaderBook("en", "a-book", "edition-ja")).resolves.toMatchObject({
+      publicationId: "pub-ja",
+      editionId: "edition-ja",
+      offer: { offerId: "offer-ja", priceMinor: 500 },
+    });
+    expect(resolveSamplePublicationId).toHaveBeenCalledWith("edition-ja");
+  });
+
+  // A forged or stale id never falls through to the default edition's sample.
+  it("returns null for an edition the work does not list", async () => {
+    mockRpc({
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [english, japanese] }), error: null },
+    });
+
+    await expect(getSampleReaderBook("en", "a-book", "edition-forged")).resolves.toBeNull();
+    expect(resolveSamplePublicationId).not.toHaveBeenCalled();
   });
 });
 
@@ -493,8 +592,15 @@ describe("book actions", () => {
     expect(builder.eq).toHaveBeenCalledWith("status", "active");
   });
 
+  it("reads edition ownership separately, and skips an entitlement with no edition", async () => {
+    const { builder } = mockEntitlements([{ edition_id: EDITION_ID }, { edition_id: undefined }]);
+    expect(await getActiveEntitlementEditionIds(PROFILE_ID)).toEqual(new Set([EDITION_ID]));
+    expect(builder.eq).toHaveBeenCalledWith("profile_id", PROFILE_ID);
+    expect(builder.eq).toHaveBeenCalledWith("status", "active");
+  });
+
   const free = {
-    bookId: BOOK_ID,
+    editionId: EDITION_ID,
     offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasActivePublication: true,
   };
@@ -511,11 +617,20 @@ describe("book actions", () => {
     vi.mocked(getCurrentProfile).mockResolvedValue({
       id: PROFILE_ID,
     } as Awaited<ReturnType<typeof getCurrentProfile>>);
-    mockEntitlements([{ book_id: BOOK_ID }]);
+    mockEntitlements([{ edition_id: EDITION_ID }]);
     expect(await getBookActionState(free)).toEqual({
       action: "read",
       signedIn: true,
     });
+  });
+
+  // Holding the English edition leaves the Japanese one to buy.
+  it("does not let another edition of the work make this one readable", async () => {
+    vi.mocked(getCurrentProfile).mockResolvedValue({
+      id: PROFILE_ID,
+    } as Awaited<ReturnType<typeof getCurrentProfile>>);
+    mockEntitlements([{ edition_id: "50000000-0000-4000-8000-0000000000ff" }]);
+    expect(await getBookActionState(free)).toEqual({ action: "get_free", signedIn: true });
   });
 
   it("shows coming_soon for a paid book when payments are disabled", async () => {
@@ -538,7 +653,6 @@ describe("publicBookAction", () => {
   it("answers for an anonymous visitor without reading a session", () => {
     expect(
       publicBookAction({
-        bookId: "book-1",
         offer: { priceMinor: 129000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
         hasActivePublication: true,
       }),
@@ -549,7 +663,6 @@ describe("publicBookAction", () => {
   it("never answers `read`, because an anonymous visitor owns nothing", () => {
     expect(
       publicBookAction({
-        bookId: "book-1",
         offer: null,
         hasActivePublication: true,
       }),

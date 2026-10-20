@@ -36,6 +36,10 @@ select is(has_function_privilege('authenticated', 'public.rollback_publication(u
 
 -- (7)-(9) A signed-in non-admin passes the grant but is rejected by each function's own
 -- is_admin() check.
+-- Press: a publication goes live only for an editorially approved edition.
+update public.editions set editorial_state = 'approved', reviewed_at = now(),
+  reviewed_by = (select id from public.profiles order by created_at limit 1);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '95000000-0000-0000-0000-000000000002', true);
 select throws_ok(
@@ -93,7 +97,8 @@ begin
     )),
     '[]'::jsonb,
     '[]'::jsonb,
-    '[]'::jsonb
+    '[]'::jsonb,
+    'en'
   ) into v_publication_id;
   reset role;
 
@@ -144,7 +149,7 @@ reset role;
 -- moved, and an audit row was recorded.
 select is((select status from public.ebook_publications where id = (select publication_id from t_a1)), 'published'::public.publication_status, 'book A v1 publication is now published');
 select is((select status from public.ebook_assets where id = (select asset_id from t_a1)), 'published'::public.ebook_asset_status, 'book A v1 asset is now published');
-select is((select active_publication_id from public.books where id = '96000000-0000-0000-0000-000000000011'), (select publication_id from t_a1), 'book A''s active pointer now targets v1');
+select is((select e.active_publication_id from public.editions e where e.book_id = '96000000-0000-0000-0000-000000000011'), (select publication_id from t_a1), 'book A''s active pointer now targets v1');
 select is(
   (select count(*)::bigint from public.audit_logs where action = 'publish_publication' and entity_id = (select publication_id from t_a1)),
   1::bigint,
@@ -215,7 +220,7 @@ select is((select status from public.ebook_publications where id = (select publi
 select is((select status from public.ebook_publications where id = (select publication_id from t_a1)), 'superseded'::public.publication_status, 'book A v1 publication is superseded once v2 publishes');
 select is((select status from public.ebook_assets where id = (select asset_id from t_a1)), 'superseded'::public.ebook_asset_status, 'book A v1 asset is superseded once v2 publishes');
 select is((select status from public.ebook_assets where id = (select asset_id from t_a2)), 'published'::public.ebook_asset_status, 'book A v2 asset is now published');
-select is((select active_publication_id from public.books where id = '96000000-0000-0000-0000-000000000011'), (select publication_id from t_a2), 'book A''s active pointer now targets v2');
+select is((select e.active_publication_id from public.editions e where e.book_id = '96000000-0000-0000-0000-000000000011'), (select publication_id from t_a2), 'book A''s active pointer now targets v2');
 
 -- (30) Publishing a publication id that does not exist is rejected distinctly from every status
 -- rejection below.
@@ -304,7 +309,7 @@ select is((select status from public.ebook_publications where id = (select publi
 select is((select status from public.ebook_publications where id = (select publication_id from t_a2)), 'superseded'::public.publication_status, 'book A v2 publication is superseded after rollback');
 select is((select status from public.ebook_assets where id = (select asset_id from t_a1)), 'published'::public.ebook_asset_status, 'book A v1 asset is published again after rollback');
 select is((select status from public.ebook_assets where id = (select asset_id from t_a2)), 'superseded'::public.ebook_asset_status, 'book A v2 asset is superseded after rollback');
-select is((select active_publication_id from public.books where id = '96000000-0000-0000-0000-000000000011'), (select publication_id from t_a1), 'book A''s active pointer targets v1 again after rollback');
+select is((select e.active_publication_id from public.editions e where e.book_id = '96000000-0000-0000-0000-000000000011'), (select publication_id from t_a1), 'book A''s active pointer targets v1 again after rollback');
 
 -- (44) Fix round 1, Important #3 (sharper cross-book case): the earlier cross-book rollback
 -- attempt used book B's *rejected* t_b1, which fails the status check too - it doesn't prove
@@ -399,9 +404,9 @@ reset role;
 -- update.
 --
 -- t_a3 is still ready_for_preview: (45) only *attempted* a rollback of it, which was refused.
-update public.books
-   set active_publication_id = (select publication_id from t_b1)
- where id = '96000000-0000-0000-0000-000000000011';
+update public.editions e set active_publication_id = pub.id, status = 'published'
+from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
+where b.id = e.book_id and pa.edition_id = e.id and pub.id = (select publication_id from t_b1) and (b.id = '96000000-0000-0000-0000-000000000011');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '95000000-0000-0000-0000-000000000001', true);

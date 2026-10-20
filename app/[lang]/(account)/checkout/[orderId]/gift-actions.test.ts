@@ -43,7 +43,7 @@ describe("saveGiftAction", () => {
   });
 
   it("sends an unknown locale home rather than acting on the order", async () => {
-    await expect(saveGiftAction("de", ORDER, idle, form({ recipientEmail: "friend@example.com" }))).rejects.toThrow("REDIRECT:/vi");
+    await expect(saveGiftAction("de", ORDER, idle, form({ recipientEmail: "friend@example.com" }))).rejects.toThrow("REDIRECT:/en");
     expect(configureGift).not.toHaveBeenCalled();
   });
 
@@ -125,7 +125,7 @@ describe("removeGiftAction", () => {
   });
 
   it("sends an unknown locale home rather than removing anything", async () => {
-    await expect(removeGiftAction("de", ORDER, idle, new FormData())).rejects.toThrow("REDIRECT:/vi");
+    await expect(removeGiftAction("de", ORDER, idle, new FormData())).rejects.toThrow("REDIRECT:/en");
     expect(removeGift).not.toHaveBeenCalled();
   });
 

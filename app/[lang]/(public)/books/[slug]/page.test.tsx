@@ -10,13 +10,13 @@ import { getBookAcceptsQuestions } from "@/lib/data/catalog";
 import { getBookReviews } from "@/lib/data/reviews";
 import type { KnowledgeLinkSummary } from "@/lib/knowledge/public-types";
 
-// The viewer action is a client component that corrects the prerendered public action; this test
-// only checks which public action the page hands it.
+// The edition panel is a client component (it reads `?edition=` in the browser, so this page stays
+// prerendered); this test only checks what the page hands it.
 const viewer = vi.hoisted(() => ({ props: null as Record<string, unknown> | null }));
-vi.mock("@/components/catalog/viewer-book-action", () => ({
-  ViewerBookAction: (props: Record<string, unknown>) => {
+vi.mock("@/components/catalog/book-edition-panel", () => ({
+  BookEditionPanel: (props: Record<string, unknown>) => {
     viewer.props = props;
-    return <p data-testid="viewer-action">{String((props.publicAction as { kind: string }).kind)}</p>;
+    return <p data-testid="viewer-action">{String((props.editions as unknown[]).length)} editions</p>;
   },
 }));
 vi.mock("@/components/catalog/action-error-banner", () => ({ ActionErrorBanner: () => null }));
@@ -36,7 +36,6 @@ vi.mock("@/lib/commerce/payment-provider", () => ({ arePaymentsEnabled: vi.fn(()
 vi.mock("@/lib/data/catalog", () => ({
   getBookAcceptsQuestions: vi.fn(async () => true),
   getBookPage: vi.fn(),
-  publicBookAction: vi.fn(() => ({ kind: "buy" })),
 }));
 vi.mock("@/lib/data/knowledge", () => ({ getKnowledgeForBook: vi.fn() }));
 vi.mock("@/lib/data/reviews", () => ({ getBookReviews: vi.fn() }));
@@ -54,7 +53,7 @@ function makeBook(overrides: Partial<CatalogBookPage> = {}): CatalogBookPage {
     cover: null,
     offer: { priceMinor: 99000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasActivePublication: true,
-    hasSample: true,
+    hasSample: true, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [{ slug: "habits", name: "Habits" }],
     featured: false,
@@ -66,8 +65,9 @@ function makeBook(overrides: Partial<CatalogBookPage> = {}): CatalogBookPage {
     faq: [{ question: "Is it long?", answer: "No." }],
     seoTitle: null,
     seoDescription: null,
-    alternateSlug: null,
+    alternateSlugs: {},
     isbn: null,
+    editions: [{ editionId: "edition-1", languageCode: "en", epubLanguage: "en", isDefault: true, offer: null, hasSample: false }],
     retailLinks: [],
     reviewSummary: null,
     ...overrides,
@@ -161,9 +161,17 @@ describe("BookPage knowledge backlinks", () => {
     render(await BookPage(paramsFor("en")));
 
     expect(screen.getByRole("heading", { level: 1, name: "Harbour Lights" })).toBeVisible();
-    expect(screen.getByTestId("viewer-action")).toHaveTextContent("buy");
-    expect(viewer.props).toMatchObject({ bookId: BOOK_ID, bookPath: "/en/books/harbour-lights", locale: "en" });
-    expect(screen.getByRole("link", { name: "Read a sample" })).toHaveAttribute("href", "/en/read-sample/harbour-lights");
+    expect(screen.getByTestId("viewer-action")).toHaveTextContent("1 editions");
+    expect(viewer.props).toMatchObject({
+      bookId: BOOK_ID,
+      bookPath: "/en/books/harbour-lights",
+      locale: "en",
+      selectable: true,
+      paymentsEnabled: true,
+      fallbackNotice: false,
+    });
+    // The sample link now lives in the edition panel, beside the edition it belongs to.
+    expect(viewer.props).toMatchObject({ bookSlug: "harbour-lights" });
     expect(screen.getByRole("heading", { name: "Topics" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Habits" })).toHaveAttribute("href", "/en/topics/habits");
     expect(screen.getByRole("heading", { name: "Questions and answers" })).toBeVisible();
@@ -201,7 +209,7 @@ describe("BookPage paperback block", () => {
     const shopee = within(section).getByRole("link", { name: "Shopee" });
     expect(shopee).toHaveAttribute(
       "href",
-      "https://shopee.vn/harbour-lights?utm_source=infinitybooks&utm_medium=book_page&utm_campaign=paperback&utm_content=en",
+      "https://shopee.vn/harbour-lights?utm_source=infinitybookspress&utm_medium=book_page&utm_campaign=paperback&utm_content=en",
     );
     expect(shopee).toHaveAttribute("rel", "nofollow noopener sponsored");
     expect(within(section).getByText(/^List price.*129[.,]000/)).toBeVisible();
@@ -232,6 +240,7 @@ describe("BookPage reviews", () => {
     authorReply: null,
     authorReplyAt: null,
     publishedAt: "2026-09-12T00:00:00Z",
+    languageCode: null,
   };
 
   it("renders the reviews section and feeds the same reviews to the Book JSON-LD", async () => {
@@ -249,7 +258,7 @@ describe("BookPage reviews", () => {
       "href",
       `/en/library/reviews/${BOOK_ID}`,
     );
-    expect(within(section).getByRole("link", { name: "Ask the author" })).toHaveAttribute("href", `/en/ask?book=${BOOK_ID}`);
+    expect(within(section).getByRole("link", { name: "Ask the editors" })).toHaveAttribute("href", `/en/ask?book=${BOOK_ID}`);
 
     const book = [...container.querySelectorAll('script[type="application/ld+json"]')]
       .map((node) => JSON.parse(node.textContent ?? "null"))
@@ -261,7 +270,7 @@ describe("BookPage reviews", () => {
     cleanup();
     vi.mocked(getBookAcceptsQuestions).mockResolvedValueOnce(false);
     render(await BookPage(paramsFor("en")));
-    expect(screen.queryByRole("link", { name: "Ask the author" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Ask the editors" })).toBeNull();
     expect(screen.getByRole("link", { name: "Write a review" })).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { isCouponCode, normalizeCouponCode } from "@/lib/commerce/coupon";
 import { knowledgeBlocksSchema } from "@/lib/knowledge/blocks";
+import { locales } from "@/lib/i18n/config";
 
 // kebab-case, lowercase ascii letters/digits, single hyphens between segments -
 // shared by canonical_key (books) and slug (book_localizations), which both
@@ -13,6 +14,13 @@ const kebabCase = z
   .min(1)
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and single hyphens.");
 
+// A content language is a registry code (content_languages), not a UI locale: a French original is
+// neither vi, en nor ja. The database foreign key decides which codes exist; this only rejects
+// malformed input early.
+export const contentLanguageSchema = z
+  .string()
+  .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, "Choose a valid language code.");
+
 // Locale is the UI language the localization is written in; language is the
 // book's own language (original_language / editions.language_code). They are
 // deliberately independent - a Vietnamese-locale page can describe an
@@ -23,8 +31,8 @@ export const createBookSchema = z
     canonicalKey: kebabCase,
     authorId: z.uuid({ error: "Choose a valid author." }).nullable().default(null),
     authorName: z.string().trim(),
-    locale: z.enum(["vi", "en"]),
-    language: z.enum(["vi", "en"]),
+    locale: z.enum(locales),
+    language: contentLanguageSchema,
     title: z.string().trim().min(1, "Enter a title."),
     slug: kebabCase,
     market: z
@@ -43,7 +51,7 @@ export const createBookSchema = z
 
 export type CreateBookInput = z.infer<typeof createBookSchema>;
 
-const localeSchema = z.enum(["vi", "en"]);
+const localeSchema = z.enum(locales);
 const nullableText = (max: number) => z.string().trim().max(max).nullable();
 
 export const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024;
@@ -108,12 +116,18 @@ export const bookLocalizationSchema = z.object({
 
 export const bookDetailsSchema = z.object({
   canonicalKey: kebabCase,
-  originalLanguage: localeSchema,
+  originalLanguage: contentLanguageSchema,
   primaryAuthorId: z.uuid({ error: "Choose an author." }),
 });
 
+// A credit on an edition: who did what (translator, editor, illustrator...).
+const contributorSchema = z.object({
+  role: z.string().trim().min(1, "Enter a role.").max(40),
+  name: z.string().trim().min(1, "Enter a name.").max(120),
+});
+
 export const editionSchema = z.object({
-  languageCode: localeSchema,
+  languageCode: contentLanguageSchema,
   isbn: z
     .string()
     .trim()
@@ -121,6 +135,37 @@ export const editionSchema = z.object({
     .nullable(),
   editionNumber: z.number({ error: "Enter the edition number." }).int().min(1),
   publicationDate: z.iso.date({ error: "Use a date like 2026-09-13." }).nullable(),
+  introduction: z.string().trim().max(5000, "Keep the introduction to 5000 characters.").nullable().default(null),
+  contributors: z.array(contributorSchema).max(20, "Use at most 20 credits.").default([]),
+});
+
+// Where the text and its translation come from, and the rights evidence an approver looks at. Notes,
+// not a legal determination.
+const provenanceNote = z.string().trim().max(2000, "Keep each note to 2000 characters.").nullable();
+export const provenanceSchema = z.object({
+  textSourceNote: provenanceNote,
+  translationSource: provenanceNote,
+  rightsNote: provenanceNote,
+  territoryNote: provenanceNote,
+});
+
+export const editionReviewSchema = z.object({
+  state: z.enum(["unreviewed", "approved", "blocked"]),
+  note: provenanceNote,
+});
+
+// A new edition of an existing work. The number defaults to the next free one for that language.
+export const createEditionSchema = z.object({
+  languageCode: contentLanguageSchema,
+  editionNumber: z.number().int().min(1, "Edition numbers start at 1.").nullable(),
+});
+
+// A new offer on an edition. The price is required: an unset price must never become a free offer
+// (free is an explicit 0).
+export const createOfferSchema = z.object({
+  marketCode: z.string().regex(/^[A-Z]{2}$/, "Use a two-letter uppercase market code, e.g. JP."),
+  currency: z.string().regex(/^[A-Z]{3}$/, "Use a three-letter uppercase currency code, e.g. JPY."),
+  priceMinor: z.number({ error: "Enter a price." }).int().min(0, "Price cannot be negative."),
 });
 
 // The price fields every offer form shares. A bundle offer is exactly these (no sale, S19 spec 2).
@@ -319,11 +364,11 @@ export const bundleLocalizationSchema = z.object({
 // again rather than sending per-row positions that could disagree with each other.
 export const bundleMembersSchema = z
   .object({
-    bookIds: z.array(z.uuid()).min(1, "Add at least one book."),
+    editionIds: z.array(z.uuid()).min(1, "Add at least one edition."),
   })
-  .refine((value) => new Set(value.bookIds).size === value.bookIds.length, {
-    message: "Each book can appear once.",
-    path: ["bookIds"],
+  .refine((value) => new Set(value.editionIds).size === value.editionIds.length, {
+    message: "Each edition can appear once.",
+    path: ["editionIds"],
   });
 
 // A bundle is priced through the same offers row shape as a sku (spec 6.1), so the offer form is
@@ -479,6 +524,10 @@ export type EntityLocalizationInput = z.infer<typeof entityLocalizationSchema>;
 export type BookLocalizationInput = z.infer<typeof bookLocalizationSchema>;
 export type BookDetailsInput = z.infer<typeof bookDetailsSchema>;
 export type EditionInput = z.infer<typeof editionSchema>;
+export type ProvenanceInput = z.infer<typeof provenanceSchema>;
+export type EditionReviewInput = z.infer<typeof editionReviewSchema>;
+export type CreateEditionInput = z.infer<typeof createEditionSchema>;
+export type CreateOfferInput = z.infer<typeof createOfferSchema>;
 export type OfferInput = z.output<typeof offerSchema>;
 export type BookRelationsInput = z.infer<typeof bookRelationsSchema>;
 export type RelatedBooksInput = z.infer<typeof relatedBooksSchema>;
@@ -486,3 +535,11 @@ export type CoverUploadInput = z.infer<typeof coverUploadSchema>;
 export type HeroUploadInput = z.infer<typeof heroUploadSchema>;
 export type AuthorImageInput = z.infer<typeof authorImageSchema>;
 export type MerchandisingInput = z.infer<typeof merchandisingSchema>;
+
+// The platform defaults (spec section 5). The RPC re-checks every code against the registries.
+export const platformSettingsSchema = z.object({
+  defaultUiLocale: localeSchema,
+  defaultContentLanguage: contentLanguageSchema,
+  defaultMetadataLocale: localeSchema,
+});
+export type PlatformSettingsInput = z.infer<typeof platformSettingsSchema>;

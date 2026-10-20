@@ -26,7 +26,7 @@ const order: CustomerOrderDTO = {
   id: ORDER_ID,
   bundleId: null,
   title: "A Book",
-  items: [{ bookId: "30000000-0000-4000-8000-000000000001", title: "A Book", hasActiveEntitlement: false }],
+  items: [{ bookId: "30000000-0000-4000-8000-000000000001", editionId: null, languageCode: null, title: "A Book", hasActiveEntitlement: false }],
   status: "pending",
   paymentStatus: "pending",
   totalMinor: 129000,
@@ -102,6 +102,14 @@ describe("CheckoutTransferPage", () => {
 
   it("sends a finished order to the status page", async () => {
     vi.mocked(getCustomerOrder).mockResolvedValue({ ...order, status: "completed", paymentStatus: "succeeded" });
+
+    await expect(CheckoutTransferPage({ params })).rejects.toThrow(`NEXT_REDIRECT /en/checkout/${ORDER_ID}/status`);
+  });
+
+  // Manual transfer settles VND only. A reader is never shown bank details for an amount that is not
+  // dong, and no QR is built for it.
+  it.each(["USD", "JPY"])("sends a %s order to the status page instead of printing bank details", async (currency) => {
+    vi.mocked(getCustomerOrder).mockResolvedValue({ ...order, currency });
 
     await expect(CheckoutTransferPage({ params })).rejects.toThrow(`NEXT_REDIRECT /en/checkout/${ORDER_ID}/status`);
   });

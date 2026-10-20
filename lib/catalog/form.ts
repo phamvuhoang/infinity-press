@@ -83,3 +83,19 @@ export function parseFaq(text: string): { question: string; answer: string }[] {
 export function formatFaq(items: { question: string; answer: string }[]): string {
   return items.map((item) => `Q: ${item.question}\nA: ${item.answer}`).join("\n\n");
 }
+
+// Edition credits are edited one per line as "role: name" (translator: Jane Doe).
+export function parseContributors(text: string): { role: string; name: string }[] {
+  return text
+    .split("\n")
+    .map((line) => {
+      const separator = line.indexOf(":");
+      if (separator < 0) return { role: "", name: "" };
+      return { role: line.slice(0, separator).trim().toLowerCase(), name: line.slice(separator + 1).trim() };
+    })
+    .filter((credit) => credit.role !== "" && credit.name !== "");
+}
+
+export function formatContributors(credits: { role: string; name: string }[]): string {
+  return credits.map((credit) => `${credit.role}: ${credit.name}`).join("\n");
+}

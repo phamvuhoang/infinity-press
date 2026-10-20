@@ -13,7 +13,7 @@ export default async function AdminReviewsPage({ searchParams }: { searchParams:
   return (
     <div className="min-w-0 max-w-[72rem] [overflow-wrap:anywhere]">
       <AdminPageHeader eyebrow="Readers" title="Reviews">
-        Publish or reject reader reviews and reply as the author. The 200 newest in each status are shown.
+        Publish or reject reader reviews and reply as the editors. The 200 newest in each status are shown.
       </AdminPageHeader>
       <ReviewList reviews={reviews} status={status} />
     </div>

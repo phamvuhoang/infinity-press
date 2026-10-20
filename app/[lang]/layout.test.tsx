@@ -31,7 +31,7 @@ describe("LocaleLayout", () => {
 
   it("prerenders one page per supported locale", async () => {
     const { generateStaticParams } = await import("@/app/[lang]/layout");
-    expect(generateStaticParams()).toEqual([{ lang: "vi" }, { lang: "en" }]);
+    expect(generateStaticParams()).toEqual([{ lang: "vi" }, { lang: "en" }, { lang: "ja" }]);
   });
 
   // A layout cannot see a notFound() thrown by its own render (not-found.tsx replaces a child of
@@ -45,6 +45,6 @@ describe("LocaleLayout", () => {
     })) as React.ReactElement<{ lang: string }>;
 
     expect(element.type).toBe("html");
-    expect(element.props.lang).toBe("vi");
+    expect(element.props.lang).toBe("en");
   });
 });

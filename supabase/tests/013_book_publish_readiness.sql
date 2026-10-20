@@ -22,8 +22,8 @@ insert into public.offers (sku_id, market_code, currency, price_minor)
 values ('c7000000-0000-0000-0000-000000000001', 'VN', 'VND', 0);
 insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
 values ('c8000000-0000-0000-0000-000000000001', 'c6000000-0000-0000-0000-000000000001', 's1-pub/source.epub', 1, 'ready_for_preview');
-insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
-values ('c9000000-0000-0000-0000-000000000001', 'c8000000-0000-0000-0000-000000000001', 1, 's1-pub/manifest.json', 'ready_for_preview');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
+values ('c9000000-0000-0000-0000-000000000001', 'c8000000-0000-0000-0000-000000000001', 1, 's1-pub/manifest.json', 'ready_for_preview', 'vi');
 
 select is(
   has_function_privilege('authenticated', 'public.book_readiness_issues(uuid)', 'EXECUTE'),
@@ -34,6 +34,10 @@ select is(has_function_privilege('anon', 'public.publish_book(uuid)', 'EXECUTE')
 select is(has_function_privilege('authenticated', 'public.publish_book(uuid)', 'EXECUTE'), true, 'authenticated holds EXECUTE on publish_book');
 select is(has_function_privilege('anon', 'public.unpublish_book(uuid)', 'EXECUTE'), false, 'anon holds no EXECUTE on unpublish_book');
 select is(has_function_privilege('authenticated', 'public.unpublish_book(uuid)', 'EXECUTE'), true, 'authenticated holds EXECUTE on unpublish_book');
+
+-- Press: a publication goes live only for an editorially approved edition.
+update public.editions set editorial_state = 'approved', reviewed_at = now(),
+  reviewed_by = (select id from public.profiles order by created_at limit 1);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'c1000000-0000-0000-0000-000000000002', true);
@@ -50,7 +54,7 @@ select throws_ok(
 select lives_ok($$select public.publish_publication('c9000000-0000-0000-0000-000000000001')$$, 'admin publishes the EPUB version');
 reset role;
 select is((select status from public.books where id = 'c3000000-0000-0000-0000-000000000001'), 'draft'::public.content_status, 'publish_publication leaves the book draft');
-select is((select active_publication_id from public.books where id = 'c3000000-0000-0000-0000-000000000001'), 'c9000000-0000-0000-0000-000000000001'::uuid, 'publish_publication still moves the active pointer');
+select is((select e.active_publication_id from public.editions e where e.book_id = 'c3000000-0000-0000-0000-000000000001'), 'c9000000-0000-0000-0000-000000000001'::uuid, 'publish_publication still moves the active pointer');
 select is((select status from public.authors where id = 'c2000000-0000-0000-0000-000000000001'), 'draft'::public.content_status, 'publish_publication leaves the author draft');
 
 update public.book_localizations set description = 'A complete description.' where book_id = 'c3000000-0000-0000-0000-000000000001';
@@ -78,8 +82,8 @@ reset role;
 -- A catalog-published book remains public while later EPUB versions are published or rolled back.
 insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
 values ('c8000000-0000-0000-0000-000000000002', 'c6000000-0000-0000-0000-000000000001', 's1-pub/source-v2.epub', 2, 'ready_for_preview');
-insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
-values ('c9000000-0000-0000-0000-000000000002', 'c8000000-0000-0000-0000-000000000002', 2, 's1-pub/manifest-v2.json', 'ready_for_preview');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
+values ('c9000000-0000-0000-0000-000000000002', 'c8000000-0000-0000-0000-000000000002', 2, 's1-pub/manifest-v2.json', 'ready_for_preview', 'vi');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'c1000000-0000-0000-0000-000000000001', true);
 select lives_ok($$select public.publish_publication('c9000000-0000-0000-0000-000000000002')$$, 'admin publishes a later EPUB version');

@@ -32,6 +32,23 @@ insert into public.book_localizations (book_id, locale, slug, title) values
   ('d5710000-0000-0000-0000-000000000002', 'vi', 's12p-sach-hai', 'Sách Hai S12P'),
   ('d5710000-0000-0000-0000-000000000003', 'vi', 's12p-sach-nhap', 'Sách Nháp S12P');
 
+
+-- Press: a work is listed only when it has a readable edition, so each published work gets one in its
+-- original language with a live publication.
+insert into public.editions (book_id, language_code)
+select b.id, b.original_language from public.books b
+where b.status = 'published' and not exists (select 1 from public.editions e where e.book_id = b.id);
+insert into public.ebook_assets (edition_id, source_storage_key, version, status)
+select e.id, 'fx/' || e.id || '.epub', 1, 'published'
+from public.editions e join public.books b on b.id = e.book_id
+where b.status = 'published' and e.active_publication_id is null;
+insert into public.ebook_publications (ebook_asset_id, version, manifest_key, status, epub_language)
+select a.id, 1, 'fx/' || a.id || '.json', 'published', e.language_code
+from public.ebook_assets a join public.editions e on e.id = a.edition_id where a.source_storage_key like 'fx/%';
+update public.editions e set status = 'published', active_publication_id = p.id
+from public.ebook_publications p join public.ebook_assets a on a.id = p.ebook_asset_id
+where a.edition_id = e.id and a.source_storage_key like 'fx/%';
+
 -- t1 is visible in both locales, t2 in vi only, t3 is a draft, t4 is published without a book.
 insert into public.topics (id, canonical_slug, name, status) values
   ('d5720000-0000-0000-0000-000000000001', 's12p-topic-1', 'Tâm lý S12P', 'published'),
@@ -137,13 +154,13 @@ set local role anon;
 -- Idea index ---------------------------------------------------------------------------------- (13)-(17)
 select is(
   (select array_agg(x.slug order by x.n)
-   from public.knowledge_idea_index('vi') with ordinality x(idea_id, slug, question, short_answer, created_at, updated_at, alternate_slug, topics, n)
+   from public.knowledge_idea_index('vi') with ordinality x(idea_id, slug, question, short_answer, created_at, updated_at, alternate_slugs, topics, n)
    where x.slug like 's12p-%'),
   array['s12p-an-sang', 's12p-doc-the-nao', 's12p-thoi-quen'],
   'the vi idea index lists only published vi ideas, ordered by question');
 select is(
   (select array_agg(x.slug order by x.n)
-   from public.knowledge_idea_index('en') with ordinality x(idea_id, slug, question, short_answer, created_at, updated_at, alternate_slug, topics, n)
+   from public.knowledge_idea_index('en') with ordinality x(idea_id, slug, question, short_answer, created_at, updated_at, alternate_slugs, topics, n)
    where x.slug like 's12p-%'),
   array['s12p-small-habits', 's12p-how-to-read'],
   'the en idea index lists only ideas localized in en');
@@ -155,8 +172,8 @@ select is(
   (select topics from public.knowledge_idea_index('vi') where slug = 's12p-an-sang'),
   '[]'::jsonb, 'an idea without topics carries an empty topic list');
 select is(
-  (select alternate_slug from public.knowledge_idea_index('vi') where slug = 's12p-thoi-quen'),
-  's12p-small-habits', 'the index row carries the other-locale slug');
+  (select alternate_slugs->>'en' from public.knowledge_idea_index('vi') where slug = 's12p-thoi-quen'),
+  's12p-small-habits', 'the index row carries the other-locale slugs');
 
 -- Idea page ----------------------------------------------------------------------------------- (18)-(30)
 select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'ideaId', 'd5730000-0000-0000-0000-000000000001', 'a published idea page resolves');
@@ -166,15 +183,17 @@ select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'bodyBlocks',
 select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'bookIds',
   '["d5710000-0000-0000-0000-000000000002","d5710000-0000-0000-0000-000000000001"]'::jsonb,
   'related books keep their position and drop drafts');
+-- The fixture works have a Vietnamese edition only, so the English catalog (default content language
+-- English) shows none of them: a page never links a work its locale cannot open.
 select is(public.knowledge_idea_page('en', 's12p-small-habits')->'bookIds',
-  '["d5710000-0000-0000-0000-000000000001"]'::jsonb, 'related books drop books not localized in the locale');
+  '[]'::jsonb, 'related books drop works the locale cannot open (no readable edition)');
 select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'relatedIdeaIds',
   '["d5730000-0000-0000-0000-000000000003","d5730000-0000-0000-0000-000000000002"]'::jsonb,
   'related ideas keep their position and drop draft and archived ideas');
 select is(public.knowledge_idea_page('en', 's12p-small-habits')->'relatedIdeaIds',
   '["d5730000-0000-0000-0000-000000000003"]'::jsonb, 'related ideas drop ideas not localized in the locale');
-select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'alternateSlug', 's12p-small-habits', 'an existing alternate is returned');
-select is(public.knowledge_idea_page('vi', 's12p-an-sang')->'alternateSlug', 'null'::jsonb, 'a missing alternate is null');
+select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->'alternateSlugs'->>'en', 's12p-small-habits', 'an existing alternate is returned');
+select is(public.knowledge_idea_page('vi', 's12p-an-sang')->'alternateSlugs', '{}'::jsonb, 'a missing alternate is null');
 select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'seoTitle', 'SEO S12P', 'the page carries its SEO override');
 select ok((public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'createdAt')::timestamptz = '2026-02-01T00:00:00Z'
   and (public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'updatedAt') is not null,
@@ -191,13 +210,13 @@ select ok(public.knowledge_idea_page('en', 's12p-thoi-quen') is null
 -- Article index ------------------------------------------------------------------------------- (31)-(35)
 select is(
   (select array_agg(x.slug order by x.n)
-   from public.knowledge_article_index('vi') with ordinality x(article_id, slug, title, excerpt, published_at, updated_at, alternate_slug, author, n)
+   from public.knowledge_article_index('vi') with ordinality x(article_id, slug, title, excerpt, published_at, updated_at, alternate_slugs, author, n)
    where x.slug like 's12p-%'),
   array['s12p-bai-hai', 's12p-bai-ba', 's12p-doc-sau'],
   'the vi article index is published_at desc, then id, and hides drafts and archives');
 select is(
   (select array_agg(x.slug order by x.n)
-   from public.knowledge_article_index('en') with ordinality x(article_id, slug, title, excerpt, published_at, updated_at, alternate_slug, author, n)
+   from public.knowledge_article_index('en') with ordinality x(article_id, slug, title, excerpt, published_at, updated_at, alternate_slugs, author, n)
    where x.slug like 's12p-%'),
   array['s12p-deep-reading'], 'the en article index lists only en localizations');
 select is((select author from public.knowledge_article_index('vi') where slug = 's12p-doc-sau'),
@@ -229,8 +248,8 @@ select ok(public.knowledge_article_page('vi', 's12p-bai-nhap') is null
   and public.knowledge_article_page('vi', 's12p-bai-luu') is null
   and public.knowledge_article_page('en', 's12p-bai-hai') is null
   and public.knowledge_article_page('vi', '../x') is null
-  and public.knowledge_article_page('vi', 's12p-doc-sau')->>'alternateSlug' = 's12p-deep-reading'
-  and public.knowledge_article_page('vi', 's12p-bai-hai')->'alternateSlug' = 'null'::jsonb,
+  and public.knowledge_article_page('vi', 's12p-doc-sau')->'alternateSlugs'->>'en' = 's12p-deep-reading'
+  and public.knowledge_article_page('vi', 's12p-bai-hai')->'alternateSlugs' = '{}'::jsonb,
   'drafts, archives, missing locales and malformed slugs return null; alternates exist only when localized');
 
 -- Backlinks ----------------------------------------------------------------------------------- (45)-(50)
@@ -242,8 +261,8 @@ select is(
 select is(
   (select array_agg(x.kind || ':' || x.slug order by x.n)
    from public.knowledge_for_book('en', 'd5710000-0000-0000-0000-000000000001') with ordinality x(kind, slug, title, excerpt, published_at, n)),
-  array['idea:s12p-small-habits', 'idea:s12p-how-to-read', 'article:s12p-deep-reading'],
-  'book backlinks follow the locale');
+  null,
+  'book backlinks are gated on the work being open in the locale (no English edition: none)');
 select is(
   (select row(title, excerpt, published_at)::text from public.knowledge_for_book('vi', 'd5710000-0000-0000-0000-000000000001') where slug = 's12p-thoi-quen'),
   row('Thói quen nhỏ S12P có quan trọng không?', 'Có, lặp lại mỗi ngày tạo nên khác biệt.', null::timestamptz)::text,

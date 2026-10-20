@@ -19,9 +19,8 @@ import {
   getCatalogRoutes,
   getKnowledgeRoutes,
   getLocaleRoutes,
-  otherLocale,
 } from "@/lib/i18n/routes";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata, fixedPaths } from "@/lib/seo/metadata";
 
 type Props = {
   params: Promise<{ lang: string }>;
@@ -36,10 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    paths: {
-      vi: getLocaleRoutes("vi").search,
-      en: getLocaleRoutes("en").search,
-    },
+    paths: fixedPaths((l) => getLocaleRoutes(l).search),
     title: copy.title,
     description: copy.description,
     index: "noindex-follow",
@@ -58,10 +54,9 @@ export default async function SearchPage({ params, searchParams }: Props) {
   const copy = dictionary.catalog;
   const catalogRoutes = getCatalogRoutes(locale);
   const rawQuery = (Array.isArray(q) ? q[0] : q) ?? "";
-  const other = otherLocale(locale);
-  const otherSearch = query
-    ? `${getLocaleRoutes(other).search}?${new URLSearchParams({ q: query })}`
-    : getLocaleRoutes(other).search;
+  const searchPaths = fixedPaths((l) =>
+    query ? `${getLocaleRoutes(l).search}?${new URLSearchParams({ q: query })}` : getLocaleRoutes(l).search,
+  );
 
   const knowledgeRoutes = getKnowledgeRoutes(locale);
   // Display order after books (S12 spec 8): authors, ideas, articles, series, topics. Each hit links
@@ -113,7 +108,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
   return (
     <div className="min-h-screen bg-ivory">
       <SiteHeader
-        alternates={{ [other]: otherSearch }}
+        alternates={searchPaths}
         current="search"
         locale={locale}
       />

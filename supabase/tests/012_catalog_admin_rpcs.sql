@@ -57,11 +57,11 @@ select is(
   'admin_create_book reuses the existing author'
 );
 select lives_ok(
-  $$select public.admin_create_book('s1-viet-book', 'Phương Bùi', 'vi', 'vi', 'Sách Việt', 's1-viet-book', 'VN', 'VND', 0)$$,
+  $$select public.admin_create_book('s1-viet-book', 'Nguyễn Du', 'vi', 'vi', 'Sách Việt', 's1-viet-book', 'VN', 'VND', 0)$$,
   'admin_create_book accepts a Vietnamese author name'
 );
 reset role;
-select ok(exists(select 1 from public.authors where canonical_slug = 'phuong-bui'), 'Vietnamese author slug is unaccented');
+select ok(exists(select 1 from public.authors where canonical_slug = 'nguyen-du'), 'Vietnamese author slug is unaccented');
 
 insert into public.authors (id, canonical_slug, display_name) values
   ('c2000000-0000-0000-0000-000000000002', 'shared-name-one', 'Shared Name'),

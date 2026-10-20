@@ -1,3 +1,4 @@
+import { soleEditionId } from "./editions";
 import { createServiceRoleClient } from "./supabase";
 
 // Seeds a complete catalog book for public-page tests. Service role only; local stack only.
@@ -7,7 +8,7 @@ const PNG = Buffer.from(
   "base64",
 );
 
-type Locale = "vi" | "en";
+type Locale = "vi" | "en" | "ja";
 
 // Throws on a failed write. Inserts without `.select()` return null data, which callers ignore.
 function check<T>(result: { data: T; error: { message: string } | null }): NonNullable<T> {
@@ -38,7 +39,8 @@ export async function seedCatalogBook(options: {
   const author = check(
     await service
       .from("authors")
-      .insert({ canonical_slug: `e2e-author-${suffix}`, display_name: `E2E Author ${suffix}`, status: "published" })
+      // Fixture authors take reader questions: Press defaults the switch off, and the question specs need it on.
+      .insert({ canonical_slug: `e2e-author-${suffix}`, display_name: `E2E Author ${suffix}`, status: "published", accepts_questions: true })
       .select("id")
       .single(),
   );
@@ -146,12 +148,8 @@ export async function seedCatalogBook(options: {
     check(await service.from("book_series").insert({ book_id: book.id, series_id: series.id, position: 1 }));
   }
 
-  check(
-    await service
-      .from("books")
-      .update({ active_publication_id: publication.id, status: options.status ?? "published" })
-      .eq("id", book.id),
-  );
+  check(await service.from("editions").update({ active_publication_id: publication.id, status: "published" }).eq("id", edition.id));
+  check(await service.from("books").update({ status: options.status ?? "published" }).eq("id", book.id));
 
   // authorId and topicId are the two handles a recommendation fixture needs: the signals
   // recommend_books scores are shared author and shared topic, and each seeded book otherwise
@@ -187,6 +185,8 @@ export async function setHomeFeatured(bookId: string): Promise<void> {
 export async function seedBundle(options: {
   suffix: string;
   bookIds: string[];
+  // Name the editions directly for a bundle that holds several editions of one work.
+  editionIds?: string[];
   localizations: Partial<Record<Locale, { slug: string; title: string }>>;
   // create_bundle_order refuses an offer of 0, so a bundle fixture is always priced.
   priceMinor: number;
@@ -209,12 +209,14 @@ export async function seedBundle(options: {
       })),
     ),
   );
-  // position is 1-based and unique per bundle; the order here is the order the storefront, the
-  // checkout list and the order items all use.
+  // A bundle holds editions. Each seeded book has exactly one, so members are named by book here and
+  // resolved to that edition; position is 1-based and unique per bundle, and the order here is the
+  // order the storefront, the checkout list and the order items all use.
+  const editionIds = options.editionIds ?? (await Promise.all(bookIds.map(soleEditionId)));
   check(
     await service
-      .from("bundle_books")
-      .insert(bookIds.map((bookId, index) => ({ bundle_id: bundle.id, book_id: bookId, position: index + 1 }))),
+      .from("bundle_editions")
+      .insert(editionIds.map((editionId, index) => ({ bundle_id: bundle.id, edition_id: editionId, position: index + 1 }))),
   );
   check(
     await service

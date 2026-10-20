@@ -110,7 +110,7 @@ test("a reader transfers, reports it, and an admin confirms", async ({ page, bro
   await page.goto(`/en/checkout/${orderId}/status`);
   await expect(page.getByRole("heading", { level: 1, name: "Payment complete" })).toBeVisible();
   await page.getByRole("link", { name: "Read now" }).click();
-  await expect(page).toHaveURL(new RegExp(`/en/read/${bookId}$`));
+  await expect(page).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
 });
 
 test("a declined transfer returns the reader to the instructions", async ({ page, browser }) => {

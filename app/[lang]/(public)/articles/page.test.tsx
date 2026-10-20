@@ -30,7 +30,8 @@ function article(slug: string, title: string, publishedAt: string): KnowledgeArt
     excerpt: `About ${title}`,
     publishedAt,
     updatedAt: publishedAt,
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "en",
     author: { name: "Mai Tran", slug: "mai-tran" },
   };
 }
@@ -84,7 +85,7 @@ describe("ArticlesPage", () => {
 });
 
 describe("generateMetadata", () => {
-  it("uses the fixed index copy and both locale paths", async () => {
+  it("uses the fixed index copy and every locale path", async () => {
     const metadata = await generateMetadata({ params: Promise.resolve({ lang: "vi" }) });
 
     expect(metadata.title).toBe("Bài viết");
@@ -93,7 +94,8 @@ describe("generateMetadata", () => {
       languages: {
         vi: "https://books.example/vi/articles",
         en: "https://books.example/en/articles",
-        "x-default": "https://books.example/vi/articles",
+        ja: "https://books.example/ja/articles",
+        "x-default": "https://books.example/en/articles",
       },
     });
   });

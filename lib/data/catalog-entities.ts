@@ -1,4 +1,5 @@
 import "server-only";
+import { type Locale, locales } from "@/lib/i18n/config";
 
 import { notFound } from "next/navigation";
 
@@ -29,7 +30,6 @@ export class EntityNotReadyError extends Error {
 }
 
 type Status = "draft" | "published" | "archived";
-type Locale = "vi" | "en";
 
 export type CatalogEntityListItemDTO = {
   id: string;
@@ -56,7 +56,7 @@ type EntityRow = {
   localizations: { locale: Locale; slug: string; name: string; description: string | null; quote: string | null }[];
 };
 
-const localeOrder: Record<Locale, number> = { vi: 0, en: 1 };
+const localeOrder = Object.fromEntries(locales.map((locale, index) => [locale, index])) as Record<Locale, number>;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function selectFor(type: CatalogEntityType) {

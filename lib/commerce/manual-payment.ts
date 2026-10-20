@@ -37,6 +37,13 @@ export class MissingBankReferenceError extends Error {
   }
 }
 
+export class DuplicateBankReferenceError extends Error {
+  constructor() {
+    super("That bank reference is already recorded on another order.");
+    this.name = "DuplicateBankReferenceError";
+  }
+}
+
 export class MissingDeclineReasonError extends Error {
   constructor() {
     super("Enter a reason before declining.");
@@ -89,6 +96,7 @@ export async function confirmManualPayment(orderId: string, input: ConfirmManual
       throw new AmountMismatchError(input.receivedAmountMinor, input.expectedAmountMinor);
     }
     if (error.code === "EB022") throw new NotAPendingManualOrderError();
+    if (error.code === "EB043") throw new DuplicateBankReferenceError();
     if (error.code === "22023") throw new MissingBankReferenceError();
     throw new Error(`confirmManualPayment: confirm_manual_payment failed: ${error.message}`);
   }

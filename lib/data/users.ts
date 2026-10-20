@@ -1,4 +1,5 @@
 import "server-only";
+import { defaultLocale } from "@/lib/i18n/config";
 
 import { notFound } from "next/navigation";
 
@@ -10,6 +11,10 @@ export type AdminUserSearchResultDTO = { profileId: string; email: string; displ
 export type AdminUserEntitlementDTO = {
   id: string;
   bookId: string;
+  // The edition (language) the entitlement is for. Null only for an old row no edition could be
+  // proven for; such a row opens nothing.
+  editionId: string | null;
+  languageCode: string | null;
   bookTitle: string;
   sourceType: "free_order" | "admin_grant" | "simulated_payment" | "manual_payment" | "sepay_payment";
   status: "active" | "revoked";
@@ -68,6 +73,8 @@ export async function searchUsers(query: string): Promise<AdminUserSearchResultD
 type EntitlementRow = {
   id: string;
   book_id: string;
+  edition_id: string | null;
+  edition: { language_code: string } | { language_code: string }[] | null;
   source_type: AdminUserEntitlementDTO["sourceType"];
   status: AdminUserEntitlementDTO["status"];
   reason: string | null;
@@ -78,8 +85,35 @@ type EntitlementRow = {
 
 function bookTitle(book: EntitlementRow["book"]): string {
   if (!book) return "Unknown book";
-  const localized = book.localizations.find((row) => row.locale === "vi") ?? book.localizations[0];
+  const localized = book.localizations.find((row) => row.locale === defaultLocale) ?? book.localizations[0];
   return localized?.title ?? book.canonical_key;
+}
+
+export type GrantableEditionDTO = { id: string; label: string };
+
+// Every edition an admin can grant, labelled "Title (language)". Grants are per edition: granting
+// English never opens Japanese.
+export async function listGrantableEditions(): Promise<GrantableEditionDTO[]> {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("editions")
+    .select("id, language_code, edition_number, book:books ( canonical_key, localizations:book_localizations ( locale, title ) )")
+    .order("language_code");
+  if (error) throw new Error("Unable to load editions.");
+
+  return ((data ?? []) as unknown as {
+    id: string;
+    language_code: string;
+    edition_number: number;
+    book: EntitlementRow["book"];
+  }[])
+    .map((row) => ({
+      id: row.id,
+      label: `${bookTitle(row.book)} (${row.language_code}${row.edition_number > 1 ? ` #${row.edition_number}` : ""})`,
+    }))
+    .sort((left, right) => left.label.localeCompare(right.label));
 }
 
 export async function getAdminUser(profileId: string): Promise<AdminUserDTO> {
@@ -93,7 +127,7 @@ export async function getAdminUser(profileId: string): Promise<AdminUserDTO> {
     supabase.from("user_roles").select("role").eq("profile_id", profileId).maybeSingle(),
     supabase
       .from("entitlements")
-      .select("id, book_id, source_type, status, reason, granted_at, revoked_at, book:books ( canonical_key, localizations:book_localizations ( locale, title ) )")
+      .select("id, book_id, edition_id, source_type, status, reason, granted_at, revoked_at, edition:editions ( language_code ), book:books ( canonical_key, localizations:book_localizations ( locale, title ) )")
       .eq("profile_id", profileId)
       .order("granted_at", { ascending: false }),
   ]);
@@ -115,6 +149,8 @@ export async function getAdminUser(profileId: string): Promise<AdminUserDTO> {
     entitlements: ((entitlements.data ?? []) as unknown as EntitlementRow[]).map((row) => ({
       id: row.id,
       bookId: row.book_id,
+      editionId: row.edition_id ?? null,
+      languageCode: (Array.isArray(row.edition) ? row.edition[0] : row.edition)?.language_code ?? null,
       bookTitle: bookTitle(row.book),
       sourceType: row.source_type,
       status: row.status,

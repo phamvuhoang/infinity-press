@@ -1,4 +1,5 @@
 import "server-only";
+import { alternateSlugsSchema } from "@/lib/i18n/alternates";
 
 import { headers } from "next/headers";
 import { cache } from "react";
@@ -8,6 +9,7 @@ import { retailers } from "@/lib/analytics/browser";
 import { type BookAction, resolveBookAction } from "@/lib/catalog/book-action";
 import { booksForEntity } from "@/lib/catalog/browse";
 import { coverPublicUrl } from "@/lib/catalog/covers";
+import { selectEdition } from "@/lib/catalog/edition-selection";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import type {
   CatalogBookCard,
@@ -23,6 +25,7 @@ import {
   searchHitKinds,
 } from "@/lib/catalog/search";
 import { getServerEnv } from "@/lib/config/server-env";
+import { editionOptionsSchema } from "@/lib/data/editions";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import type { Locale } from "@/lib/i18n/config";
 import { getRequestId } from "@/lib/observability/request-id";
@@ -89,6 +92,10 @@ type CardRow = {
   created_at: string;
   list_price_minor: number | null;
   sale_ends_at: string | null;
+  edition_id: string;
+  language_code: string;
+  is_language_fallback: boolean;
+  metadata_locale: string;
 };
 
 const topicsSchema = z
@@ -117,6 +124,10 @@ function toCard(row: CardRow): CatalogBookCard {
           },
     hasActivePublication: row.has_active_publication,
     hasSample: row.has_sample,
+    editionId: row.edition_id,
+    languageCode: row.language_code,
+    isLanguageFallback: row.is_language_fallback,
+    metadataLocale: row.metadata_locale,
     series:
       row.series_slug && row.series_name && row.series_position !== null
         ? {
@@ -179,8 +190,10 @@ const bookPageSchema = z.object({
     .catch([]),
   seoTitle: z.string().nullable(),
   seoDescription: z.string().nullable(),
-  alternateSlug: z.string().nullable(),
+  alternateSlugs: alternateSlugsSchema,
   isbn: z.string().nullable().catch(null),
+  metadataLocale: z.string(),
+  editions: editionOptionsSchema,
   // One malformed row drops that row, not the whole block: a paperback button must not vanish for
   // every retailer because one stored link fails the enum or the URL rule.
   retailLinks: z
@@ -279,7 +292,8 @@ const entityPageSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  alternateSlug: z.string().nullable(),
+  alternateSlugs: alternateSlugsSchema,
+  metadataLocale: z.string(),
   quote: z.string().nullable().catch(null),
   imagePath: z.string().nullable().catch(null),
   imageAlt: z.string().nullable().catch(null),
@@ -321,6 +335,21 @@ export const getEntityPage = cache(
   },
 );
 
+// The author, series and topic slugs that are pages of THIS locale (their own copy, a visible book),
+// for generateStaticParams and the sitemap. An entity shown under another locale's copy is that
+// locale's page and is not listed here.
+export const listEntitySlugs = cache(
+  async (locale: Locale): Promise<Record<CatalogEntityKind, string[]>> => {
+    const { data, error } = await createPublicClient().rpc("catalog_entity_slugs", { p_locale: locale });
+    if (error) throw await failure("listEntitySlugs", error);
+    const slugs: Record<CatalogEntityKind, string[]> = { author: [], series: [], topic: [] };
+    for (const row of (data ?? []) as { kind: string; slug: string }[]) {
+      if (row.kind === "author" || row.kind === "series" || row.kind === "topic") slugs[row.kind].push(row.slug);
+    }
+    return slugs;
+  },
+);
+
 export async function getActiveEntitlementBookIds(
   profileId: string,
 ): Promise<Set<string>> {
@@ -334,16 +363,31 @@ export async function getActiveEntitlementBookIds(
   return new Set((data ?? []).map((row) => row.book_id));
 }
 
+// Access is per edition. An order line that names an edition is owned only when THAT edition is held:
+// owning the English edition says nothing about the Japanese one.
+export async function getActiveEntitlementEditionIds(profileId: string): Promise<Set<string>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("entitlements")
+    .select("edition_id")
+    .eq("profile_id", profileId)
+    .eq("status", "active");
+  if (error) throw await failure("getActiveEntitlementEditionIds", error);
+  return new Set((data ?? []).flatMap((row) => (row.edition_id ? [row.edition_id] : [])));
+}
+
+// What the viewer can do with ONE edition. Ownership is per edition: holding the English edition
+// leaves the Japanese one to buy.
 export async function getBookActionState(
-  card: Pick<CatalogBookCard, "bookId" | "offer" | "hasActivePublication">,
+  card: Pick<CatalogBookCard, "editionId" | "offer" | "hasActivePublication">,
 ): Promise<{ action: BookAction; signedIn: boolean }> {
   const profile = await getCurrentProfile();
   const owned = profile
-    ? await getActiveEntitlementBookIds(profile.id)
+    ? await getActiveEntitlementEditionIds(profile.id)
     : new Set<string>();
 
   const action = resolveBookAction({
-    hasActiveEntitlement: owned.has(card.bookId),
+    hasActiveEntitlement: owned.has(card.editionId),
     offer: card.offer
       ? { priceMinor: card.offer.priceMinor, active: true }
       : null,
@@ -357,7 +401,7 @@ export async function getBookActionState(
 // the entitlement the viewer might hold. A page renders this so it can be prerendered; the viewer's
 // own state arrives from /api/catalog/books/[bookId]/action-state.
 export function publicBookAction(
-  card: Pick<CatalogBookCard, "bookId" | "offer" | "hasActivePublication">,
+  card: Pick<CatalogBookCard, "offer" | "hasActivePublication">,
 ): BookAction {
   return resolveBookAction({
     hasActiveEntitlement: false,
@@ -374,29 +418,41 @@ export function publicBookAction(
 export async function getSampleReaderBook(
   locale: Locale,
   slug: string,
+  // The edition the reader selected on the book page; null is the default edition. An id that is not
+  // one of the work's readable editions is a 404, never the default's sample.
+  requestedEditionId: string | null = null,
 ): Promise<{
   bookId: string;
   title: string;
   slug: string;
   publicationId: string;
+  // The edition the sample belongs to, and the offer it is sold under: the end-of-sample control
+  // buys or opens THIS edition.
+  editionId: string;
+  offer: { offerId: string; priceMinor: number } | null;
   action: BookAction;
   signedIn: boolean;
 } | null> {
   const book = await getBookPage(locale, slug);
-  if (!book || !book.hasSample) return null;
+  if (!book) return null;
+  const selection = selectEdition(book.editions, requestedEditionId);
+  if (selection.status !== "selected" || !selection.edition.hasSample) return null;
+  const edition = selection.edition;
 
-  const publicationId = await resolveSamplePublicationId(book.bookId);
+  const publicationId = await resolveSamplePublicationId(edition.editionId);
   if (!publicationId) return null;
 
   // Reads the optional session, like the book page does: a signed-out visitor is the expected
   // caller here and must not be redirected. It only decides which control the sample ends with.
-  const { action, signedIn } = await getBookActionState(book);
+  const { action, signedIn } = await getBookActionState({ ...book, editionId: edition.editionId, offer: edition.offer });
 
   return {
     bookId: book.bookId,
     title: book.title,
     slug: book.slug,
     publicationId,
+    editionId: edition.editionId,
+    offer: edition.offer ? { offerId: edition.offer.offerId, priceMinor: edition.offer.priceMinor } : null,
     action,
     signedIn,
   };

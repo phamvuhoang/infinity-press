@@ -20,7 +20,7 @@ function card(overrides: Partial<CatalogBookCard> & { bookId: string }): Catalog
     cover: null,
     offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,

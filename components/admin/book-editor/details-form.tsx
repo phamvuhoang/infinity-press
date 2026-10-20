@@ -1,21 +1,23 @@
 "use client";
 
 import { useActionState } from "react";
-
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { initialAdminFormState, type AdminFormState } from "@/lib/catalog/form";
+import type { ContentLanguageOption } from "@/lib/i18n/settings";
 
 export function DetailsForm({
   action,
   authors,
+  languages,
   defaults,
 }: {
   action: (state: AdminFormState, formData: FormData) => Promise<AdminFormState>;
   authors: { id: string; name: string; canonicalSlug: string }[];
+  languages: ContentLanguageOption[];
   defaults: { canonicalKey: string; originalLanguage: string; primaryAuthorId: string };
 }) {
   const [state, formAction] = useActionState(action, initialAdminFormState);
@@ -31,8 +33,11 @@ export function DetailsForm({
         <div className="min-w-0 space-y-2">
           <Label htmlFor="details-originalLanguage">Book language</Label>
           <NativeSelect defaultValue={defaults.originalLanguage} aria-invalid={Boolean(state.fieldErrors.originalLanguage)} aria-describedby={state.fieldErrors.originalLanguage ? "details-originalLanguage-error" : undefined} id="details-originalLanguage" name="originalLanguage">
-            <option value="vi">Vietnamese (vi)</option>
-            <option value="en">English (en)</option>
+            {languages.map((language) => (
+              <option key={language.code} value={language.code}>
+                {`${language.name} (${language.code})`}
+              </option>
+            ))}
           </NativeSelect>
           <FieldError id="details-originalLanguage-error" message={state.fieldErrors.originalLanguage} />
         </div>

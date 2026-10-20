@@ -76,7 +76,7 @@ test("an admin uploads an EPUB and it is queued for processing", async ({ page }
   const { email, password } = await createAdminUser();
   const { bookId, editionId } = await createBookWithEdition();
 
-  await signInAsAdmin(page, email, password, `/admin/books/${bookId}`);
+  await signInAsAdmin(page, email, password, `/admin/books/${bookId}/editions/${editionId}`);
 
   await page.locator("#epub-file").setInputFiles({
     name: "e2e-book.epub",
@@ -85,9 +85,8 @@ test("an admin uploads an EPUB and it is queued for processing", async ({ page }
   });
   await page.getByRole("button", { name: "Upload EPUB" }).click();
 
-  // Scoped to the EPUB section rather than the page: S11's editorial-pins picker added a second,
-  // initially empty role="status" live region to this editor, so a page-wide status locator is
-  // ambiguous. The section's anchor id is what the editor's own section nav links to.
+  // Scoped to the EPUB section rather than the page: the edition page carries other live regions
+  // (one per form), so a page-wide status locator is ambiguous.
   const status = page.locator("#epub").getByRole("status");
   await expect(status).toContainText("Queued for processing. Job", { timeout: 15_000 });
 
@@ -119,9 +118,9 @@ test("an admin uploads an EPUB and it is queued for processing", async ({ page }
 
 test("a non-EPUB file is rejected client-side, with no server round trip", async ({ page }) => {
   const { email, password } = await createAdminUser();
-  const { bookId } = await createBookWithEdition();
+  const { bookId, editionId } = await createBookWithEdition();
 
-  await signInAsAdmin(page, email, password, `/admin/books/${bookId}`);
+  await signInAsAdmin(page, email, password, `/admin/books/${bookId}/editions/${editionId}`);
 
   // A Server Action call is a POST to the current page URL carrying a Next-Action header - track
   // every POST from here on so the "no server round trip" half of this test's title is actually

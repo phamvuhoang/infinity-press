@@ -1,3 +1,4 @@
+import { approveEditionDirectly } from "./support/editions";
 import { type Page, expect, test } from "@playwright/test";
 
 import { createServiceRoleClient } from "./support/supabase";
@@ -62,6 +63,7 @@ async function seedReadyPublication() {
     .select("id")
     .single();
   if (editionError) throw editionError;
+  await approveEditionDirectly(edition.id);
 
   const { data: asset, error: assetError } = await admin
     .from("ebook_assets")
@@ -81,6 +83,7 @@ async function seedReadyPublication() {
       ebook_asset_id: asset.id,
       version: 1,
       manifest_key: `${asset.id}/manifest.json`,
+      epub_language: "en",
       toc_json: [{ title: "Chapter 1", href: "OEBPS/text/chapter1.xhtml", children: [] }],
       status: "ready_for_preview",
     })
@@ -141,13 +144,11 @@ test("an admin previews a ready-for-preview version and publishes it", async ({ 
   await expect(page.getByTestId("publication-lifecycle")).toContainText("currently active");
 
   const admin = createServiceRoleClient();
-  const { data: bookRow, error } = await admin
-    .from("books")
-    .select("active_publication_id, status")
-    .eq("id", bookId)
-    .single();
+  const { data: bookRow, error } = await admin.from("books").select("status").eq("id", bookId).single();
   if (error) throw error;
-  expect(bookRow.active_publication_id).toBe(publicationId);
+  const { data: editionRow, error: editionError } = await admin.from("editions").select("active_publication_id").eq("book_id", bookId).single();
+  if (editionError) throw editionError;
+  expect(editionRow.active_publication_id).toBe(publicationId);
   // Since migration 20260913120000, publishing a version moves the active pointer only; the book
   // stays draft until an admin publishes the book itself (covered by e2e/admin-catalog.spec.ts).
   expect(bookRow.status).toBe("draft");
@@ -194,7 +195,7 @@ test("the preview resource route refuses an unauthenticated request", async ({ r
   // requireAdmin() with no `next`/`locale`, so buildSignInRedirect resolves to the default
   // locale's own sign-in page with no query string.
   expect(response.status()).toBe(307);
-  expect(response.headers()["location"]).toContain("/vi/sign-in");
+  expect(response.headers()["location"]).toContain("/en/sign-in");
   const body = await response.text();
   expect(body).not.toContain("Chapter 1 preview content");
 });

@@ -17,7 +17,8 @@ function idea(slug: string, question: string, topics = [habits]): KnowledgeIdeaS
     shortAnswer: `Answer to ${question}`,
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-02T00:00:00+00:00",
-    alternateSlug: null,
+    alternateSlugs: {},
+    metadataLocale: "en",
     topics,
   };
 }

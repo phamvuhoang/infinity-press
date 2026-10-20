@@ -6,11 +6,13 @@ import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
   AmountMismatchError,
+  DuplicateBankReferenceError,
   NotAPendingManualOrderError,
   confirmManualPayment,
   rejectManualPayment,
   type DeclineOutcome,
 } from "@/lib/commerce/manual-payment";
+import { minorFromMajorText } from "@/lib/commerce/money";
 import { getAdminOrder } from "@/lib/data/admin-orders";
 import { getRequestId } from "@/lib/observability/request-id";
 
@@ -48,17 +50,16 @@ export async function confirmManualPaymentAction(
   const bankReference = String(formData.get("reference") ?? "").trim();
   if (!bankReference) return { status: "error", message: "Enter the bank transaction reference." };
 
-  const rawAmount = String(formData.get("amount") ?? "").trim();
-  // A price is integer minor units. Anything else is a typo, and guessing at it would write the
-  // wrong number into the reconciliation record.
-  if (!/^\d+$/.test(rawAmount)) {
-    return { status: "error", message: "Enter the received amount as a whole number." };
-  }
-  const receivedAmountMinor = Number.parseInt(rawAmount, 10);
-
   // getAdminOrder never returns null: a missing or malformed order id calls notFound() internally
   // and this Server Action never gets a chance to run. There is nothing to check here.
   const order = await getAdminOrder(orderId);
+
+  // The amount is typed in the order's currency and parsed as exact decimal text. Anything else is
+  // a typo, and guessing at it would write the wrong number into the reconciliation record.
+  const receivedAmountMinor = minorFromMajorText(String(formData.get("amount") ?? ""), order.currency);
+  if (receivedAmountMinor === null) {
+    return { status: "error", message: "Enter the received amount in the order's currency, without rounding." };
+  }
 
   const note = String(formData.get("note") ?? "").trim();
 
@@ -73,6 +74,9 @@ export async function confirmManualPaymentAction(
   } catch (error) {
     if (error instanceof AmountMismatchError) {
       return { status: "mismatch", receivedMinor: error.receivedMinor, expectedMinor: error.expectedMinor };
+    }
+    if (error instanceof DuplicateBankReferenceError) {
+      return { status: "error", message: "That bank reference is already recorded on another order." };
     }
     if (error instanceof NotAPendingManualOrderError) {
       return { status: "error", message: "This order is no longer awaiting a transfer." };
