@@ -37,17 +37,17 @@ in `lib/auth/callback.ts` first. Until then the direct style would send those us
 
 ## 2. Subjects
 
-Every subject starts with `[InfinityBooksPress]`, so the mail is easy to find and filter in a shared
+Every subject starts with `[InfinityPress]`, so the mail is easy to find and filter in a shared
 inbox. Paste the subject into the template's **Subject** field exactly as shown:
 
 | Template | Subject |
 | --- | --- |
-| Magic Link | `[InfinityBooksPress] Your sign-in link` |
-| Confirm signup | `[InfinityBooksPress] Confirm your email address` |
-| Reset Password | `[InfinityBooksPress] Reset your password` |
-| Reauthentication | `[InfinityBooksPress] Your verification code` |
-| Invite user | `[InfinityBooksPress] You have been invited` |
-| Change Email Address | `[InfinityBooksPress] Confirm your new email address` |
+| Magic Link | `[InfinityPress] Your sign-in link` |
+| Confirm signup | `[InfinityPress] Confirm your email address` |
+| Reset Password | `[InfinityPress] Reset your password` |
+| Reauthentication | `[InfinityPress] Your verification code` |
+| Invite user | `[InfinityPress] You have been invited` |
+| Change Email Address | `[InfinityPress] Confirm your new email address` |
 
 ## 3. House style
 
@@ -62,7 +62,7 @@ Every template below shares one skeleton, so a change to one is easy to mirror a
   fonts that exist on every mail client.
 - A hidden preheader line controls the inbox preview text instead of leaking the first sentence.
 - Every link is also printed as plain text underneath, for clients that strip anchors.
-- The brand is a text wordmark ("Infinity Books Press"), not an image, so nothing depends on remote
+- The brand is a text wordmark ("Infinity Press"), not an image, so nothing depends on remote
   images being loaded.
 - Rounded corners degrade to square in Outlook. That is the only visual difference there.
 
@@ -85,7 +85,7 @@ Press readers to the wrong site.
 
 ## 4. Magic Link
 
-Subject: `[InfinityBooksPress] Your sign-in link`
+Subject: `[InfinityPress] Your sign-in link`
 
 ```html
 <!DOCTYPE html>
@@ -98,19 +98,19 @@ Subject: `[InfinityBooksPress] Your sign-in link`
 <title>Your sign-in link</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f7f4ed;">
-<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Your one-time link to Infinity Books Press. It expires in one hour.</div>
+<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Your one-time link to Infinity Press. It expires in one hour.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f7f4ed;">
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
 <tr><td align="left" style="padding:0 4px 24px 4px;">
-<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Books Press</p>
+<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Press</p>
 </td></tr>
 <tr><td style="background-color:#fbf9f4;border:1px solid #e4ded2;border-radius:12px;padding:40px 36px;">
 <h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;font-weight:400;color:#202421;">Your sign-in link</h1>
 <p style="margin:0 0 28px 0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3a413d;">Follow the link below to continue to your library. No password needed.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td bgcolor="#34473e" style="border-radius:8px;">
-<a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;padding:14px 30px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;line-height:1;color:#f7f4ed;text-decoration:none;border-radius:8px;">Sign in to Infinity Books Press</a>
+<a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;padding:14px 30px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;line-height:1;color:#f7f4ed;text-decoration:none;border-radius:8px;">Sign in to Infinity Press</a>
 </td></tr></table>
 <p style="margin:28px 0 8px 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#5f6e64;">Button not working? Paste this into your browser:</p>
 <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#5f6e64;word-break:break-all;"><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email" style="color:#34473e;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email</a></p>
@@ -120,7 +120,7 @@ Subject: `[InfinityBooksPress] Your sign-in link`
 </td></tr></table>
 </td></tr>
 <tr><td align="left" style="padding:24px 8px 0 8px;">
-<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Books Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a><br>You received this because someone entered this address on our sign-in page.</p>
+<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a><br>You received this because someone entered this address on our sign-in page.</p>
 </td></tr>
 </table>
 </td></tr>
@@ -133,7 +133,7 @@ Subject: `[InfinityBooksPress] Your sign-in link`
 
 ## 5. Confirm signup
 
-Subject: `[InfinityBooksPress] Confirm your email address`
+Subject: `[InfinityPress] Confirm your email address`
 
 Sent instead of the magic link the first time an address is seen, because `requestMagicLink()`
 passes `shouldCreateUser: true`. Keep the two consistent: a reader cannot tell which one they
@@ -150,15 +150,15 @@ triggered.
 <title>Confirm your email address</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f7f4ed;">
-<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Confirm your address to open your Infinity Books Press library.</div>
+<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Confirm your address to open your Infinity Press library.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f7f4ed;">
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
 <tr><td align="left" style="padding:0 4px 24px 4px;">
-<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Books Press</p>
+<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Press</p>
 </td></tr>
 <tr><td style="background-color:#fbf9f4;border:1px solid #e4ded2;border-radius:12px;padding:40px 36px;">
-<h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;font-weight:400;color:#202421;">Welcome to Infinity Books Press</h1>
+<h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;font-weight:400;color:#202421;">Welcome to Infinity Press</h1>
 <p style="margin:0 0 28px 0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3a413d;">Confirm this address and your library opens straight away. You will never need a password — each time you sign in, we send a link like this one.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td bgcolor="#34473e" style="border-radius:8px;">
@@ -172,7 +172,7 @@ triggered.
 </td></tr></table>
 </td></tr>
 <tr><td align="left" style="padding:24px 8px 0 8px;">
-<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Books Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a><br>You received this because this address was entered on our sign-in page.</p>
+<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a><br>You received this because this address was entered on our sign-in page.</p>
 </td></tr>
 </table>
 </td></tr>
@@ -185,7 +185,7 @@ triggered.
 
 ## 6. Reset Password
 
-Subject: `[InfinityBooksPress] Reset your password`
+Subject: `[InfinityPress] Reset your password`
 
 Password access is the internal staff fallback, not a customer path, so this link carries
 `next=/internal/en/update-password` — the same destination `requestPasswordReset()` asks for. The
@@ -202,12 +202,12 @@ wording says so, to keep a customer who receives it from expecting a second way 
 <title>Reset your password</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f7f4ed;">
-<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Choose a new password for your Infinity Books Press staff account.</div>
+<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Choose a new password for your Infinity Press staff account.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f7f4ed;">
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
 <tr><td align="left" style="padding:0 4px 24px 4px;">
-<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Books Press</p>
+<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Press</p>
 </td></tr>
 <tr><td style="background-color:#fbf9f4;border:1px solid #e4ded2;border-radius:12px;padding:40px 36px;">
 <h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;font-weight:400;color:#202421;">Reset your password</h1>
@@ -224,7 +224,7 @@ wording says so, to keep a customer who receives it from expecting a second way 
 </td></tr></table>
 </td></tr>
 <tr><td align="left" style="padding:24px 8px 0 8px;">
-<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Books Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a></p>
+<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a></p>
 </td></tr>
 </table>
 </td></tr>
@@ -237,7 +237,7 @@ wording says so, to keep a customer who receives it from expecting a second way 
 
 ## 7. Reauthentication
 
-Subject: `[InfinityBooksPress] Your verification code`
+Subject: `[InfinityPress] Your verification code`
 
 A code, not a link — Supabase asks the reader to type it back into the page they are already on.
 
@@ -257,7 +257,7 @@ A code, not a link — Supabase asks the reader to type it back into the page th
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
 <tr><td align="left" style="padding:0 4px 24px 4px;">
-<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Books Press</p>
+<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Press</p>
 </td></tr>
 <tr><td style="background-color:#fbf9f4;border:1px solid #e4ded2;border-radius:12px;padding:40px 36px;">
 <h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;font-weight:400;color:#202421;">Confirm it is you</h1>
@@ -272,7 +272,7 @@ A code, not a link — Supabase asks the reader to type it back into the page th
 </td></tr></table>
 </td></tr>
 <tr><td align="left" style="padding:24px 8px 0 8px;">
-<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Books Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a></p>
+<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a></p>
 </td></tr>
 </table>
 </td></tr>
@@ -285,7 +285,7 @@ A code, not a link — Supabase asks the reader to type it back into the page th
 
 ## 8. Invite user
 
-Subject: `[InfinityBooksPress] You have been invited`
+Subject: `[InfinityPress] You have been invited`
 
 Uses `{{ .ConfirmationURL }}`: `lib/auth/callback.ts` does not accept `type=invite` today, so a
 direct link would land the guest on `/en/sign-in?error=callback`. That also means this link depends
@@ -300,19 +300,19 @@ Authentication → URL Configuration.
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>You have been invited to Infinity Books Press</title>
+<title>You have been invited to Infinity Press</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f7f4ed;">
-<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Accept your invitation to Infinity Books Press.</div>
+<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Accept your invitation to Infinity Press.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f7f4ed;">
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
 <tr><td align="left" style="padding:0 4px 24px 4px;">
-<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Books Press</p>
+<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Press</p>
 </td></tr>
 <tr><td style="background-color:#fbf9f4;border:1px solid #e4ded2;border-radius:12px;padding:40px 36px;">
 <h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;font-weight:400;color:#202421;">You have been invited</h1>
-<p style="margin:0 0 28px 0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3a413d;">Someone at Infinity Books Press invited <strong style="color:#202421;">{{ .Email }}</strong> to join. Accept below to set up your account.</p>
+<p style="margin:0 0 28px 0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3a413d;">Someone at Infinity Press invited <strong style="color:#202421;">{{ .Email }}</strong> to join. Accept below to set up your account.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td bgcolor="#34473e" style="border-radius:8px;">
 <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 30px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;line-height:1;color:#f7f4ed;text-decoration:none;border-radius:8px;">Accept the invitation</a>
@@ -325,7 +325,7 @@ Authentication → URL Configuration.
 </td></tr></table>
 </td></tr>
 <tr><td align="left" style="padding:24px 8px 0 8px;">
-<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Books Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a></p>
+<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a></p>
 </td></tr>
 </table>
 </td></tr>
@@ -338,7 +338,7 @@ Authentication → URL Configuration.
 
 ## 9. Change Email Address
 
-Subject: `[InfinityBooksPress] Confirm your new email address`
+Subject: `[InfinityPress] Confirm your new email address`
 
 Uses `{{ .ConfirmationURL }}` for the same reason as the invite: `type=email_change` is not in
 `otpTypes`. Supabase sends this to both the old and the new address when "Secure email change" is
@@ -355,16 +355,16 @@ on, which is why the copy names both.
 <title>Confirm your new email address</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f7f4ed;">
-<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Confirm the address change on your Infinity Books Press account.</div>
+<div style="display:none;font-size:1px;color:#f7f4ed;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">Confirm the address change on your Infinity Press account.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f7f4ed;">
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
 <tr><td align="left" style="padding:0 4px 24px 4px;">
-<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Books Press</p>
+<p style="margin:0;font-family:Georgia,serif;font-size:20px;color:#202421;">Infinity Press</p>
 </td></tr>
 <tr><td style="background-color:#fbf9f4;border:1px solid #e4ded2;border-radius:12px;padding:40px 36px;">
 <h1 style="margin:0 0 16px 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.3;font-weight:400;color:#202421;">Confirm your new address</h1>
-<p style="margin:0 0 24px 0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3a413d;">Your Infinity Books Press account is moving from <strong style="color:#202421;">{{ .Email }}</strong> to <strong style="color:#202421;">{{ .NewEmail }}</strong>. Confirm below to finish the change — your library and reading progress come with you.</p>
+<p style="margin:0 0 24px 0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3a413d;">Your Infinity Press account is moving from <strong style="color:#202421;">{{ .Email }}</strong> to <strong style="color:#202421;">{{ .NewEmail }}</strong>. Confirm below to finish the change — your library and reading progress come with you.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td bgcolor="#34473e" style="border-radius:8px;">
 <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 30px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;line-height:1;color:#f7f4ed;text-decoration:none;border-radius:8px;">Confirm the change</a>
@@ -377,7 +377,7 @@ on, which is why the copy names both.
 </td></tr></table>
 </td></tr>
 <tr><td align="left" style="padding:24px 8px 0 8px;">
-<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Books Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a></p>
+<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#77877b;">Infinity Press · <a href="{{ .SiteURL }}" style="color:#77877b;">{{ .SiteURL }}</a></p>
 </td></tr>
 </table>
 </td></tr>

@@ -257,15 +257,15 @@ otp_expiry = 3600
 # Email links use token hashes so they work when opened on another device. Hosted projects need
 # the same templates configured in the Supabase dashboard.
 [auth.email.template.magic_link]
-subject = "Your Infinity Books Press sign-in link"
+subject = "Your Infinity Press sign-in link"
 content_path = "./supabase/templates/magic-link.html"
 
 [auth.email.template.confirmation]
-subject = "Confirm your Infinity Books Press email"
+subject = "Confirm your Infinity Press email"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Reset your Infinity Books Press password"
+subject = "Reset your Infinity Press password"
 content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template
