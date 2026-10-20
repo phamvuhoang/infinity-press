@@ -71,9 +71,11 @@ create policy "admin writes pricing defaults" on public.edition_pricing_defaults
 
 -- Writes to the locale registries and settings go through the RPC below (or a migration), never
 -- directly from a client role.
-revoke insert, update, delete on public.supported_locales, public.content_languages,
-  public.platform_settings from anon, authenticated;
-revoke all on public.edition_pricing_defaults from anon;
+revoke all on public.supported_locales, public.content_languages, public.platform_settings,
+  public.edition_pricing_defaults from anon, authenticated;
+grant select on public.supported_locales, public.content_languages, public.platform_settings
+  to anon, authenticated;
+grant select, insert, update, delete on public.edition_pricing_defaults to authenticated;
 
 create function public.is_supported_locale(p_locale text)
 returns boolean

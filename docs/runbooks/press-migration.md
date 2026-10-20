@@ -104,3 +104,50 @@ select conrelid::regclass, conname from pg_constraint
  where contype = 'c' and connamespace = 'public'::regnamespace
    and pg_get_constraintdef(oid) ~ $$'vi'$$ order by 1;
 ```
+
+## Edition schema (expand phase, Task 3)
+
+Migration `20261020110000_press_edition_schema.sql` is additive and nullable. It adds
+`editions.status`, `editions.active_publication_id` (a trigger rejects a publication of another
+edition), `editions.contributors`, `editions.introduction`, `books.default_content_language`,
+`book_language_editions` (one default edition per book and language, composite foreign key),
+`edition_default_offers` (offer must belong to a SKU of the edition), `bundle_editions`, and
+`edition_id` on `entitlements`, `library_items`, `order_items` and `book_reviews`, each with a
+composite key that refuses an edition of a different book. An edition with orders or entitlements
+keeps its book and language.
+
+Nothing is `NOT NULL` yet and the book-only unique indexes still exist. They go in the contract
+migration (Task 10), after the RPCs write `edition_id` themselves. Until then, re-run the backfill
+before any cutover: rows created by book-only RPCs after this migration have a null `edition_id`.
+
+### Backfill
+
+`public.press_edition_backfill(p_apply boolean)` (service role only) maps legacy rows from evidence:
+the SKU on the order behind an entitlement, the asset behind a publication, the only edition of a
+single-edition book, the edition a reviewer owns. It never grants another language. A dry run
+(`false`) does the work, returns a report and rolls back. A row it cannot map is listed by id (no
+email or other PII) and the run stops without changing anything. The migration itself calls it with
+`true`, so an upgrade that meets an ambiguous row fails with the ids in the error detail.
+
+```sql
+select public.press_edition_backfill(false);   -- report only
+```
+
+### Upgrade rehearsal (local only)
+
+```bash
+scripts/rehearse-upgrade.sh .superpowers/scratch/sbworkdir
+```
+
+Resets the **scratch** stack to the last pre-Press migration, loads `fixtures/db/press-legacy-*.sql`
+(single edition, two assets of one edition, paid and pending orders, a pending gift, progress,
+annotations, a bundle), applies the Press migrations, and asserts the mapping. A second case adds an
+unscoped admin grant on a two-edition book and asserts the upgrade stops, names the row, leaks no
+email, and leaves the schema unchanged. The script refuses any stack whose `project_id` does not end
+in `-local`.
+
+### Regenerating `lib/supabase/database.types.ts`
+
+```bash
+supabase gen types typescript --local --workdir <scratch> | npx prettier --parser typescript --no-semi
+```

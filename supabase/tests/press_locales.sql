@@ -1,5 +1,5 @@
 begin;
-select plan(34);
+select plan(36);
 
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
@@ -184,6 +184,10 @@ select throws_ok(
   null,
   'language and market identify one default'
 );
+
+-- (35)-(36) Registries grant read access only, nothing that survives RLS (TRUNCATE ignores it).
+select is(has_table_privilege('authenticated', 'public.supported_locales', 'TRUNCATE'), false, 'authenticated cannot truncate the locale registry');
+select is(has_table_privilege('anon', 'public.platform_settings', 'UPDATE'), false, 'anon cannot update platform settings');
 
 -- (31)-(34) Metadata fallback picks one whole localization: requested, then the platform default, never a mix.
 select is(public.resolve_metadata_locale('ja', array['en', 'ja']), 'ja', 'the requested locale wins when it exists');
