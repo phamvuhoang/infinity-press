@@ -599,6 +599,11 @@ test.describe.serial("reader depth acceptance", () => {
     const { data: assets } = await service.from("ebook_assets").select("id").eq("edition_id", edition!.id);
     const { data: previous } = await service.from("ebook_publications").select("id").in("ebook_asset_id", (assets ?? []).map((asset) => asset.id)).neq("id", book.publicationId).limit(1).maybeSingle();
     if (!previous) throw new Error("The fixture placeholder publication is missing.");
+    // A rollback to the older version: it becomes the published, pointed-at one and this one is
+    // superseded. (Pointing at a non-published row alone would leave this publication readable,
+    // because the owner's readable publication then falls back to the latest published one.)
+    await service.from("ebook_publications").update({ status: "superseded" }).eq("id", book.publicationId);
+    await service.from("ebook_publications").update({ status: "published" }).eq("id", previous.id);
     await service.from("editions").update({ active_publication_id: previous.id }).eq("id", edition!.id);
     const denied = await page.evaluate(async (publicationId) => Promise.all([
       `/api/reader/publications/${publicationId}/manifest`,
@@ -613,6 +618,8 @@ test.describe.serial("reader depth acceptance", () => {
       { path: `/api/reader/publications/${book.publicationId}/annotations`, status: 404, cache: "private, no-store" },
       { path: `/api/reader/publications/${book.publicationId}/search?q=compass`, status: 404, cache: "private, no-store" },
     ]);
+    await service.from("ebook_publications").update({ status: "superseded" }).eq("id", previous.id);
+    await service.from("ebook_publications").update({ status: "published" }).eq("id", book.publicationId);
     await service.from("editions").update({ active_publication_id: book.publicationId }).eq("id", edition!.id);
     await service.from("ebook_publications").update({ positions_json: null }).eq("id", book.publicationId);
     await page.reload();

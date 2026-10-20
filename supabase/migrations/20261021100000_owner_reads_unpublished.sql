@@ -13,6 +13,8 @@
 -- caller inherits the rule with its opaque denial unchanged: create_reader_session (EB008),
 -- authorize_reader_session (zero rows, which search and annotations also use),
 -- save_reading_progress (EB009), submit_edition_feedback, and the four reader_annotations policies.
+-- create_shared_quote also asked this rule; it re-checks books.status itself in
+-- 20261021120000_shared_quote_published_book.sql, because a public share card needs a published book.
 
 create or replace function public.reader_publication_for_edition(p_edition_id uuid)
 returns uuid

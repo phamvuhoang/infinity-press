@@ -1,5 +1,5 @@
 begin;
-select plan(31);
+select plan(33);
 
 -- Owners keep reading after unpublish or rollback
 -- (docs/superpowers/specs/2026-10-21-owner-reads-unpublished-design.md). Every reader gate follows
@@ -208,6 +208,18 @@ reset role;
 update public.editions set status = 'published' where id = 'e7300000-0000-0000-0000-000000000030';
 
 -- ============================================================================================
+-- (k) What stays hidden: an owner reads an unpublished book but cannot mint a public share card
+-- ============================================================================================
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e7300000-0000-0000-0000-000000000001', true);
+select throws_ok(
+  $$select public.create_shared_quote('e7300000-0000-0000-0000-000000000051', 'a line worth sharing', 'vi')$$,
+  'EB039', null,
+  'an owner cannot share a quote from an unpublished book'
+);
+reset role;
+
+-- ============================================================================================
 -- my_library_editions: the owner's library lists the unpublished book, scoped to the caller
 -- (the book is still 'draft'; after (g) the en pointer is on v1)
 -- ============================================================================================
@@ -257,6 +269,10 @@ update public.books set status = 'published' where id = 'e7300000-0000-0000-0000
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e7300000-0000-0000-0000-000000000001', true);
 select is((select in_catalog from public.my_library_editions('en')), true, 'a republished book is in the catalog');
+select lives_ok(
+  $$select public.create_shared_quote('e7300000-0000-0000-0000-000000000051', 'a line worth sharing', 'vi')$$,
+  'the same owner can share once the book is republished'
+);
 reset role;
 
 select * from finish();
