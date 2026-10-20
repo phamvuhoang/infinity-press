@@ -16,6 +16,11 @@ export type { ProcessingPolicy } from "@/lib/epub/types";
 const XHTML_MEDIA_TYPE = "application/xhtml+xml";
 const CSS_MEDIA_TYPE = "text/css";
 
+// Launch supports horizontal layout only. Vertical writing is detected in the publication's own
+// stylesheets (the standard property and the EPUB-prefixed legacy one) and refused up front, with a
+// message an operator can act on, rather than published into a reader that was never tested for it.
+const VERTICAL_WRITING_PATTERN = /(?:^|[;{\s])(?:-epub-|-webkit-)?writing-mode\s*:\s*(?:vertical-|tb-)/i;
+
 // Named supported-profile exclusion (spec 8, alongside sanitize.ts's `<style>`
 // exclusion): `image/svg+xml` is not in the default allowlist. SVG is XML and can carry
 // its own `<script>` - inert when the resource is only ever reached via `<img src>`
@@ -116,6 +121,14 @@ function buildResource(archive: SafeArchive, item: ParsedManifestItem, policy: P
     // XHTML at all.
     const decoded = textDecoder.decode(rawBytes);
     referencedHrefs = scanCss(decoded, { resourceHref: item.href, policy }).referencedHrefs;
+    if (VERTICAL_WRITING_PATTERN.test(decoded)) {
+      throw new ProcessingError(
+        processingFailure(
+          "UNSUPPORTED_LAYOUT",
+          `${item.href} sets vertical writing. Press supports horizontal layout only at launch: re-export the EPUB with horizontal text (remove writing-mode: vertical-*) and upload it again.`,
+        ),
+      );
+    }
   }
 
   return {

@@ -236,3 +236,44 @@ Migrations `20261020160000_press_edition_bundles.sql`, `20261020170000_press_edi
   edition (`EB042` when a reader holds several and names none). Public reviews carry `languageCode`.
 - **Ask the author -> ask the editors**: default off for authors; copy (vi/en/ja) attributes replies
   to the editors.
+
+## Catalog resolution (Task 8)
+
+Migration `20261020190000_press_catalog_resolution.sql`. One rule decides which edition a reader is
+shown, for lists, search, recommendations and the book page alike:
+
+1. an explicit edition id, if it is a readable edition of that work (`catalog_resolve_edition`);
+2. otherwise the work's default edition in the requested language;
+3. otherwise the default edition in the one effective default language (the work's
+   `default_content_language`, else `platform_settings.default_content_language`);
+4. otherwise nothing: the work is not listed and its page is unavailable. Never a third language.
+
+"Readable" means the edition is `published` and its live publication is `published`. Archived and
+draft editions are not offered to new readers (owners keep reading them). **Offers do not take part**:
+a Japanese edition without a buyable offer is shown as Japanese and not yet on sale, never replaced
+by an English edition that has a price. The price is the edition's default offer
+(`edition_default_offers`), or its only active offer when there is exactly one; with several and no
+default it has no price until an admin chooses. Never the cheapest.
+
+- `catalog_resolved_editions(language, book?)` is the set-wise form used by `catalog_book_cards`,
+  `catalog_book_card_by_id`, `search_catalog`, `recommend_books` and `catalog_has_visible_book`.
+  Tests (`press_catalog_resolution.sql`) prove the set-wise and single-work forms agree.
+- **Metadata is chosen separately**, as one whole localization row: requested locale, else the platform
+  default metadata locale, else the work's original language (`catalog_book_metadata`). A card and
+  page report `metadataLocale`; the page says when the copy is in another language than the interface.
+  A work is reachable only under the slug of the copy it is shown with.
+- A trigger records the first published edition of a language as that language's default
+  (`book_language_editions`); the admin RPCs already did, now every writer does.
+- The book page lists the readable editions (`catalog_book_editions`): language of the EPUB, the
+  edition's own price and currency, whether it is the default for the interface language. The page
+  stays prerendered; `?edition=` is read in the browser. An id that is not on the list gets **no
+  Buy/Get button** and never becomes the default. Buying, getting free, reading and the viewer's
+  ownership are all per edition (`/api/catalog/books/{id}/action-state?locale=&edition=`).
+- Every card names the language of its EPUB; the library ignores the catalog rule and lists every
+  edition the reader owns.
+- Cache: every admin write that changes defaults, editions, offers, publications, localizations or
+  platform settings already calls `revalidateStorefront()`, which revalidates `/[lang]` for all
+  locales, the sitemap and `llms.txt`. The cached pages hold no viewer state.
+- Japanese is searchable without word breaks (substring match on the normalized title).
+- Not in this step: public discovery pages for bundles (none exist yet); the quote card page sells the
+  edition its card resolves to rather than the quoted publication's edition.

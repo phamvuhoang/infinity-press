@@ -44,6 +44,10 @@ insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key
 insert into public.reading_progress (profile_id, publication_id, locator_json, progression, device_id, client_sequence)
 select reader_id, 'e5600000-0000-0000-0000-000000000001', '{"href":"a"}'::jsonb, 0.7, 'd', 1 from t_p;
 
+-- Press: a publication goes live only for an editorially approved edition.
+update public.editions set editorial_state = 'approved', reviewed_at = now(),
+  reviewed_by = (select id from public.profiles order by created_at limit 1);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e5100000-0000-0000-0000-000000000002', true);
 

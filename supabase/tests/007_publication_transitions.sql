@@ -36,6 +36,10 @@ select is(has_function_privilege('authenticated', 'public.rollback_publication(u
 
 -- (7)-(9) A signed-in non-admin passes the grant but is rejected by each function's own
 -- is_admin() check.
+-- Press: a publication goes live only for an editorially approved edition.
+update public.editions set editorial_state = 'approved', reviewed_at = now(),
+  reviewed_by = (select id from public.profiles order by created_at limit 1);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '95000000-0000-0000-0000-000000000002', true);
 select throws_ok(

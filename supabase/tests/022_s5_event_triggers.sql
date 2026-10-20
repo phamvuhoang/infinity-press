@@ -77,6 +77,10 @@ select has_trigger('public', 'audit_logs', 'audit_logs_book_published_events', '
 select has_trigger('public', 'processing_jobs', 'processing_jobs_epub_events', 'the EPUB job trigger exists');
 
 -- A save that crosses no threshold emits nothing (4)
+-- Press: a publication goes live only for an editorially approved edition.
+update public.editions set editorial_state = 'approved', reviewed_at = now(),
+  reviewed_by = (select id from public.profiles order by created_at limit 1);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000002', true);
 select lives_ok(

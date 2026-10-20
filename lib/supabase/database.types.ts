@@ -1453,6 +1453,77 @@ export type Database = {
           },
         ]
       }
+      edition_feedback: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          edition_id: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          locator: Json | null
+          message: string
+          profile_id: string
+          publication_id: string
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          edition_id: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          locator?: Json | null
+          message: string
+          profile_id: string
+          publication_id: string
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          edition_id?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          locator?: Json | null
+          message?: string
+          profile_id?: string
+          publication_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edition_feedback_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edition_feedback_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edition_feedback_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edition_feedback_publication_id_fkey"
+            columns: ["publication_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       edition_pricing_defaults: {
         Row: {
           currency: string
@@ -1488,36 +1559,60 @@ export type Database = {
           book_id: string
           contributors: NonNullable<Json>
           edition_number: number
+          editorial_state: string
           id: string
           introduction: string | null
           isbn: string | null
           language_code: string
           publication_date: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          rights_note: string | null
           status: Database["public"]["Enums"]["content_status"]
+          territory_note: string | null
+          text_source_note: string | null
+          translation_source: string | null
         }
         Insert: {
           active_publication_id?: string | null
           book_id: string
           contributors?: NonNullable<Json>
           edition_number?: number
+          editorial_state?: string
           id?: string
           introduction?: string | null
           isbn?: string | null
           language_code: string
           publication_date?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rights_note?: string | null
           status?: Database["public"]["Enums"]["content_status"]
+          territory_note?: string | null
+          text_source_note?: string | null
+          translation_source?: string | null
         }
         Update: {
           active_publication_id?: string | null
           book_id?: string
           contributors?: NonNullable<Json>
           edition_number?: number
+          editorial_state?: string
           id?: string
           introduction?: string | null
           isbn?: string | null
           language_code?: string
           publication_date?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          rights_note?: string | null
           status?: Database["public"]["Enums"]["content_status"]
+          territory_note?: string | null
+          text_source_note?: string | null
+          translation_source?: string | null
         }
         Relationships: [
           {
@@ -1540,6 +1635,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "content_languages"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "editions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3537,6 +3639,7 @@ export type Database = {
           starts_at: string
         }[]
       }
+      admin_list_edition_feedback: { Args: { p_status: string }; Returns: Json }
       admin_list_questions: { Args: { p_status: string }; Returns: Json }
       admin_list_reviews: { Args: { p_status: string }; Returns: Json }
       admin_list_shared_quotes: { Args: { p_book_id: string }; Returns: Json }
@@ -3574,6 +3677,10 @@ export type Database = {
           storage_key: string
           version: number
         }[]
+      }
+      admin_resolve_edition_feedback: {
+        Args: { p_id: string; p_note: string; p_status: string }
+        Returns: undefined
       }
       admin_save_article_localization: {
         Args: {
@@ -3632,6 +3739,16 @@ export type Database = {
           p_isbn: string
           p_language_code: string
           p_publication_date: string
+        }
+        Returns: undefined
+      }
+      admin_save_edition_provenance: {
+        Args: {
+          p_edition_id: string
+          p_rights_note: string
+          p_territory_note: string
+          p_text_source_note: string
+          p_translation_source: string
         }
         Returns: undefined
       }
@@ -3771,6 +3888,10 @@ export type Database = {
       }
       admin_set_default_offer: {
         Args: { p_edition_id: string; p_offer_id: string }
+        Returns: undefined
+      }
+      admin_set_edition_review: {
+        Args: { p_edition_id: string; p_note: string; p_state: string }
         Returns: undefined
       }
       admin_set_home_hero: {
@@ -4589,6 +4710,10 @@ export type Database = {
           p_rating: number
         }
         Returns: Json
+      }
+      submit_edition_feedback: {
+        Args: { p_locator: Json; p_message: string; p_publication_id: string }
+        Returns: string
       }
       submit_reader_question: {
         Args: {

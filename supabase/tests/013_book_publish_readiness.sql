@@ -35,6 +35,10 @@ select is(has_function_privilege('authenticated', 'public.publish_book(uuid)', '
 select is(has_function_privilege('anon', 'public.unpublish_book(uuid)', 'EXECUTE'), false, 'anon holds no EXECUTE on unpublish_book');
 select is(has_function_privilege('authenticated', 'public.unpublish_book(uuid)', 'EXECUTE'), true, 'authenticated holds EXECUTE on unpublish_book');
 
+-- Press: a publication goes live only for an editorially approved edition.
+update public.editions set editorial_state = 'approved', reviewed_at = now(),
+  reviewed_by = (select id from public.profiles order by created_at limit 1);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'c1000000-0000-0000-0000-000000000002', true);
 select throws_ok($$select public.publish_book('c3000000-0000-0000-0000-000000000001')$$, '42501', null, 'non-admin cannot publish a book');
