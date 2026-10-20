@@ -151,3 +151,38 @@ in `-local`.
 ```bash
 supabase gen types typescript --local --workdir <scratch> | npx prettier --parser typescript --no-semi
 ```
+
+## Edition access (Task 5)
+
+Migration `20261020140000_press_edition_access.sql`. An entitlement and a library item identify
+`(profile, edition)`; the book-only unique indexes are gone, so one reader can hold English and
+Japanese of the same work, each with its own progress.
+
+- **One reading rule.** `reader_edition_for_publication(profile, publication)` returns the edition a
+  reader may open, or null: the publication is the edition's live, published one; the edition is
+  `published` (or `archived`, which owners keep and new buyers never see); the work is published;
+  and the profile holds an active entitlement for that edition. `create_reader_session`,
+  `authorize_reader_session`, `save_reading_progress`, `create_shared_quote` and every
+  `reader_annotations` policy call it. One refusal for every reason.
+- **One grant primitive.** `press_grant_edition_access` (internal) is the only code that writes an
+  entitlement and its library item. `grant_complimentary_entitlement(profile, edition, reason)`,
+  `acquire_free_edition(edition)`, `apply_payment_event`, `apply_coupon_to_order` and `claim_gift`
+  all go through it. It is idempotent per `(profile, edition)`: a second source returns the first
+  entitlement rather than adding or rewriting one, so revoking one order never removes another
+  active grant.
+- **Book-only writes are fenced.** A trigger fills `edition_id` from the order's SKU, else the only
+  edition of a one-edition work, and refuses (`23514`) a work with several editions and no evidence.
+  `acquire_free_ebook(book)` survives only as a wrapper that refuses to choose between two free
+  editions; it is removed in the contract migration.
+- **Transitional bridge, both ways.** `publish_publication` mirrors the edition pointer to
+  `books.active_publication_id` only while the book pointer names the same edition (or nothing), and
+  a trigger copies a write to the book pointer onto its edition. Both go away with the column.
+- **Routes.** Reading is `/{locale}/read/editions/{editionId}`. `/{locale}/read/{bookId}` resolves
+  only to editions the reader owns: one redirects, several open a chooser, none is a 404. The
+  interface locale never picks the language. The library lists every owned edition (grouped by work,
+  tagged with its language) whatever the interface locale.
+- **Admin grants** are per edition: Users -> Grant complimentary access names an edition, and the
+  entitlement table shows `Title (language)`.
+
+Samples are still resolved per work (`resolveSamplePublicationId`); the edition-aware sample arrives
+with the catalog resolver (Task 8).
