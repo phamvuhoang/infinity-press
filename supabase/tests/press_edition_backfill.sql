@@ -5,6 +5,12 @@ select plan(34);
 -- function maps each to exactly one edition from evidence (the SKU on the order, the asset behind a
 -- publication) and refuses to guess. No row is ever granted an extra language to "stay compatible".
 
+-- Legacy rows carry only a book: the access triggers that now fill the edition at insert are switched
+-- off for the fixtures, so the backfill is exercised on rows shaped like the old data.
+alter table public.entitlements disable trigger entitlements_resolve_edition_guard;
+alter table public.library_items disable trigger library_items_resolve_edition_guard;
+alter table public.books disable trigger books_mirror_active_publication_bridge;
+
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
   ('00000000-0000-0000-0000-000000000000', 'e4100000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'bf-reader1@example.test', '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),

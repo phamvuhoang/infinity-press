@@ -280,16 +280,17 @@ select throws_ok(
 reset role;
 update public.ebook_publications set status = 'published' where id = 'a8000000-0000-0000-0000-000000000050';
 
--- (23) The book's active pointer. The publication stays 'published' and the book stays
+-- (23) The edition's active pointer. The publication stays 'published' and the book stays
 -- 'published' - only the pointer moves away, which is the rollback case: a superseded-but-still-
 -- published-looking publication must not remain openable after the book points elsewhere.
 update public.books set active_publication_id = null where id = 'a8000000-0000-0000-0000-000000000020';
+update public.editions set active_publication_id = null where id = 'a8000000-0000-0000-0000-000000000030';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a8000000-0000-0000-0000-000000000001', true);
 select throws_ok(
   $$select * from public.create_reader_session('a8000000-0000-0000-0000-000000000050', 900)$$,
   'EB008', null,
-  'an entitled reader cannot mint a session for a publication the book no longer points at'
+  'an entitled reader cannot mint a session for a publication its edition no longer points at'
 );
 reset role;
 update public.books set active_publication_id = 'a8000000-0000-0000-0000-000000000050'

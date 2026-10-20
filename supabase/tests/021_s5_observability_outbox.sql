@@ -27,6 +27,9 @@ values ('81000000-0000-0000-0000-000000000001', 's5-outbox-author', 'S5 Outbox A
 insert into public.books (id, canonical_key, original_language, primary_author_id, status)
 select ('82000000-0000-0000-0000-00000000000' || n)::uuid, 's5-outbox-book-' || n, 'vi', '81000000-0000-0000-0000-000000000001', 'published'
 from generate_series(1, 4) as n;
+insert into public.editions (id, book_id, language_code)
+select ('82100000-0000-0000-0000-00000000000' || n)::uuid, ('82000000-0000-0000-0000-00000000000' || n)::uuid, 'vi'
+from generate_series(1, 4) as n;
 
 -- Schema and function contract (1-5)
 select has_table('public', 'analytics_events'::name);
@@ -71,7 +74,7 @@ select is(
 insert into public.entitlements (profile_id, book_id, source_type, actor_profile_id, reason, status)
 select t_ids.reader_id, '82000000-0000-0000-0000-000000000001', 'admin_grant', t_ids.admin_id, 'Test fixture repeat', 'active'
 from t_ids
-on conflict (profile_id, book_id) where status = 'active' do nothing;
+on conflict (profile_id, edition_id) where status = 'active' and edition_id is not null do nothing;
 select is(
   (select count(*)::int from public.entitlements where profile_id = (select reader_id from t_ids) and book_id = '82000000-0000-0000-0000-000000000001'),
   1,

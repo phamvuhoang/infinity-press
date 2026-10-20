@@ -69,6 +69,7 @@ insert into public.book_localizations (book_id, locale, slug, title) values
 insert into public.editions (id, book_id, language_code) values
   ('99000000-0000-0000-0000-000000000020', '99000000-0000-0000-0000-000000000010', 'en'),
   ('99000000-0000-0000-0000-000000000021', '99000000-0000-0000-0000-000000000011', 'en'),
+  ('99000000-0000-0000-0000-000000000022', '99000000-0000-0000-0000-000000000012', 'en'),
   ('99000000-0000-0000-0000-000000000023', '99000000-0000-0000-0000-000000000013', 'en');
 
 insert into public.skus (id, edition_id, sku_code) values
@@ -195,7 +196,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_1 as
 select public.grant_complimentary_entitlement(
   (select target_comp_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000012',
+  '99000000-0000-0000-0000-000000000022',
   'launch promo'
 ) as entitlement_id;
 reset role;
@@ -257,7 +258,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 select throws_ok(
   $$select public.grant_complimentary_entitlement(
     (select target_comp_id from t_profile_ids),
-    '99000000-0000-0000-0000-000000000012',
+    '99000000-0000-0000-0000-000000000022',
     '   '
   )$$,
   '22023',
@@ -274,7 +275,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000002
 select throws_ok(
   $$select public.grant_complimentary_entitlement(
     (select target_comp_id from t_profile_ids),
-    '99000000-0000-0000-0000-000000000012',
+    '99000000-0000-0000-0000-000000000022',
     'a customer trying to self-grant'
   )$$,
   '42501',
@@ -292,7 +293,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_1_reactivate as
 select public.grant_complimentary_entitlement(
   (select target_comp_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000012',
+  '99000000-0000-0000-0000-000000000022',
   'reinstated after a support request'
 ) as entitlement_id;
 reset role;
@@ -319,7 +320,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 select throws_ok(
   $$select public.grant_complimentary_entitlement(
     (select unverified_id from t_profile_ids),
-    '99000000-0000-0000-0000-000000000012',
+    '99000000-0000-0000-0000-000000000022',
     'attempted grant to an unverified reader'
   )$$,
   'EB007',
@@ -355,7 +356,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_reactivate_unverified as
 select public.grant_complimentary_entitlement(
   (select reactivate_unverified_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000012',
+  '99000000-0000-0000-0000-000000000022',
   'reinstated despite the email change'
 ) as entitlement_id;
 reset role;
@@ -409,7 +410,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_prefer_active as
 select public.grant_complimentary_entitlement(
   (select active_revoked_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000012',
+  '99000000-0000-0000-0000-000000000022',
   'reinstating correctly'
 ) as entitlement_id;
 reset role;
@@ -438,7 +439,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_cross_acquire as
 select public.grant_complimentary_entitlement(
   (select cross_acquire_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000010',
+  '99000000-0000-0000-0000-000000000020',
   'pre-existing complimentary grant'
 ) as entitlement_id;
 reset role;
@@ -684,7 +685,7 @@ select set_config('request.jwt.claim.sub', '98000000-0000-0000-0000-000000000001
 create temporary table t_grant_cross_payment as
 select public.grant_complimentary_entitlement(
   (select cross_payment_id from t_profile_ids),
-  '99000000-0000-0000-0000-000000000013',
+  '99000000-0000-0000-0000-000000000023',
   'existing access before a purchase attempt'
 ) as entitlement_id;
 reset role;
