@@ -120,6 +120,14 @@
     "shelfDescription": "A growing shelf of classic works. Each card names the language of the edition you will read."
   },
   "catalog": {
+    "editions": {
+      "label": "Language editions",
+      "notOnSale": "Not on sale yet",
+      "invalid": "That edition is not available. Choose one of the editions below.",
+      "ebookIn": "Ebook · {language}",
+      "fallbackNote": "There is no {requested} edition yet. This is the {language} edition.",
+      "metadataNote": "Title and description are shown in {language}."
+    },
     "quoteCard": {
       "eyebrow": "A quote from",
       "sharedFrom": "Shared from Infinity Books Press",

@@ -182,7 +182,7 @@ function card(overrides: Record<string, unknown> = {}) {
     cover: { url: "https://cdn.example/cover.jpg", alt: "Related book" },
     offer: null,
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,

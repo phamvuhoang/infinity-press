@@ -44,7 +44,7 @@ function card(bookId: string, slug: string, title: string): CatalogBookCard {
     cover: null,
     offer: { priceMinor: 129000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,

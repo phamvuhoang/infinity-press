@@ -9,7 +9,6 @@ import { requireUser } from "@/lib/auth/session";
 import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { getBookCardById } from "@/lib/data/catalog";
 import { getOwnedEditionsOfBook } from "@/lib/data/library";
-import { getCurrentProfile } from "@/lib/data/profiles";
 import { getMyBookReview } from "@/lib/data/reviews";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";

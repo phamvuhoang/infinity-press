@@ -12,8 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 // own authorization model (Ruling AO) and its own RPC
 // (supabase/migrations/20260911190000_entitlement_rpcs.sql):
 //
-// - acquireFreeOffer: an ordinary signed-in customer, gated on requireUser - never requireAdmin.
-//   acquire_free_ebook derives the profile from auth.uid() itself; this function never accepts or
+// - acquireFreeEdition: an ordinary signed-in customer, gated on requireUser - never requireAdmin.
+//   acquire_free_edition derives the profile from auth.uid() itself; this function never accepts or
 //   forwards a caller-supplied profile id.
 // - grantComplimentaryEntitlement: an admin mutation on the Ruling W pattern - the user-session
 //   client, gated on requireAdmin, with grant_complimentary_entitlement's own is_admin() check as
@@ -79,28 +79,6 @@ export class OrderEntitlementNotFoundError extends Error {
     super("That order granted no access.");
     this.name = "OrderEntitlementNotFoundError";
   }
-}
-
-// Free acquisition (spec 6.2). Idempotent: acquire_free_ebook uses
-// entitlements_active_subject_key (a partial unique index, not a hand-rolled check-then-insert)
-// so a retried request resolves to the same entitlement instead of erroring or duplicating
-// access - the opposite of admin_create_ebook's deliberate reject-on-duplicate.
-export async function acquireFreeOffer(locale: Locale, bookId: string): Promise<{ entitlementId: string }> {
-  await requireUser(locale);
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("acquire_free_ebook", { p_book_id: bookId });
-
-  if (error) {
-    if (error.code === "EB005") throw new EmailNotVerifiedError();
-    if (error.code === "EB006") throw new NoFreeOfferError();
-    throw new Error(`acquireFreeOffer: acquire_free_ebook failed: ${error.message}`);
-  }
-  if (typeof data !== "string" || data.length === 0) {
-    throw new Error("acquireFreeOffer: acquire_free_ebook returned no entitlement id");
-  }
-
-  return { entitlementId: data };
 }
 
 // Free acquisition of ONE named edition (spec 6.2 and section 8). The edition is explicit: there is no

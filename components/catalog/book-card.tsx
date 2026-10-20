@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CoverImage } from "@/components/catalog/cover-image";
 import { PriceLabel } from "@/components/catalog/price-label";
 import type { CatalogBookCard } from "@/lib/catalog/public-types";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
@@ -20,9 +21,12 @@ export function BookCard({
   card: CatalogBookCard;
   locale: Locale;
   copy: CardCopy;
-  // Set where a card stands for one EDITION (a bundle member), so two languages of one work are told apart.
+  // Overrides the language shown, where a card stands for a specific EDITION (a bundle member).
   languageLabel?: string;
 }) {
+  // Every card says which language the EPUB is actually in: the edition shown may not be the one in
+  // the reader's interface language, and the price beside it is that edition's.
+  const language = languageLabel ?? editionLanguageLabel(card.languageCode);
   return (
     <article className="flex flex-col gap-3">
       <Link
@@ -33,7 +37,7 @@ export function BookCard({
         <span className="font-serif text-lg leading-snug text-ink group-hover:underline">{card.title}</span>
       </Link>
       <p className="text-sm text-ink-soft">{card.author.name}</p>
-      {languageLabel ? <p className="text-xs tracking-[0.06em] text-sage-text uppercase">{languageLabel}</p> : null}
+      {language ? <p className="text-xs tracking-[0.06em] text-sage-text uppercase">{language}</p> : null}
       <PriceLabel className="text-sm font-medium text-forest" copy={copy} locale={locale} offer={card.offer} />
     </article>
   );

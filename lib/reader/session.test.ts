@@ -494,53 +494,62 @@ describe("resolveSampleResource", () => {
 });
 
 describe("resolveSamplePublicationId", () => {
-  it("returns the book's active publication when it is published and has a sample", async () => {
+  it("returns the EDITION's active publication when it is published and has a sample", async () => {
     mockAdminTables({
-      books: { active_publication_id: "pub-1", status: "published" },
+      editions: { active_publication_id: "pub-1", status: "published", books: { status: "published" } },
       ebook_publications: { id: "pub-1", status: "published" },
       book_samples: { allowed_hrefs: ["OEBPS/c1.xhtml"] },
     });
 
-    await expect(resolveSamplePublicationId("book-1")).resolves.toBe("pub-1");
+    await expect(resolveSamplePublicationId("edition-1")).resolves.toBe("pub-1");
   });
 
   // Each of these is a separate reason, and all of them answer null. The page turns null into one
   // notFound(), so a draft book and a missing one are indistinguishable from outside - the same
   // non-disclosure rule the rest of this module enforces.
-  it("returns null when the book is not published", async () => {
-    mockAdminTables({ books: { active_publication_id: "pub-1", status: "draft" } });
-    await expect(resolveSamplePublicationId("book-1")).resolves.toBeNull();
+  it("returns null when the work is not published", async () => {
+    mockAdminTables({ editions: { active_publication_id: "pub-1", status: "published", books: { status: "draft" } } });
+    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
   });
 
-  it("returns null when the book has no active publication", async () => {
-    mockAdminTables({ books: { active_publication_id: null, status: "published" } });
-    await expect(resolveSamplePublicationId("book-1")).resolves.toBeNull();
+  it("returns null when the edition has no active publication", async () => {
+    mockAdminTables({ editions: { active_publication_id: null, status: "published", books: { status: "published" } } });
+    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
   });
 
   it("returns null when the active publication is not published", async () => {
     mockAdminTables({
-      books: { active_publication_id: "pub-1", status: "published" },
+      editions: { active_publication_id: "pub-1", status: "published", books: { status: "published" } },
       ebook_publications: { id: "pub-1", status: "superseded" },
     });
-    await expect(resolveSamplePublicationId("book-1")).resolves.toBeNull();
+    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
   });
 
   it("returns null when the sample allowlist is empty", async () => {
     mockAdminTables({
-      books: { active_publication_id: "pub-1", status: "published" },
+      editions: { active_publication_id: "pub-1", status: "published", books: { status: "published" } },
       ebook_publications: { id: "pub-1", status: "published" },
       book_samples: { allowed_hrefs: [] },
     });
-    await expect(resolveSamplePublicationId("book-1")).resolves.toBeNull();
+    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
   });
 
   it("returns null when there is no sample row at all", async () => {
     mockAdminTables({
-      books: { active_publication_id: "pub-1", status: "published" },
+      editions: { active_publication_id: "pub-1", status: "published", books: { status: "published" } },
       ebook_publications: { id: "pub-1", status: "published" },
       book_samples: null,
     });
-    await expect(resolveSamplePublicationId("book-1")).resolves.toBeNull();
+    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
+  });
+
+  it("returns null when the edition itself is not published, even with a live publication", async () => {
+    mockAdminTables({
+      editions: { active_publication_id: "pub-1", status: "archived", books: { status: "published" } },
+      ebook_publications: { id: "pub-1", status: "published" },
+      book_samples: { allowed_hrefs: ["OEBPS/c1.xhtml"] },
+    });
+    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
   });
 });
 

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { acquireFreeOffer, EmailNotVerifiedError, NoFreeOfferError } from "@/lib/access/grant";
+import { acquireFreeEdition, EmailNotVerifiedError, NoFreeOfferError } from "@/lib/access/grant";
 import { trackEventBestEffort } from "@/lib/analytics/events";
 import { requireUser } from "@/lib/auth/session";
 import type { BookActionErrorCode } from "@/lib/catalog/action-error";
@@ -16,7 +16,7 @@ import {
   OfferChangedError,
   PaymentsDisabledError,
 } from "@/lib/commerce/errors";
-import { createEbookOrder } from "@/lib/commerce/orders";
+import { createEditionOrder } from "@/lib/commerce/orders";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { defaultLocale, isLocale, type Locale, withLocale } from "@/lib/i18n/config";
 import { getCatalogRoutes, getCommerceRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
@@ -26,59 +26,6 @@ import { getRequestId } from "@/lib/observability/request-id";
 // hazard: a plain-object or non-function export from a "use server" module typechecks, lints,
 // and builds cleanly while crashing the client at request time. Only type exports are safe
 // alongside them.
-
-// Stable codes, not prose: this is a customer-facing surface (unlike the admin actions
-// elsewhere in this task, which stay English-only by design), and the repo's established
-// pattern (components/auth/auth-message.tsx, dictionary key auth.alerts.errors.<code>) maps a
-// code to localized copy at render time. No page consumes this action yet, but returning an
-// already-rendered English string here would make that string reachable from a page that just
-// renders `result.error` directly - the exact failure mode a code makes impossible.
-export type AcquireFreeEbookErrorCode = "invalid-locale" | "email-not-verified" | "no-free-offer" | "unexpected";
-
-export type AcquireFreeEbookResult =
-  | { ok: true; entitlementId: string }
-  | { ok: false; error: AcquireFreeEbookErrorCode };
-
-function toActionResult(error: unknown): Extract<AcquireFreeEbookResult, { ok: false }> {
-  if (error instanceof EmailNotVerifiedError) return { ok: false, error: "email-not-verified" };
-  if (error instanceof NoFreeOfferError) return { ok: false, error: "no-free-offer" };
-  return { ok: false, error: "unexpected" };
-}
-
-// bookId, not the route's own slug: whichever page calls this action already resolved the slug
-// to a book id (matching lib/data/publications.ts's asset-id/publication-id split), so this
-// action never has to re-resolve it itself.
-//
-// requireUser() runs here, outside the try/catch, matching every admin action's own
-// requireAdmin() call (e.g. app/admin/publications/[publicationId]/actions.ts): an anonymous
-// visitor is redirected to sign in via next/navigation's redirect(), which throws a special
-// NEXT_REDIRECT value Next.js itself has to see propagate uncaught - catching it below and
-// mapping it through toActionResult() would silently swallow the redirect. acquireFreeOffer()
-// still calls requireUser() again internally, as its own library-boundary guarantee independent
-// of this caller; the second call is a cache() hit, not a second gate.
-export async function acquireFreeEbookAction(locale: string, bookId: string): Promise<AcquireFreeEbookResult> {
-  if (!isLocale(locale)) {
-    return { ok: false, error: "invalid-locale" };
-  }
-
-  await requireUser(locale);
-
-  try {
-    const { entitlementId } = await acquireFreeOffer(locale, bookId);
-    // Task 7 review, Minor 12: acquiring a book adds a library_items row, so the reader's library
-    // is stale the moment this returns. Every admin mutation in this repo revalidates the page it
-    // changed; this is the customer-facing equivalent, and it is only wireable now that
-    // /[lang]/library actually renders that data.
-    revalidatePath(withLocale(locale, "/library"));
-    return { ok: true, entitlementId };
-  } catch (error) {
-    const result = toActionResult(error);
-    if (result.error === "unexpected") {
-      console.error("Get free ebook failed.", { bookId, requestId: getRequestId(await headers()), error: String(error) });
-    }
-    return result;
-  }
-}
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -94,6 +41,7 @@ function bookErrorPath(locale: Locale, slug: string, code: BookActionErrorCode):
 
 function buyErrorCode(error: unknown): BookActionErrorCode {
   if (error instanceof EmailNotVerifiedError) return "email-not-verified";
+  if (error instanceof NoFreeOfferError) return "no-free-offer";
   if (error instanceof PaymentsDisabledError) return "payments-unavailable";
   if (error instanceof NotPurchasableError) return "not-purchasable";
   if (error instanceof CurrencyNotPayableError) return "currency-unavailable";
@@ -102,17 +50,26 @@ function buyErrorCode(error: unknown): BookActionErrorCode {
   return "unexpected";
 }
 
-// The signed-in Get free form (S3 spec 5.1). It always ends in a redirect: the reader on success, or
-// the book page with a stable error code.
-export async function getFreeEbookAction(locale: string, bookId: string, slug: string): Promise<void> {
-  if (!isLocale(locale) || !uuidPattern.test(bookId)) redirect(withLocale(defaultLocale, "/"));
+// The signed-in Get free form (S3 spec 5.1), per edition: the reader gets THE edition they were
+// looking at, never "the book". It always ends in a redirect: the reader on success, or the book page
+// with a stable error code.
+export async function getFreeEbookAction(locale: string, bookId: string, slug: string, editionId: string): Promise<void> {
+  if (!isLocale(locale) || !uuidPattern.test(bookId) || !uuidPattern.test(editionId)) redirect(withLocale(defaultLocale, "/"));
   await requireUser(locale, bookPath(locale, slug));
 
-  const result = await acquireFreeEbookAction(locale, bookId);
-  if (!result.ok) {
-    redirect(bookErrorPath(locale, slug, result.error === "invalid-locale" ? "unexpected" : result.error));
+  try {
+    await acquireFreeEdition(locale, editionId);
+    // The reader's library is stale the moment this returns; the customer-facing counterpart of the
+    // admin mutations' revalidation.
+    revalidatePath(withLocale(locale, "/library"));
+  } catch (error) {
+    const code = buyErrorCode(error);
+    if (code === "unexpected") {
+      console.error("Get free ebook failed.", { bookId, requestId: getRequestId(await headers()), error: String(error) });
+    }
+    redirect(bookErrorPath(locale, slug, code));
   }
-  redirect(getCatalogRoutes(locale).read(bookId));
+  redirect(getCatalogRoutes(locale).readEdition(editionId));
 }
 
 // begin_checkout for an order that now exists (S5 spec 8.1). The order ID is the dedupe key, so the
@@ -138,20 +95,39 @@ async function recordBeginCheckout(locale: Locale, bookId: string, orderId: stri
   }
 }
 
-// The signed-in Buy form (S3 spec 5.2). redirect() stays outside the try block, because it throws a
-// control-flow value Next.js must see.
-export async function buyEbookAction(locale: string, bookId: string, slug: string): Promise<void> {
-  if (!isLocale(locale) || !uuidPattern.test(bookId)) redirect(withLocale(defaultLocale, "/"));
+// The signed-in Buy form (S3 spec 5.2), per edition. The edition and the offer are named by the page
+// the reader was looking at, together with the price they saw: the database validates the whole chain
+// and refuses (OfferChangedError) a price that moved, so the reader sees the new price and decides
+// again. redirect() stays outside the try block, because it throws a control-flow value Next.js must
+// see.
+export async function buyEbookAction(
+  locale: string,
+  bookId: string,
+  slug: string,
+  editionId: string,
+  offerId: string,
+  expectedMinor: number,
+): Promise<void> {
+  if (
+    !isLocale(locale) ||
+    !uuidPattern.test(bookId) ||
+    !uuidPattern.test(editionId) ||
+    !uuidPattern.test(offerId) ||
+    !Number.isSafeInteger(expectedMinor) ||
+    expectedMinor < 0
+  ) {
+    redirect(withLocale(defaultLocale, "/"));
+  }
   await requireUser(locale, bookPath(locale, slug));
 
   let destination: string;
   let orderId: string | null = null;
   try {
-    ({ orderId } = await createEbookOrder(locale, bookId));
+    ({ orderId } = await createEditionOrder(locale, editionId, offerId, expectedMinor));
     destination = getCommerceRoutes(locale).checkout(orderId);
   } catch (error) {
     if (error instanceof AlreadyOwnedError) {
-      destination = getCatalogRoutes(locale).read(bookId);
+      destination = getCatalogRoutes(locale).readEdition(editionId);
     } else {
       const code = buyErrorCode(error);
       if (code === "unexpected") {

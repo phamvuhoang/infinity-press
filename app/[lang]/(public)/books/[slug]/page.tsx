@@ -8,19 +8,19 @@ import { AnalyticsEvent } from "@/components/analytics/analytics-event";
 import { ActionErrorBanner } from "@/components/catalog/action-error-banner";
 import { BookReviews } from "@/components/catalog/book-reviews";
 import { CoverImage } from "@/components/catalog/cover-image";
-import { PriceLabel } from "@/components/catalog/price-label";
 import { RetailLinkButton } from "@/components/catalog/retail-link-button";
-import { ViewerBookAction } from "@/components/catalog/viewer-book-action";
+import { BookEditionPanel } from "@/components/catalog/book-edition-panel";
 import { KnowledgeLinkList } from "@/components/knowledge/knowledge-link-list";
 import { SiteFooter } from "@/components/site-footer";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SiteHeader } from "@/components/site-header";
 import { formatPrice } from "@/lib/catalog/price";
 import { retailerLabel, withRetailUtm } from "@/lib/catalog/retail";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { catalogStaticParams } from "@/lib/catalog/static-params";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
-import { getBookAcceptsQuestions, getBookPage, publicBookAction } from "@/lib/data/catalog";
+import { getBookAcceptsQuestions, getBookPage } from "@/lib/data/catalog";
 import { getKnowledgeForBook } from "@/lib/data/knowledge";
 import { getBookReviews } from "@/lib/data/reviews";
 import { isLocale } from "@/lib/i18n/config";
@@ -88,7 +88,6 @@ export default async function BookPage({ params }: Props) {
     getBookReviews(book.bookId, 5),
     getBookAcceptsQuestions(book.bookId),
   ]);
-  const publicAction = publicBookAction(book);
   const copy = dictionary.catalog;
   const routes = getCatalogRoutes(locale);
   const env = getServerEnv();
@@ -141,19 +140,24 @@ export default async function BookPage({ params }: Props) {
               )}
             </p>
 
-            <div className="mt-8 flex flex-wrap items-start gap-x-6 gap-y-4 border-y border-hairline py-6">
-              <div className="min-h-11 space-y-1">
-                <PriceLabel className="block text-2xl font-medium text-ink" copy={copy.book} locale={locale} offer={book.offer} />
-                <span className="block text-xs text-sage-text">{copy.book.format}</span>
-              </div>
-              <ViewerBookAction
+            {book.metadataLocale !== locale ? (
+              <p className="mt-3 text-xs text-sage-text">
+                {fillTemplate(copy.editions.metadataNote, { language: editionLanguageLabel(book.metadataLocale) ?? book.metadataLocale })}
+              </p>
+            ) : null}
+
+            <div className="mt-8 border-y border-hairline py-6">
+              <BookEditionPanel
                 bookId={book.bookId}
                 bookPath={bookPath}
                 buyAction={buyEbookAction.bind(null, locale, book.bookId, book.slug)}
-                copy={copy.actions}
+                copy={copy}
+                editions={book.editions}
+                fallbackNotice={book.isLanguageFallback}
                 getFreeAction={getFreeEbookAction.bind(null, locale, book.bookId, book.slug)}
                 locale={locale}
-                publicAction={publicAction}
+                paymentsEnabled={arePaymentsEnabled(env)}
+                selectable
               />
             </div>
 

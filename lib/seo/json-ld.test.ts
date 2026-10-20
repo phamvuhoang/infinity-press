@@ -37,7 +37,7 @@ const book: CatalogBookPage = {
   },
   offer: { priceMinor: 0, currency: "VND", listPriceMinor: null, saleEndsAt: null },
   hasActivePublication: true,
-  hasSample: true,
+  hasSample: true, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
   series: null,
   topics: [{ slug: "sea", name: "Sea" }],
   featured: false,
@@ -51,6 +51,7 @@ const book: CatalogBookPage = {
   seoDescription: "SEO-DESCRIPTION-MARKER",
   alternateSlugs: { vi: "den-cang" },
   isbn: null,
+  editions: [],
   retailLinks: [],
   reviewSummary: null,
 };
@@ -356,8 +357,6 @@ describe("serializeJsonLd", () => {
 
 function bundleMemberCard(slug: string, title: string): PublicBundleDTO["members"][number] {
   return {
-    editionId: `edition-${slug}`,
-    languageCode: "en",
     languageLabel: "English",
     bookId: `book-${slug}`,
     slug,
@@ -368,7 +367,7 @@ function bundleMemberCard(slug: string, title: string): PublicBundleDTO["members
     cover: null,
     offer: { priceMinor: 129000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,

@@ -120,6 +120,14 @@
     "shelfDescription": "少しずつ増えていく古典の本棚です。各カードには、読む版の言語が表示されています。"
   },
   "catalog": {
+    "editions": {
+      "label": "言語別の版",
+      "notOnSale": "販売準備中",
+      "invalid": "この版はご利用いただけません。下の版からお選びください。",
+      "ebookIn": "電子書籍・{language}",
+      "fallbackNote": "{requested}版はまだありません。こちらは{language}版です。",
+      "metadataNote": "タイトルと説明は{language}で表示しています。"
+    },
     "quoteCard": {
       "eyebrow": "引用元",
       "sharedFrom": "Infinity Books Press から共有",

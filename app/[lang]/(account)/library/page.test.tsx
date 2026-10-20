@@ -58,7 +58,7 @@ function candidateCard(bookId: string, title: string): CatalogBookCard {
     cover: null,
     offer: null,
     hasActivePublication: true,
-    hasSample: false,
+    hasSample: false, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,

@@ -14,7 +14,7 @@ import { getCatalogRoutes } from "@/lib/i18n/routes";
 export function BookActionControl({
   action,
   signedIn,
-  bookId,
+  readHref,
   bookPath,
   locale,
   copy,
@@ -23,7 +23,8 @@ export function BookActionControl({
 }: {
   action: BookAction;
   signedIn: boolean;
-  bookId: string;
+  // Where Read now goes: the reader page of the EDITION this control is about.
+  readHref: string;
   bookPath: string;
   locale: Locale;
   copy: Dictionary["catalog"]["actions"];
@@ -37,7 +38,7 @@ export function BookActionControl({
   switch (action) {
     case "read":
       return (
-        <Button render={<Link href={routes.read(bookId)} />} size="lg">
+        <Button render={<Link href={readHref} />} size="lg">
           {copy.read}
         </Button>
       );

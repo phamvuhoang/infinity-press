@@ -6,9 +6,9 @@ import en from "@/lib/i18n/dictionaries/en.json";
 
 afterEach(cleanup);
 
-const BOOK_ID = "30000000-0000-4000-8000-000000000001";
+const EDITION_ID = "50000000-0000-4000-8000-000000000001";
 const props = {
-  bookId: BOOK_ID,
+  readHref: `/en/read/editions/${EDITION_ID}`,
   bookPath: "/en/books/a-book",
   locale: "en" as const,
   copy: en.catalog.actions,
@@ -19,7 +19,7 @@ const props = {
 describe("BookActionControl", () => {
   it("links an entitled reader to the reader", () => {
     render(<BookActionControl {...props} action="read" signedIn />);
-    expect(screen.getByRole("link", { name: "Read now" })).toHaveAttribute("href", `/en/read/${BOOK_ID}`);
+    expect(screen.getByRole("link", { name: "Read now" })).toHaveAttribute("href", `/en/read/editions/${EDITION_ID}`);
   });
 
   it("sends a signed-out reader to sign-in and back to the book", () => {

@@ -30,7 +30,7 @@ function card(overrides: Partial<CatalogBookCard> & { slug: string }): CatalogBo
     cover: null,
     offer: null,
     hasActivePublication: true,
-    hasSample: true,
+    hasSample: true, editionId: "edition-1", languageCode: "en", isLanguageFallback: false, metadataLocale: "en",
     series: null,
     topics: [],
     featured: false,

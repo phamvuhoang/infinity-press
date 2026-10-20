@@ -24,6 +24,7 @@ import {
   searchHitKinds,
 } from "@/lib/catalog/search";
 import { getServerEnv } from "@/lib/config/server-env";
+import { editionOptionsSchema } from "@/lib/data/editions";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import type { Locale } from "@/lib/i18n/config";
 import { getRequestId } from "@/lib/observability/request-id";
@@ -90,6 +91,10 @@ type CardRow = {
   created_at: string;
   list_price_minor: number | null;
   sale_ends_at: string | null;
+  edition_id: string;
+  language_code: string;
+  is_language_fallback: boolean;
+  metadata_locale: string;
 };
 
 const topicsSchema = z
@@ -118,6 +123,10 @@ function toCard(row: CardRow): CatalogBookCard {
           },
     hasActivePublication: row.has_active_publication,
     hasSample: row.has_sample,
+    editionId: row.edition_id,
+    languageCode: row.language_code,
+    isLanguageFallback: row.is_language_fallback,
+    metadataLocale: row.metadata_locale,
     series:
       row.series_slug && row.series_name && row.series_position !== null
         ? {
@@ -182,6 +191,8 @@ const bookPageSchema = z.object({
   seoDescription: z.string().nullable(),
   alternateSlugs: alternateSlugsSchema,
   isbn: z.string().nullable().catch(null),
+  metadataLocale: z.string(),
+  editions: editionOptionsSchema,
   // One malformed row drops that row, not the whole block: a paperback button must not vanish for
   // every retailer because one stored link fails the enum or the URL rule.
   retailLinks: z
@@ -348,16 +359,18 @@ export async function getActiveEntitlementEditionIds(profileId: string): Promise
   return new Set((data ?? []).flatMap((row) => (row.edition_id ? [row.edition_id] : [])));
 }
 
+// What the viewer can do with ONE edition. Ownership is per edition: holding the English edition
+// leaves the Japanese one to buy.
 export async function getBookActionState(
-  card: Pick<CatalogBookCard, "bookId" | "offer" | "hasActivePublication">,
+  card: Pick<CatalogBookCard, "editionId" | "offer" | "hasActivePublication">,
 ): Promise<{ action: BookAction; signedIn: boolean }> {
   const profile = await getCurrentProfile();
   const owned = profile
-    ? await getActiveEntitlementBookIds(profile.id)
+    ? await getActiveEntitlementEditionIds(profile.id)
     : new Set<string>();
 
   const action = resolveBookAction({
-    hasActiveEntitlement: owned.has(card.bookId),
+    hasActiveEntitlement: owned.has(card.editionId),
     offer: card.offer
       ? { priceMinor: card.offer.priceMinor, active: true }
       : null,
@@ -371,7 +384,7 @@ export async function getBookActionState(
 // the entitlement the viewer might hold. A page renders this so it can be prerendered; the viewer's
 // own state arrives from /api/catalog/books/[bookId]/action-state.
 export function publicBookAction(
-  card: Pick<CatalogBookCard, "bookId" | "offer" | "hasActivePublication">,
+  card: Pick<CatalogBookCard, "offer" | "hasActivePublication">,
 ): BookAction {
   return resolveBookAction({
     hasActiveEntitlement: false,
@@ -393,24 +406,31 @@ export async function getSampleReaderBook(
   title: string;
   slug: string;
   publicationId: string;
+  // The edition the sample belongs to, and the offer it is sold under: the end-of-sample control
+  // buys or opens THIS edition.
+  editionId: string;
+  offer: { offerId: string; priceMinor: number } | null;
   action: BookAction;
   signedIn: boolean;
 } | null> {
   const book = await getBookPage(locale, slug);
   if (!book || !book.hasSample) return null;
 
-  const publicationId = await resolveSamplePublicationId(book.bookId);
+  const publicationId = await resolveSamplePublicationId(book.editionId);
   if (!publicationId) return null;
 
   // Reads the optional session, like the book page does: a signed-out visitor is the expected
   // caller here and must not be redirected. It only decides which control the sample ends with.
   const { action, signedIn } = await getBookActionState(book);
 
+  const offer = book.editions.find((edition) => edition.editionId === book.editionId)?.offer ?? null;
   return {
     bookId: book.bookId,
     title: book.title,
     slug: book.slug,
     publicationId,
+    editionId: book.editionId,
+    offer: offer ? { offerId: offer.offerId, priceMinor: offer.priceMinor } : null,
     action,
     signedIn,
   };

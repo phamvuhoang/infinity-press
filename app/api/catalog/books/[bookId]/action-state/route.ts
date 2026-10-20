@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 import type { ViewerBookActionState } from "@/lib/catalog/viewer-action";
 import { getBookActionState, getBookCardById } from "@/lib/data/catalog";
+import { findBookEdition } from "@/lib/data/editions";
 import { isLocale } from "@/lib/i18n/config";
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // The one part of a book page that differs per viewer. The page itself renders what an anonymous
 // visitor could do, so it can be prerendered, and this fills in the rest in the browser. It grants
@@ -24,6 +27,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ book
   // a hidden book.
   const card = await getBookCardById(locale, bookId);
   if (!card) return NextResponse.json({ error: "not_found" }, { status: 404, headers: { "cache-control": "private, no-store" } });
+
+  // The state is per edition. An explicit edition must be one of the work's readable editions: an id
+  // that is not answers 404 here, never the default edition's state, so the control on the page can
+  // not offer a Buy button for something other than what it names.
+  const requested = new URL(request.url).searchParams.get("edition");
+  if (requested !== null) {
+    const edition = uuidPattern.test(requested) ? await findBookEdition(bookId, locale, requested) : null;
+    if (!edition) return NextResponse.json({ error: "not_found" }, { status: 404, headers: { "cache-control": "private, no-store" } });
+    const explicit: ViewerBookActionState = await getBookActionState({
+      editionId: edition.editionId,
+      offer: edition.offer,
+      hasActivePublication: true,
+    });
+    return NextResponse.json(explicit, { headers: { "cache-control": "private, no-store" } });
+  }
 
   const state: ViewerBookActionState = await getBookActionState(card);
   return NextResponse.json(state, { headers: { "cache-control": "private, no-store" } });

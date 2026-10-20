@@ -63,12 +63,16 @@ export default async function ReadSamplePage({ params }: Props) {
         endSlot={
           <BookActionControl
             action={book.action}
-            bookId={book.bookId}
             bookPath={bookPath}
-            buyAction={buyEbookAction.bind(null, locale, book.bookId, book.slug)}
+            buyAction={
+              book.offer
+                ? buyEbookAction.bind(null, locale, book.bookId, book.slug, book.editionId, book.offer.offerId, book.offer.priceMinor)
+                : async () => undefined
+            }
             copy={dictionary.catalog.actions}
-            getFreeAction={getFreeEbookAction.bind(null, locale, book.bookId, book.slug)}
+            getFreeAction={getFreeEbookAction.bind(null, locale, book.bookId, book.slug, book.editionId)}
             locale={locale}
+            readHref={routes.readEdition(book.editionId)}
             signedIn={book.signedIn}
           />
         }

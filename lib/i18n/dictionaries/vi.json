@@ -120,6 +120,14 @@
     "shelfDescription": "Kệ sách kinh điển đang lớn dần. Mỗi thẻ ghi rõ ngôn ngữ của bản bạn sẽ đọc."
   },
   "catalog": {
+    "editions": {
+      "label": "Các ấn bản theo ngôn ngữ",
+      "notOnSale": "Chưa mở bán",
+      "invalid": "Ấn bản này không có. Hãy chọn một trong các ấn bản bên dưới.",
+      "ebookIn": "Ebook · {language}",
+      "fallbackNote": "Chưa có ấn bản {requested}. Đây là ấn bản {language}.",
+      "metadataNote": "Tiêu đề và mô tả hiển thị bằng {language}."
+    },
     "quoteCard": {
       "eyebrow": "Trích dẫn từ",
       "sharedFrom": "Chia sẻ từ Infinity Books Press",
