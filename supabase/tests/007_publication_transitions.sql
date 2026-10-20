@@ -93,7 +93,8 @@ begin
     )),
     '[]'::jsonb,
     '[]'::jsonb,
-    '[]'::jsonb
+    '[]'::jsonb,
+    'en'
   ) into v_publication_id;
   reset role;
 

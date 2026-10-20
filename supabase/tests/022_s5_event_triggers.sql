@@ -33,8 +33,8 @@ insert into public.editions (id, book_id, language_code)
 values ('93000000-0000-0000-0000-00000000000a', '92000000-0000-0000-0000-00000000000a', 'vi');
 insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
 values ('94000000-0000-0000-0000-00000000000a', '93000000-0000-0000-0000-00000000000a', 's5-events/a/1.epub', 1, 'published');
-insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
-values ('95000000-0000-0000-0000-00000000000a', '94000000-0000-0000-0000-00000000000a', 1, 's5-events/a/1/manifest.json', 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
+values ('95000000-0000-0000-0000-00000000000a', '94000000-0000-0000-0000-00000000000a', 1, 's5-events/a/1/manifest.json', 'published', 'vi');
 update public.books set active_publication_id = '95000000-0000-0000-0000-00000000000a'
 where id = '92000000-0000-0000-0000-00000000000a';
 insert into public.entitlements (id, profile_id, book_id, source_type, actor_profile_id, reason, status)
@@ -57,8 +57,8 @@ insert into public.media_assets (owner_type, owner_id, kind, storage_key, alt_te
 values ('book', '92000000-0000-0000-0000-00000000000b', 'cover', 'books/92000000-0000-0000-0000-00000000000b/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.png', 'Cover');
 insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
 values ('94000000-0000-0000-0000-00000000000b', '93000000-0000-0000-0000-00000000000b', 's5-events/b/1.epub', 1, 'ready_for_preview');
-insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
-values ('95000000-0000-0000-0000-00000000000b', '94000000-0000-0000-0000-00000000000b', 1, 's5-events/b/1/manifest.json', 'ready_for_preview');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
+values ('95000000-0000-0000-0000-00000000000b', '94000000-0000-0000-0000-00000000000b', 1, 's5-events/b/1/manifest.json', 'ready_for_preview', 'vi');
 
 -- Book C: never published or made ready - only its edition and two ebook_assets exist, as
 -- processing_jobs targets for the EPUB job trigger. This models a book still mid-processing.

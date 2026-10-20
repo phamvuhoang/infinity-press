@@ -22,8 +22,8 @@ insert into public.offers (sku_id, market_code, currency, price_minor)
 values ('c7000000-0000-0000-0000-000000000001', 'VN', 'VND', 0);
 insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
 values ('c8000000-0000-0000-0000-000000000001', 'c6000000-0000-0000-0000-000000000001', 's1-pub/source.epub', 1, 'ready_for_preview');
-insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
-values ('c9000000-0000-0000-0000-000000000001', 'c8000000-0000-0000-0000-000000000001', 1, 's1-pub/manifest.json', 'ready_for_preview');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
+values ('c9000000-0000-0000-0000-000000000001', 'c8000000-0000-0000-0000-000000000001', 1, 's1-pub/manifest.json', 'ready_for_preview', 'vi');
 
 select is(
   has_function_privilege('authenticated', 'public.book_readiness_issues(uuid)', 'EXECUTE'),
@@ -78,8 +78,8 @@ reset role;
 -- A catalog-published book remains public while later EPUB versions are published or rolled back.
 insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
 values ('c8000000-0000-0000-0000-000000000002', 'c6000000-0000-0000-0000-000000000001', 's1-pub/source-v2.epub', 2, 'ready_for_preview');
-insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
-values ('c9000000-0000-0000-0000-000000000002', 'c8000000-0000-0000-0000-000000000002', 2, 's1-pub/manifest-v2.json', 'ready_for_preview');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
+values ('c9000000-0000-0000-0000-000000000002', 'c8000000-0000-0000-0000-000000000002', 2, 's1-pub/manifest-v2.json', 'ready_for_preview', 'vi');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'c1000000-0000-0000-0000-000000000001', true);
 select lives_ok($$select public.publish_publication('c9000000-0000-0000-0000-000000000002')$$, 'admin publishes a later EPUB version');

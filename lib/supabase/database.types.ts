@@ -1281,6 +1281,7 @@ export type Database = {
       ebook_publications: {
         Row: {
           ebook_asset_id: string
+          epub_language: string | null
           id: string
           manifest_key: string
           positions_json: Json | null
@@ -1291,6 +1292,7 @@ export type Database = {
         }
         Insert: {
           ebook_asset_id: string
+          epub_language?: string | null
           id?: string
           manifest_key: string
           positions_json?: Json | null
@@ -1301,6 +1303,7 @@ export type Database = {
         }
         Update: {
           ebook_asset_id?: string
+          epub_language?: string | null
           id?: string
           manifest_key?: string
           positions_json?: Json | null
@@ -3436,12 +3439,31 @@ export type Database = {
         }
         Returns: string
       }
+      admin_create_edition: {
+        Args: {
+          p_book_id: string
+          p_edition_number: number
+          p_isbn: string
+          p_language_code: string
+          p_publication_date: string
+        }
+        Returns: string
+      }
       admin_create_idea: {
         Args: {
           p_locale: string
           p_question: string
           p_short_answer: string
           p_slug: string
+        }
+        Returns: string
+      }
+      admin_create_offer: {
+        Args: {
+          p_currency: string
+          p_edition_id: string
+          p_market_code: string
+          p_price_minor: number
         }
         Returns: string
       }
@@ -3597,6 +3619,18 @@ export type Database = {
         }
         Returns: string
       }
+      admin_save_edition: {
+        Args: {
+          p_contributors: Json
+          p_edition_id: string
+          p_edition_number: number
+          p_introduction: string
+          p_isbn: string
+          p_language_code: string
+          p_publication_date: string
+        }
+        Returns: undefined
+      }
       admin_save_entity_localization: {
         Args: {
           p_description: string
@@ -3722,6 +3756,18 @@ export type Database = {
           p_price_minor: number
         }
         Returns: string
+      }
+      admin_set_default_edition: {
+        Args: {
+          p_book_id: string
+          p_edition_id: string
+          p_language_code: string
+        }
+        Returns: undefined
+      }
+      admin_set_default_offer: {
+        Args: { p_edition_id: string; p_offer_id: string }
+        Returns: undefined
       }
       admin_set_home_hero: {
         Args: {
@@ -3998,6 +4044,7 @@ export type Database = {
       }
       complete_processing_job: {
         Args: {
+          p_epub_language?: string
           p_job_id: string
           p_manifest_key: string
           p_positions: Json
@@ -4204,6 +4251,14 @@ export type Database = {
         Returns: string[]
       }
       press_edition_backfill: { Args: { p_apply?: boolean }; Returns: Json }
+      press_move_edition_pointer: {
+        Args: { p_edition_id: string; p_publication_id: string }
+        Returns: string
+      }
+      publication_readiness_issues: {
+        Args: { p_publication_id: string }
+        Returns: string[]
+      }
       publish_article: { Args: { p_article_id: string }; Returns: undefined }
       publish_book: { Args: { p_book_id: string }; Returns: undefined }
       publish_bundle: { Args: { p_bundle_id: string }; Returns: undefined }
