@@ -64,6 +64,7 @@ type EngineStub = {
   getLocator: ReturnType<typeof vi.fn>;
   getNavigationState: ReturnType<typeof vi.fn>;
   getTableOfContents: ReturnType<typeof vi.fn>;
+  settleSelection: ReturnType<typeof vi.fn>;
   destroy: ReturnType<typeof vi.fn>;
 };
 
@@ -94,6 +95,7 @@ function makeEngine(): EngineStub {
       .mockResolvedValue({ href: "c1.xhtml", progression: 0, totalProgression: 0, locations: {} }),
     getNavigationState: vi.fn(() => Promise.resolve(harness.navigationState)),
     getTableOfContents: vi.fn(() => Promise.resolve(harness.toc)),
+    settleSelection: vi.fn(),
     destroy: vi.fn().mockResolvedValue(undefined),
   };
   return engine;

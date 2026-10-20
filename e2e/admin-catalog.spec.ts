@@ -3,6 +3,7 @@ import { type Page, expect, test } from "@playwright/test";
 
 import { validEpub } from "../scripts/fixtures/create-test-epub";
 import { createAnonClient, createServiceRoleClient } from "./support/supabase";
+import { approveEditionDirectly } from "./support/editions";
 
 // S1 acceptance: deleting a section save, bypassing readiness, chaining slug redirects, or
 // removing a page gate must fail here. Only account/role setup writes fixture rows directly;
@@ -139,6 +140,8 @@ test("an operator builds, publishes, replaces the cover, renames, and unpublishe
   await expect(page.locator("#epub").getByRole("status")).toContainText("Queued for processing. Job");
   const { data: edition, error: editionError } = await service.from("editions").select("id,edition_number,publication_date").eq("book_id", bookId).single();
   if (editionError) throw editionError;
+  // Editorial approval gates publishing (covered end to end in ebook-golden-path.spec.ts).
+  await approveEditionDirectly(edition.id);
   expect(edition).toMatchObject({ edition_number: 2, publication_date: "2026-09-14" });
   const { data: asset, error: assetError } = await service.from("ebook_assets").select("id,source_storage_key").eq("edition_id", edition.id).single();
   if (assetError) throw assetError;
