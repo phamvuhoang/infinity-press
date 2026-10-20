@@ -81,6 +81,7 @@ async function seedReadyPublication() {
       ebook_asset_id: asset.id,
       version: 1,
       manifest_key: `${asset.id}/manifest.json`,
+      epub_language: "en",
       toc_json: [{ title: "Chapter 1", href: "OEBPS/text/chapter1.xhtml", children: [] }],
       status: "ready_for_preview",
     })
@@ -194,7 +195,7 @@ test("the preview resource route refuses an unauthenticated request", async ({ r
   // requireAdmin() with no `next`/`locale`, so buildSignInRedirect resolves to the default
   // locale's own sign-in page with no query string.
   expect(response.status()).toBe(307);
-  expect(response.headers()["location"]).toContain("/vi/sign-in");
+  expect(response.headers()["location"]).toContain("/en/sign-in");
   const body = await response.text();
   expect(body).not.toContain("Chapter 1 preview content");
 });

@@ -19,18 +19,30 @@ does not count as a saved change. Keep the request ID from an error when investi
    - **Details:** canonical key, book language, primary author. Author options include canonical
      slugs so duplicate display names remain distinguishable.
    - **Localizations:** title, slug, description, audience, key ideas (`Title | summary`, one per
-     line), FAQ (`Q:` / `A:` blocks separated by a blank line), SEO title and description. Both
-     Vietnamese and English are supported.
-   - **Edition & offer:** ISBN without dashes, edition number, publication date, and price in minor
-     units. Zero is a free ebook. Save the edition and offer separately; activate the offer.
+     line), FAQ (`Q:` / `A:` blocks separated by a blank line), SEO title and description. One form
+     per interface language (Vietnamese, English, Japanese).
+   - **Editions:** one entry per language translation, each with its own page at
+     `/admin/books/<id>/editions/<editionId>`. Add one by choosing its language. On the edition page:
+     ISBN without dashes, edition number, publication date, credits (`translator: Name`, one per
+     line), a translation introduction, and offers. A price is entered in minor units and is never
+     implied: zero is an explicit free edition, a blank price is refused, and 500 JPY is 500. A new
+     offer is prefilled from the language's pricing template when the admin has set one, and the
+     templates never change an existing offer. The first offer becomes the default; use **Make
+     default offer** to change it. **Make default** names the edition readers get for that language.
+     An edition that already has orders or readers keeps its language.
    - **Cover:** JPEG, PNG, or WebP up to 5 MB, with nonempty alt text. Wait for **Cover saved.** and
      check the preview. Uploading again replaces the selected cover, including across formats.
    - **Relations:** choose topics, optionally a series and its position, then save.
-   - **EPUB:** upload and wait for the queued job. Follow [EPUB processing](epub-processing.md)
-     to run the local worker, preview the processed resources, and publish that EPUB version.
+   - **EPUB (on the edition page):** upload and wait for the queued job. Follow
+     [EPUB processing](epub-processing.md) to run the local worker, preview the processed resources,
+     and publish that EPUB version. Publishing checks that the EPUB's own language matches the
+     edition's language (`en-GB` satisfies `en`); a mismatch, or an EPUB processed by an older worker
+     that did not record its language, is refused with the reason shown. Publishing or rolling back
+     one edition never changes another.
    - **Publish:** resolve each checklist link. **Publish book** is disabled until a localization
-     has title, slug, and description; a primary author with localized copy, cover, active ebook
-     offer, and published EPUB version are present. The database repeats this check. Confirm
+     has title, slug, and description; a primary author with localized copy, a cover, and at
+     least one published edition are present. An offer is not required: an edition with no offer is
+     visible but not for sale. The database repeats this check. Confirm
      publishing the book.
 4. Reload the editor to check saved values and status. Catalog metadata needs no manual database
    edits. EPUB processing still requires the operator CLI.

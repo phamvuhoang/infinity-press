@@ -68,7 +68,7 @@ export function CreateEditionForm({ action, languages }: { action: FormAction; l
         </div>
         <div className="min-w-0 space-y-2">
           <Label htmlFor="new-edition-editionNumber">Edition number (optional)</Label>
-          <Input id="new-edition-editionNumber" min={1} name="editionNumber" type="number" />
+          <Input aria-describedby={state.fieldErrors.editionNumber ? "new-edition-editionNumber-error" : undefined} aria-invalid={Boolean(state.fieldErrors.editionNumber)} id="new-edition-editionNumber" min={1} name="editionNumber" type="number" />
           <FieldError id="new-edition-editionNumber-error" message={state.fieldErrors.editionNumber} />
         </div>
       </div>
@@ -168,17 +168,17 @@ export function CreateOfferForm({ action, defaults }: { action: FormAction; defa
       <div className="grid min-w-0 gap-5 sm:grid-cols-3">
         <div className="min-w-0 space-y-2">
           <Label htmlFor="new-offer-marketCode">Market</Label>
-          <Input defaultValue={prefill?.marketCode ?? ""} id="new-offer-marketCode" maxLength={2} name="marketCode" />
+          <Input aria-describedby={state.fieldErrors.marketCode ? "new-offer-marketCode-error" : undefined} aria-invalid={Boolean(state.fieldErrors.marketCode)} defaultValue={prefill?.marketCode ?? ""} id="new-offer-marketCode" maxLength={2} name="marketCode" />
           <FieldError id="new-offer-marketCode-error" message={state.fieldErrors.marketCode} />
         </div>
         <div className="min-w-0 space-y-2">
           <Label htmlFor="new-offer-currency">Currency</Label>
-          <Input defaultValue={prefill?.currency ?? ""} id="new-offer-currency" maxLength={3} name="currency" />
+          <Input aria-describedby={state.fieldErrors.currency ? "new-offer-currency-error" : undefined} aria-invalid={Boolean(state.fieldErrors.currency)} defaultValue={prefill?.currency ?? ""} id="new-offer-currency" maxLength={3} name="currency" />
           <FieldError id="new-offer-currency-error" message={state.fieldErrors.currency} />
         </div>
         <div className="min-w-0 space-y-2">
           <Label htmlFor="new-offer-priceMinor">Price (minor units)</Label>
-          <Input defaultValue={prefill?.priceMinor ?? ""} id="new-offer-priceMinor" min={0} name="priceMinor" type="number" />
+          <Input aria-describedby={state.fieldErrors.priceMinor ? "new-offer-priceMinor-error" : undefined} aria-invalid={Boolean(state.fieldErrors.priceMinor)} defaultValue={prefill?.priceMinor ?? ""} id="new-offer-priceMinor" min={0} name="priceMinor" type="number" />
           <FieldError id="new-offer-priceMinor-error" message={state.fieldErrors.priceMinor} />
         </div>
       </div>

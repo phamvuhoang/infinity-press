@@ -205,9 +205,10 @@ type BookRow = {
     status: AdminBookDTO["status"];
     active_publication_id: string | null;
     publication: { status: string } | { status: string }[] | null;
+    // The default-edition rows that name this edition (book_language_editions), at most one.
+    default_for: { language_code: string }[];
     skus: { id: string; active: boolean; offers: OfferRow[] }[];
   }[];
-  defaults: { language_code: string; edition_id: string }[];
   topics: { topic_id: string }[];
   related: { related_book_id: string; position: number }[];
   retail_links: {
@@ -233,8 +234,7 @@ const bookSelect = `
   primary_author_id,
   author:authors ( display_name, localizations:author_localizations ( id ) ),
   localizations:book_localizations ( id, locale, slug, title, subtitle, short_description, description, audience, key_ideas, faq, seo_title, seo_description ),
-  editions ( id, language_code, edition_number, status, active_publication_id, publication:ebook_publications!editions_active_publication_id_fkey ( status ), skus ( id, active, offers ( ${offerColumns} ) ) ),
-  defaults:book_language_editions ( language_code, edition_id ),
+  editions ( id, language_code, edition_number, status, active_publication_id, publication:ebook_publications!editions_active_publication_id_fkey ( status ), default_for:book_language_editions ( language_code ), skus ( id, active, offers ( ${offerColumns} ) ) ),
   topics:book_topics ( topic_id ),
   related:related_books!related_books_book_id_fkey ( related_book_id, position ),
   retail_links:book_retail_links ( id, retailer, label, url, price_minor, currency, position, active ),
@@ -266,7 +266,6 @@ function toDto(row: BookRow, cover: { storage_key: string; alt_text: string } | 
 
   const series = oneOrNull(row.series);
   const now = new Date();
-  const defaultEditionIds = new Set(row.defaults.map((entry) => entry.edition_id));
   const editions: AdminEditionSummaryDTO[] = [...row.editions]
     .sort((a, b) => a.language_code.localeCompare(b.language_code) || a.edition_number - b.edition_number)
     .map((edition) => {
@@ -276,7 +275,7 @@ function toDto(row: BookRow, cover: { storage_key: string; alt_text: string } | 
         languageCode: edition.language_code,
         editionNumber: edition.edition_number,
         status: edition.status,
-        isDefault: defaultEditionIds.has(edition.id),
+        isDefault: edition.default_for.length > 0,
         activePublicationId: edition.active_publication_id,
         offerCount: offers.length,
         hasLiveOffer: offers.some((offer) => isOfferLive(offer, now)),

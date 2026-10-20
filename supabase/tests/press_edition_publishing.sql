@@ -1,5 +1,5 @@
 begin;
-select plan(55);
+select plan(58);
 
 -- Press Task 4: publishing is per edition. Publishing or rolling back Japanese never touches the
 -- English publication, pointer, or progress.
@@ -126,6 +126,11 @@ select is((select price_minor from public.offers o join public.skus s on s.id = 
 select is((select count(*) from public.edition_default_offers where edition_id = 'e5400000-0000-0000-0000-000000000002'), 1::bigint, 'the first offer becomes the default');
 select lives_ok($$select public.admin_create_offer('e5400000-0000-0000-0000-000000000001', 'US', 'USD', 500)$$, 'the English edition gets its own offer');
 select throws_ok($$select public.admin_set_default_offer('e5400000-0000-0000-0000-000000000002', (select o.id from public.offers o join public.skus s on s.id = o.sku_id where s.edition_id = 'e5400000-0000-0000-0000-000000000001' limit 1))$$, 'P0002', null, 'another edition''s offer cannot be the default');
+
+-- (a)-(c) A new work's first edition is its language default, with its one offer as the default offer.
+select lives_ok($$select public.admin_create_book('ep-created', 'EP Author', 'en', 'ja', 'Created', 'ep-created', 'JP', 'JPY', 500)$$, 'an admin creates a work with a Japanese first edition');
+select is((select count(*) from public.book_language_editions bl join public.books b on b.id = bl.book_id where b.canonical_key = 'ep-created' and bl.language_code = 'ja'), 1::bigint, 'the first edition is the Japanese default');
+select is((select count(*) from public.edition_default_offers d join public.editions e on e.id = d.edition_id join public.books b on b.id = e.book_id where b.canonical_key = 'ep-created'), 1::bigint, 'and its offer is the default offer');
 
 reset role;
 

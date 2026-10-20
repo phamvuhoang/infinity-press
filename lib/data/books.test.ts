@@ -105,6 +105,7 @@ const editorRow = {
       status: "draft",
       active_publication_id: null,
       publication: null,
+      default_for: [{ language_code: "en" }],
       skus: [
         {
           id: "7a1b2c3d-0000-4000-8000-000000000001",
@@ -128,7 +129,6 @@ const editorRow = {
     { id: "c1000000-0000-4000-8000-000000000002", retailer: "other", label: "ABC", url: "https://abc.example/x", price_minor: "129000" as unknown as number, currency: "VND", position: 10, active: false },
     { id: "c1000000-0000-4000-8000-000000000001", retailer: "shopee", label: null, url: "https://shopee.vn/x", price_minor: null, currency: null, position: 2, active: true },
   ],
-  defaults: [{ language_code: "en", edition_id: "6a1b2c3d-0000-4000-8000-000000000001" }],
   series: { series_id: "aa1b2c3d-0000-4000-8000-000000000001", position: 2 },
 };
 
