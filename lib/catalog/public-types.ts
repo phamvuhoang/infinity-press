@@ -2,6 +2,7 @@
 // publication IDs, and no entitlement data.
 
 import type { Retailer } from "@/lib/analytics/browser";
+import type { AlternateSlugs } from "@/lib/i18n/alternates";
 
 export type CatalogEntityKind = "author" | "series" | "topic";
 
@@ -46,7 +47,7 @@ export type CatalogBookPage = CatalogBookCard & {
   faq: { question: string; answer: string }[];
   seoTitle: string | null;
   seoDescription: string | null;
-  alternateSlug: string | null;
+  alternateSlugs: AlternateSlugs;
   isbn: string | null;
   // Active links of a published book, in editorial order. The URL is the stored one; the page
   // decorates it with UTM parameters at render time.
@@ -60,7 +61,7 @@ export type CatalogEntityPage = {
   id: string;
   name: string;
   description: string | null;
-  alternateSlug: string | null;
+  alternateSlugs: AlternateSlugs;
   // Authors only. Series and topics always report null for both.
   quote: string | null;
   image: { url: string; alt: string } | null;

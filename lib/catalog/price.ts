@@ -1,6 +1,5 @@
-import type { Locale } from "@/lib/i18n/config";
+import { type Locale, localeRegistry } from "@/lib/i18n/config";
 
-const localeTags: Record<Locale, string> = { vi: "vi-VN", en: "en-US" };
 
 function minorDigits(currency: string): number {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 0;
@@ -20,6 +19,6 @@ export function saleLastDay(saleEndsAt: string): string {
 
 // offers.price_minor is in the currency's minor unit. VND has none, so 129000 is 129.000 ₫.
 export function formatPrice(priceMinor: number, currency: string, locale: Locale): string {
-  const formatter = new Intl.NumberFormat(localeTags[locale], { style: "currency", currency });
+  const formatter = new Intl.NumberFormat(localeRegistry[locale].intlTag, { style: "currency", currency });
   return formatter.format(priceInMajorUnits(priceMinor, currency));
 }

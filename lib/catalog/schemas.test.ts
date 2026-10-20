@@ -108,7 +108,7 @@ describe("admin catalog schemas", () => {
 
   it("validates localized copy and offers", () => {
     expect(entityLocalizationSchema.safeParse({ locale: "vi", slug: "jane-austen", name: "Jane Austen", description: null }).success).toBe(true);
-    expect(entityLocalizationSchema.safeParse({ locale: "ja", slug: "x", name: "X", description: null }).success).toBe(false);
+    expect(entityLocalizationSchema.safeParse({ locale: "fr", slug: "x", name: "X", description: null }).success).toBe(false);
     expect(
       bookLocalizationSchema.safeParse({
         locale: "vi",

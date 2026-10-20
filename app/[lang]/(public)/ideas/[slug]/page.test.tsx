@@ -63,7 +63,7 @@ const related: KnowledgeIdeaSummary = {
   shortAnswer: "Sometimes.",
   createdAt: "2026-09-01T00:00:00+00:00",
   updatedAt: "2026-09-02T00:00:00+00:00",
-  alternateSlug: null,
+  alternateSlugs: {},
   topics: [],
 };
 
@@ -78,7 +78,7 @@ const idea: KnowledgeIdeaPage = {
   seoDescription: null,
   createdAt: "2026-09-01T00:00:00+00:00",
   updatedAt: "2026-09-03T00:00:00+00:00",
-  alternateSlug: "vi-sao-doc-cham",
+  alternateSlugs: { vi: "vi-sao-doc-cham" },
   blocks: [
     { type: "paragraph", content: [{ text: "Slow reading is a practice." }] },
   ],
@@ -203,10 +203,10 @@ describe("IdeaPage", () => {
   });
 
   it("leaves the switcher on the other locale's home when the idea has no alternate", async () => {
-    vi.mocked(getIdeaPage).mockResolvedValue({ ...idea, alternateSlug: null });
+    vi.mocked(getIdeaPage).mockResolvedValue({ ...idea, alternateSlugs: {} });
     render(await IdeaPage({ params }));
 
-    expect(header.props?.alternates).toBeUndefined();
+    expect(header.props?.alternates).toEqual({});
   });
 
   it("emits breadcrumbs through the idea index", async () => {
@@ -307,7 +307,7 @@ describe("generateMetadata", () => {
       languages: {
         en: "https://books.example/en/ideas/why-read-slowly",
         vi: "https://books.example/vi/ideas/vi-sao-doc-cham",
-        "x-default": "https://books.example/vi/ideas/vi-sao-doc-cham",
+        "x-default": "https://books.example/en/ideas/why-read-slowly",
       },
     });
   });
@@ -315,7 +315,7 @@ describe("generateMetadata", () => {
   it("prefers the SEO overrides and names only the locales that exist", async () => {
     vi.mocked(getIdeaPage).mockResolvedValue({
       ...idea,
-      alternateSlug: null,
+      alternateSlugs: {},
       seoTitle: "Slow reading, explained",
       seoDescription: "What slow reading gives you.",
     });

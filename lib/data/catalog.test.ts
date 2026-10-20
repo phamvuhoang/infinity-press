@@ -329,7 +329,7 @@ describe("getBookPage", () => {
           faq: [{ question: "Why?", answer: "Because." }],
           seoTitle: null,
           seoDescription: null,
-          alternateSlug: "mot-cuon-sach",
+          alternateSlugs: { vi: "mot-cuon-sach" },
         },
         error: null,
       },
@@ -339,7 +339,7 @@ describe("getBookPage", () => {
     expect(page?.description).toBe("Long");
     expect(page?.keyIdeas).toEqual([]);
     expect(page?.faq).toEqual([{ question: "Why?", answer: "Because." }]);
-    expect(page?.alternateSlug).toBe("mot-cuon-sach");
+    expect(page?.alternateSlugs).toEqual({ vi: "mot-cuon-sach" });
   });
 
   it("keeps https retail links and drops the whole list when one url is not https", async () => {
@@ -385,7 +385,7 @@ describe("getEntityPage", () => {
     id: "40000000-0000-4000-8000-000000000001",
     name: "Harbour",
     description: null,
-    alternateSlug: null,
+    alternateSlugs: {},
   };
 
   it("returns the series with its books in order", async () => {
@@ -422,7 +422,7 @@ function bookPageData(overrides: Record<string, unknown> = {}) {
     faq: [],
     seoTitle: null,
     seoDescription: null,
-    alternateSlug: null,
+    alternateSlugs: {},
     ...overrides,
   };
 }

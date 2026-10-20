@@ -23,7 +23,7 @@ describe("getSafeRedirect", () => {
     "/vib",
     "/administrator",
     "/vi/../sign-up",
-    "/internal/ja/sign-in",
+    "/internal/fr/sign-in",
     "",
   ])("rejects %j", (value) => {
     expect(getSafeRedirect(value, "/en/library")).toBe("/en/library");

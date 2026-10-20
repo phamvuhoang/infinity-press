@@ -20,7 +20,7 @@ Infinity Books Press implements one complete ebook path on Next.js 16 and Supaba
 - A customer gets access through a free offer, a grant, a manual bank transfer, SePay, or the payment simulator.
 - The customer library shows reading progress and opens the protected Readium reader.
 - The reader uses short sessions and saves progress through database functions.
-- Public and customer pages support Vietnamese and English.
+- Public and customer pages support Vietnamese, English, and Japanese. English is the default interface locale. `lib/i18n/config.ts` is the locale registry; `supported_locales` mirrors it in the database.
 - Email magic links are the main sign-in method. Password pages are an internal fallback.
 
 The payment simulator is for local, test, and staging only. Production rejects this provider.
@@ -40,7 +40,7 @@ The payment simulator is for local, test, and staging only. Production rejects t
 ## Required rules
 
 - Read the relevant local Next.js guide before you change Next.js code.
-- Keep customer routes under `/{locale}`. The supported locales are `vi` and `en`.
+- Keep customer routes under `/{locale}`. The supported locales are `vi`, `en`, and `ja`.
 - Keep `/admin` without a locale prefix.
 - Call `requireUser()` or `requireAdmin()` in each protected page and server action.
 - Do not use a layout as the only authorization control.

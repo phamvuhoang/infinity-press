@@ -1,4 +1,5 @@
 import "server-only";
+import type { AlternateSlugs } from "@/lib/i18n/alternates";
 
 import { headers } from "next/headers";
 import { cache } from "react";
@@ -34,7 +35,7 @@ export type PublicBundleDTO = {
   slug: string;
   // The other locale's slug, when the bundle is localized there. Null makes the page single-locale:
   // no hreflang alternate, no locale switch.
-  alternateSlug: string | null;
+  alternateSlugs: AlternateSlugs;
   title: string;
   subtitle: string | null;
   description: string | null;
@@ -126,7 +127,9 @@ export const getPublicBundle = cache(async (locale: Locale, slug: string): Promi
   const bundle = row as unknown as BundleRow;
   const current = bundle.localizations.find((candidate) => candidate.locale === locale);
   if (!current) return null;
-  const alternate = bundle.localizations.find((candidate) => candidate.locale !== locale);
+  const alternateSlugs = Object.fromEntries(
+    bundle.localizations.filter((candidate) => candidate.locale !== locale && isLocale(candidate.locale)).map((candidate) => [candidate.locale, candidate.slug]),
+  );
 
   const byBookId = new Map(cards.map((card) => [card.bookId, card]));
   const members = [...bundle.members]
@@ -141,7 +144,7 @@ export const getPublicBundle = cache(async (locale: Locale, slug: string): Promi
   return {
     bundleId: bundle.id,
     slug: current.slug,
-    alternateSlug: alternate?.slug ?? null,
+    alternateSlugs: alternateSlugs,
     title: current.title,
     subtitle: current.subtitle,
     description: current.description,

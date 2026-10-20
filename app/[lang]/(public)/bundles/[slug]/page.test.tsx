@@ -56,7 +56,7 @@ function card(bookId: string, slug: string, title: string): CatalogBookCard {
 const bundle: PublicBundleDTO = {
   bundleId: BUNDLE_ID,
   slug: "starter-bundle",
-  alternateSlug: "goi-khoi-dau",
+  alternateSlugs: { vi: "goi-khoi-dau" },
   title: "Starter Bundle",
   subtitle: "Two books to begin with",
   description: "A set of two.",
@@ -171,13 +171,13 @@ describe("generateMetadata", () => {
       languages: {
         en: "https://books.example/en/bundles/starter-bundle",
         vi: "https://books.example/vi/bundles/goi-khoi-dau",
-        "x-default": "https://books.example/vi/bundles/goi-khoi-dau",
+        "x-default": "https://books.example/en/bundles/starter-bundle",
       },
     });
   });
 
   it("names no alternate for a bundle localized in one locale only", async () => {
-    vi.mocked(getPublicBundle).mockResolvedValue({ ...bundle, alternateSlug: null });
+    vi.mocked(getPublicBundle).mockResolvedValue({ ...bundle, alternateSlugs: {} });
 
     const metadata = await generateMetadata({ params });
 

@@ -89,6 +89,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "analytics_events_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "analytics_events_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -254,6 +261,13 @@ export type Database = {
             referencedRelation: "articles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "article_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
         ]
       }
       article_topics: {
@@ -398,6 +412,13 @@ export type Database = {
             referencedRelation: "authors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "author_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
         ]
       }
       authors: {
@@ -489,6 +510,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -602,6 +630,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_reviews_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "book_reviews_profile_id_fkey"
@@ -741,6 +776,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "books_original_language_fkey"
+            columns: ["original_language"]
+            isOneToOne: false
+            referencedRelation: "content_languages"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "books_primary_author_id_fkey"
             columns: ["primary_author_id"]
             isOneToOne: false
@@ -821,6 +863,13 @@ export type Database = {
             referencedRelation: "bundles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bundle_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
         ]
       }
       bundles: {
@@ -862,6 +911,21 @@ export type Database = {
           payment_provider?: string
           payments_enabled?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      content_languages: {
+        Row: {
+          code: string
+          name: string
+        }
+        Insert: {
+          code: string
+          name: string
+        }
+        Update: {
+          code?: string
+          name?: string
         }
         Relationships: []
       }
@@ -1264,6 +1328,35 @@ export type Database = {
           },
         ]
       }
+      edition_pricing_defaults: {
+        Row: {
+          currency: string
+          language_code: string
+          market_code: string
+          price_minor: number
+        }
+        Insert: {
+          currency: string
+          language_code: string
+          market_code: string
+          price_minor: number
+        }
+        Update: {
+          currency?: string
+          language_code?: string
+          market_code?: string
+          price_minor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edition_pricing_defaults_language_code_fkey"
+            columns: ["language_code"]
+            isOneToOne: false
+            referencedRelation: "content_languages"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       editions: {
         Row: {
           book_id: string
@@ -1296,6 +1389,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editions_language_code_fkey"
+            columns: ["language_code"]
+            isOneToOne: false
+            referencedRelation: "content_languages"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -1568,6 +1668,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ideas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "idea_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -1979,7 +2086,6 @@ export type Database = {
           ends_at: string | null
           id: string
           market_code: string
-          offer_effective_price_minor: number | null
           price_minor: number
           sale_amount_off_minor: number | null
           sale_ends_at: string | null
@@ -1988,6 +2094,7 @@ export type Database = {
           sale_starts_at: string | null
           sku_id: string | null
           starts_at: string | null
+          offer_effective_price_minor: number | null
         }
         Insert: {
           active?: boolean
@@ -2281,6 +2388,52 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          default_content_language: string
+          default_metadata_locale: string
+          default_ui_locale: string
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          default_content_language?: string
+          default_metadata_locale?: string
+          default_ui_locale?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          default_content_language?: string
+          default_metadata_locale?: string
+          default_ui_locale?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_settings_default_content_language_fkey"
+            columns: ["default_content_language"]
+            isOneToOne: false
+            referencedRelation: "content_languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "platform_settings_default_metadata_locale_fkey"
+            columns: ["default_metadata_locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "platform_settings_default_ui_locale_fkey"
+            columns: ["default_ui_locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       processing_jobs: {
         Row: {
           attempt: number
@@ -2356,7 +2509,15 @@ export type Database = {
           locale?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       reader_annotations: {
         Row: {
@@ -2476,6 +2637,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ideas"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reader_questions_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "reader_questions_profile_id_fkey"
@@ -2693,6 +2861,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "series_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "series_localizations_series_id_fkey"
             columns: ["series_id"]
             isOneToOne: false
@@ -2712,9 +2887,9 @@ export type Database = {
           publication_id: string | null
           quote: string
           removed_by: string | null
-          shared_quote_json: Json | null
           status: string
           updated_at: string
+          shared_quote_json: Json | null
         }
         Insert: {
           book_id: string
@@ -2749,6 +2924,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_quotes_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "shared_quotes_profile_id_fkey"
@@ -2798,6 +2980,27 @@ export type Database = {
           },
         ]
       }
+      supported_locales: {
+        Row: {
+          code: string
+          created_at: string
+          enabled: boolean
+          native_name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          enabled?: boolean
+          native_name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          enabled?: boolean
+          native_name?: string
+        }
+        Relationships: []
+      }
       topic_localizations: {
         Row: {
           description: string | null
@@ -2827,6 +3030,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "topic_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "topic_localizations_topic_id_fkey"
             columns: ["topic_id"]
@@ -3134,7 +3344,10 @@ export type Database = {
         }
         Returns: undefined
       }
-      admin_remove_shared_quote: { Args: { p_code: string }; Returns: undefined }
+      admin_remove_shared_quote: {
+        Args: { p_code: string }
+        Returns: undefined
+      }
       admin_reply_review: {
         Args: { p_reply: string; p_review_id: string }
         Returns: undefined
@@ -3225,6 +3438,14 @@ export type Database = {
           p_locale: string
           p_seo_description: string
           p_seo_title: string
+        }
+        Returns: undefined
+      }
+      admin_save_platform_settings: {
+        Args: {
+          p_default_content_language: string
+          p_default_metadata_locale: string
+          p_default_ui_locale: string
         }
         Returns: undefined
       }
@@ -3429,7 +3650,10 @@ export type Database = {
         Args: { p_bundle_id: string }
         Returns: string[]
       }
-      catalog_book_accepts_questions: { Args: { p_book_id: string }; Returns: boolean }
+      catalog_book_accepts_questions: {
+        Args: { p_book_id: string }
+        Returns: boolean
+      }
       catalog_book_card_by_id: {
         Args: { p_book_id: string; p_locale: string }
         Returns: {
@@ -3694,6 +3918,7 @@ export type Database = {
       }
       idea_readiness_issues: { Args: { p_idea_id: string }; Returns: string[] }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      is_supported_locale: { Args: { p_locale: string }; Returns: boolean }
       knowledge_article_author: {
         Args: { p_author_id: string; p_locale: string }
         Returns: Json
@@ -3701,7 +3926,7 @@ export type Database = {
       knowledge_article_index: {
         Args: { p_locale: string }
         Returns: {
-          alternate_slug: string
+          alternate_slugs: Json
           article_id: string
           author: Json
           excerpt: string
@@ -3748,7 +3973,7 @@ export type Database = {
       knowledge_idea_index: {
         Args: { p_locale: string }
         Returns: {
-          alternate_slug: string
+          alternate_slugs: Json
           created_at: string
           idea_id: string
           question: string
@@ -3889,6 +4114,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_metadata_locale: {
+        Args: { p_available: string[]; p_requested: string }
+        Returns: string
+      }
       resolve_public_redirect: {
         Args: { p_source_path: string }
         Returns: string
@@ -4008,17 +4237,10 @@ export type Database = {
       library_state: "unread" | "reading" | "completed"
       order_status: "draft" | "pending" | "completed" | "cancelled"
       payment_status:
-        | "not_required"
-        | "pending"
-        | "succeeded"
-        | "failed"
-        | "cancelled"
+        "not_required" | "pending" | "succeeded" | "failed" | "cancelled"
       processing_job_status: "queued" | "processing" | "failed" | "completed"
       publication_status:
-        | "ready_for_preview"
-        | "published"
-        | "rejected"
-        | "superseded"
+        "ready_for_preview" | "published" | "rejected" | "superseded"
       sku_format: "ebook"
     }
     CompositeTypes: {
@@ -4040,12 +4262,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4067,13 +4289,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4092,13 +4313,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4117,13 +4337,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4136,11 +4355,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

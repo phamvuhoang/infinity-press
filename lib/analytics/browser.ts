@@ -1,3 +1,4 @@
+import { type Locale } from "@/lib/i18n/config";
 // Browser side of the analytics beacon (S5 spec 8.2). A Server Component render is not a page view -
 // Next.js renders pages for prefetch and metadata work too - so these events are sent from the
 // browser once something actually happened on screen, to POST /api/analytics/events.
@@ -7,7 +8,6 @@ export const ANALYTICS_EVENTS_PATH = "/api/analytics/events";
 export const analyticsDeviceClasses = ["mobile", "tablet", "desktop"] as const;
 export type AnalyticsDeviceClass = (typeof analyticsDeviceClasses)[number];
 
-type Locale = "vi" | "en";
 
 export const retailers = ["shopee", "fahasa", "tiki", "other"] as const;
 export type Retailer = (typeof retailers)[number];

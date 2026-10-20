@@ -1,5 +1,5 @@
 begin;
-select plan(30);
+select plan(34);
 
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
@@ -184,6 +184,12 @@ select throws_ok(
   null,
   'language and market identify one default'
 );
+
+-- (31)-(34) Metadata fallback picks one whole localization: requested, then the platform default, never a mix.
+select is(public.resolve_metadata_locale('ja', array['en', 'ja']), 'ja', 'the requested locale wins when it exists');
+select is(public.resolve_metadata_locale('ja', array['en', 'vi']), 'en', 'falls back to the platform default metadata locale');
+select is(public.resolve_metadata_locale('ja', array['vi']), null, 'no requested and no default copy means no metadata');
+select is(public.resolve_metadata_locale(null, array['en']), 'en', 'a missing request uses the default');
 
 select * from finish();
 rollback;

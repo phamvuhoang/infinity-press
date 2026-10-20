@@ -1,4 +1,5 @@
 import "server-only";
+import { alternateSlugsSchema } from "@/lib/i18n/alternates";
 
 import { headers } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
@@ -110,7 +111,7 @@ const ideaIndexRowsSchema = z.array(
     short_answer: z.string(),
     created_at: z.string(),
     updated_at: z.string(),
-    alternate_slug: z.string().nullable(),
+    alternate_slugs: alternateSlugsSchema,
     topics: topicRefsSchema,
   }),
 );
@@ -123,7 +124,7 @@ const articleIndexRowsSchema = z.array(
     excerpt: z.string(),
     published_at: z.string(),
     updated_at: z.string(),
-    alternate_slug: z.string().nullable(),
+    alternate_slugs: alternateSlugsSchema,
     author: authorSchema,
   }),
 );
@@ -138,7 +139,7 @@ const ideaPageSchema = z.object({
   seoDescription: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  alternateSlug: z.string().nullable(),
+  alternateSlugs: alternateSlugsSchema,
   bookIds: idsSchema,
   relatedIdeaIds: idsSchema,
   topics: topicRefsSchema,
@@ -154,7 +155,7 @@ const articlePageSchema = z.object({
   seoDescription: z.string().nullable(),
   publishedAt: z.string(),
   updatedAt: z.string(),
-  alternateSlug: z.string().nullable(),
+  alternateSlugs: alternateSlugsSchema,
   author: authorSchema,
   bookIds: idsSchema,
   ideaIds: idsSchema,
@@ -192,7 +193,7 @@ export const getPublishedIdeas = cache(
       shortAnswer: row.short_answer,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      alternateSlug: row.alternate_slug,
+      alternateSlugs: row.alternate_slugs,
       topics: row.topics,
     }));
   },
@@ -254,7 +255,7 @@ export const getArticleIndex = cache(
       excerpt: row.excerpt,
       publishedAt: row.published_at,
       updatedAt: row.updated_at,
-      alternateSlug: row.alternate_slug,
+      alternateSlugs: row.alternate_slugs,
       author: row.author,
     }));
   },

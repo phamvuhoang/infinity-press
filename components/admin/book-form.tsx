@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { localeRegistry, locales } from "@/lib/i18n/config";
 
 import { createBookAction, type CreateBookFormState } from "@/app/admin/books/actions";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -80,8 +81,9 @@ export function BookForm({ authorOptions }: { authorOptions: { id: string; name:
               <SelectValue placeholder="Select a locale" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="vi">Vietnamese (vi)</SelectItem>
-              <SelectItem value="en">English (en)</SelectItem>
+              {locales.map((code) => (
+<SelectItem key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</SelectItem>
+))}
             </SelectContent>
           </Select>
           <FieldError message={state.fieldErrors.locale} />
@@ -94,8 +96,9 @@ export function BookForm({ authorOptions }: { authorOptions: { id: string; name:
               <SelectValue placeholder="Select the book's language" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="vi">Vietnamese (vi)</SelectItem>
-              <SelectItem value="en">English (en)</SelectItem>
+              {locales.map((code) => (
+<SelectItem key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</SelectItem>
+))}
             </SelectContent>
           </Select>
           <FieldError message={state.fieldErrors.language} />

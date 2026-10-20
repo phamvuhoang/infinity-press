@@ -56,8 +56,8 @@ describe("buyBundleAction", () => {
   });
 
   it("redirects home for an invalid locale or bundle ID without creating an order", async () => {
-    await expect(buyBundleAction("fr", BUNDLE_ID, "starter-bundle")).rejects.toThrow("NEXT_REDIRECT /vi");
-    await expect(buyBundleAction("en", "not-a-uuid", "starter-bundle")).rejects.toThrow("NEXT_REDIRECT /vi");
+    await expect(buyBundleAction("fr", BUNDLE_ID, "starter-bundle")).rejects.toThrow("NEXT_REDIRECT /en");
+    await expect(buyBundleAction("en", "not-a-uuid", "starter-bundle")).rejects.toThrow("NEXT_REDIRECT /en");
     expect(createBundleOrder).not.toHaveBeenCalled();
   });
 

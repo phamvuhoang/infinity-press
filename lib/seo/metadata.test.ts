@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { absoluteUrl, buildPageMetadata, DEFAULT_OG_IMAGE, localePaths } from "@/lib/seo/metadata";
+import { absoluteUrl, buildPageMetadata, DEFAULT_OG_IMAGE, fixedPaths, localePaths } from "@/lib/seo/metadata";
 
 const siteUrl = "https://books.example";
 
@@ -21,21 +21,35 @@ describe("absoluteUrl", () => {
 });
 
 describe("localePaths", () => {
-  it("keeps only the current locale when the entity has no localization in the other one", () => {
-    expect(localePaths("vi", "/vi/books/a", null)).toEqual({ vi: "/vi/books/a" });
+  it("keeps only the current locale when the entity has no other localization", () => {
+    expect(localePaths("vi", "/vi/books/a", {})).toEqual({ vi: "/vi/books/a" });
   });
 
-  it("adds the other locale when a localization exists", () => {
-    expect(localePaths("en", "/en/books/a", "/vi/books/b")).toEqual({ en: "/en/books/a", vi: "/vi/books/b" });
+  it("adds every other locale that has a localization", () => {
+    expect(localePaths("en", "/en/books/a", { vi: "/vi/books/b", ja: "/ja/books/c" })).toEqual({
+      en: "/en/books/a",
+      vi: "/vi/books/b",
+      ja: "/ja/books/c",
+    });
+  });
+
+  it("never lets an alternate replace the current locale's own path", () => {
+    expect(localePaths("en", "/en/x", { en: "/en/other" })).toEqual({ en: "/en/x" });
+  });
+});
+
+describe("fixedPaths", () => {
+  it("names the same page in every registered locale", () => {
+    expect(fixedPaths((locale) => `/${locale}/books`)).toEqual({ vi: "/vi/books", en: "/en/books", ja: "/ja/books" });
   });
 });
 
 describe("buildPageMetadata", () => {
-  it("sets an absolute canonical and both locale alternates for a fixed page", () => {
+  it("sets an absolute canonical and every locale alternate for a fixed page", () => {
     const metadata = buildPageMetadata({
       siteUrl,
       locale: "vi",
-      paths: { vi: "/vi/books", en: "/en/books" },
+      paths: { vi: "/vi/books", en: "/en/books", ja: "/ja/books" },
       title: "Sách",
     });
     expect(metadata.alternates).toEqual({
@@ -43,7 +57,8 @@ describe("buildPageMetadata", () => {
       languages: {
         vi: "https://books.example/vi/books",
         en: "https://books.example/en/books",
-        "x-default": "https://books.example/vi/books",
+        ja: "https://books.example/ja/books",
+        "x-default": "https://books.example/en/books",
       },
     });
     expect(metadata.title).toBe("Sách");
@@ -59,10 +74,10 @@ describe("buildPageMetadata", () => {
   });
 
   it("points x-default at the default locale, falling back to the only page that exists", () => {
-    const both = buildPageMetadata({ siteUrl, locale: "en", paths: { en: "/en/books", vi: "/vi/books" } });
-    const enOnly = buildPageMetadata({ siteUrl, locale: "en", paths: { en: "/en/books/a" } });
-    expect(both.alternates?.languages?.["x-default"]).toBe("https://books.example/vi/books");
-    expect(enOnly.alternates?.languages?.["x-default"]).toBe("https://books.example/en/books/a");
+    const both = buildPageMetadata({ siteUrl, locale: "ja", paths: { en: "/en/books", vi: "/vi/books", ja: "/ja/books" } });
+    const jaOnly = buildPageMetadata({ siteUrl, locale: "ja", paths: { ja: "/ja/books/a" } });
+    expect(both.alternates?.languages?.["x-default"]).toBe("https://books.example/en/books");
+    expect(jaOnly.alternates?.languages?.["x-default"]).toBe("https://books.example/ja/books/a");
   });
 
   it("uses the branded default Open Graph image when there is no cover", () => {

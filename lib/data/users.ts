@@ -1,4 +1,5 @@
 import "server-only";
+import { defaultLocale } from "@/lib/i18n/config";
 
 import { notFound } from "next/navigation";
 
@@ -78,7 +79,7 @@ type EntitlementRow = {
 
 function bookTitle(book: EntitlementRow["book"]): string {
   if (!book) return "Unknown book";
-  const localized = book.localizations.find((row) => row.locale === "vi") ?? book.localizations[0];
+  const localized = book.localizations.find((row) => row.locale === defaultLocale) ?? book.localizations[0];
   return localized?.title ?? book.canonical_key;
 }
 

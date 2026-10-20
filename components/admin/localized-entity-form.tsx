@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { type Locale } from "@/lib/i18n/config";
 
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -81,7 +82,7 @@ export function EntityLocalizationForm({
   showQuote = false,
 }: {
   action: FormAction;
-  locale: "vi" | "en";
+  locale: Locale;
   defaults: { slug: string; name: string; description: string | null; quote: string | null } | null;
   // Authors only: board 1e sets a pull quote above the description in the home page band.
   showQuote?: boolean;

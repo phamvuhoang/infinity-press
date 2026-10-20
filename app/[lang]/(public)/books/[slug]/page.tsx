@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { alternatePaths } from "@/lib/i18n/alternates";
 
 import { AnalyticsEvent } from "@/components/analytics/analytics-event";
 import { ActionErrorBanner } from "@/components/catalog/action-error-banner";
@@ -25,7 +26,7 @@ import { getBookReviews } from "@/lib/data/reviews";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { fillTemplate } from "@/lib/i18n/format";
-import { getCatalogRoutes, getLocaleRoutes, otherLocale } from "@/lib/i18n/routes";
+import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { bookSchema, breadcrumbSchema } from "@/lib/seo/json-ld";
 import { buildPageMetadata, localePaths, SITE_NAME } from "@/lib/seo/metadata";
 
@@ -59,14 +60,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const book = await getBookPage(locale, slug);
   if (!book) return {};
-  const other = otherLocale(locale);
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
     paths: localePaths(
       locale,
       getCatalogRoutes(locale).book(book.slug),
-      book.alternateSlug ? getCatalogRoutes(other).book(book.alternateSlug) : null,
+      alternatePaths(book.alternateSlugs, (l, s) => getCatalogRoutes(l).book(s)),
     ),
     title: book.seoTitle ?? book.title,
     description: book.seoDescription ?? book.shortDescription ?? undefined,
@@ -91,14 +91,13 @@ export default async function BookPage({ params }: Props) {
   const publicAction = publicBookAction(book);
   const copy = dictionary.catalog;
   const routes = getCatalogRoutes(locale);
-  const other = otherLocale(locale);
   const env = getServerEnv();
   const bookPath = routes.book(book.slug);
 
   return (
     <div className="min-h-screen bg-ivory">
       <SiteHeader
-        alternates={book.alternateSlug ? { [other]: getCatalogRoutes(other).book(book.alternateSlug) } : undefined}
+        alternates={alternatePaths(book.alternateSlugs, (l, s) => getCatalogRoutes(l).book(s))}
         current="books"
         locale={locale}
       />

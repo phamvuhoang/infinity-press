@@ -49,7 +49,7 @@ const book: CatalogBookPage = {
   faq: [],
   seoTitle: "SEO-TITLE-MARKER",
   seoDescription: "SEO-DESCRIPTION-MARKER",
-  alternateSlug: "den-cang",
+  alternateSlugs: { vi: "den-cang" },
   isbn: null,
   retailLinks: [],
   reviewSummary: null,
@@ -312,7 +312,7 @@ describe("personSchema", () => {
     id: "40000000-0000-4000-8000-000000000001",
     name: "Mai Tran",
     description: "Writes about the sea.",
-    alternateSlug: null,
+    alternateSlugs: {},
     quote: null,
     image: null,
     books: [],
@@ -378,7 +378,7 @@ describe("bundleSchema", () => {
   const bundle: PublicBundleDTO = {
     bundleId: "40000000-0000-4000-8000-000000000001",
     slug: "starter-bundle",
-    alternateSlug: "goi-khoi-dau",
+    alternateSlugs: { vi: "goi-khoi-dau" },
     title: "Starter Bundle",
     subtitle: "Two books",
     description: "A set of two.",
@@ -486,7 +486,7 @@ describe("knowledge structured data", () => {
     shortAnswer: "Related answer.",
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-01T00:00:00+00:00",
-    alternateSlug: null,
+    alternateSlugs: {},
     topics: [],
   };
   const renderContext = {
@@ -509,7 +509,7 @@ describe("knowledge structured data", () => {
     seoDescription: "SEO-DESCRIPTION-MARKER",
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-03T00:00:00+00:00",
-    alternateSlug: "vi-sao-doc-cham",
+    alternateSlugs: { vi: "vi-sao-doc-cham" },
     relatedIdeas: [relatedIdea],
   };
 
@@ -523,7 +523,7 @@ describe("knowledge structured data", () => {
     seoDescription: "SEO-DESCRIPTION-MARKER",
     publishedAt: "2026-09-20T03:00:00+00:00",
     updatedAt: "2026-09-21T03:00:00+00:00",
-    alternateSlug: "doc-mua-thu",
+    alternateSlugs: { vi: "doc-mua-thu" },
     author: { name: "Mai Tran", slug: "mai-tran" },
     ideas: [relatedIdea],
   };

@@ -66,7 +66,7 @@ function makeBook(overrides: Partial<CatalogBookPage> = {}): CatalogBookPage {
     faq: [{ question: "Is it long?", answer: "No." }],
     seoTitle: null,
     seoDescription: null,
-    alternateSlug: null,
+    alternateSlugs: {},
     isbn: null,
     retailLinks: [],
     reviewSummary: null,

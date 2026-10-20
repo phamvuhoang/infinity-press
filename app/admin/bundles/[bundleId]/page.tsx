@@ -14,6 +14,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 import type { BundleEditorSection } from "@/lib/catalog/bundle-readiness";
 import { listAdminBooks } from "@/lib/data/books";
 import { getAdminBundle } from "@/lib/data/bundles";
+import { locales, localeRegistry } from "@/lib/i18n/config";
 
 // The anchors the readiness issues link to: bundleReadinessIssueSection names one of these for
 // every issue code, so a verdict always points at a section that exists on this page.
@@ -65,10 +66,10 @@ export default async function AdminBundlePage({ params }: { params: Promise<{ bu
 
         <AdminSection id="localizations" title="Localizations">
           <div className="space-y-12">
-            {(["vi", "en"] as const).map((locale) => (
+            {locales.map((locale) => (
               <div key={locale}>
                 <h3 className="mb-4 text-[0.6875rem] font-medium tracking-[0.08em] text-sage-text uppercase">
-                  {locale === "vi" ? "Vietnamese" : "English"}
+                  {localeRegistry[locale].englishName}
                 </h3>
                 <BundleLocalizationForm
                   action={saveBundleLocalizationAction.bind(null, bundle.id, locale)}

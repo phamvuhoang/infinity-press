@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { alternatePaths } from "@/lib/i18n/alternates";
 
 import { BookGrid } from "@/components/catalog/book-card";
 import { BlockRenderer } from "@/components/knowledge/BlockRenderer";
@@ -20,7 +21,6 @@ import {
   getCatalogRoutes,
   getKnowledgeRoutes,
   getLocaleRoutes,
-  otherLocale,
 } from "@/lib/i18n/routes";
 import { knowledgeStaticParams } from "@/lib/knowledge/static-params";
 import { breadcrumbSchema, knowledgeArticleSchema } from "@/lib/seo/json-ld";
@@ -54,16 +54,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const article = await getArticlePage(locale, slug);
   if (!article) return {};
-  const other = otherLocale(locale);
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
     paths: localePaths(
       locale,
       getKnowledgeRoutes(locale).article(article.slug),
-      article.alternateSlug
-        ? getKnowledgeRoutes(other).article(article.alternateSlug)
-        : null,
+      alternatePaths(article.alternateSlugs, (l, s) => getKnowledgeRoutes(l).article(s)),
     ),
     title: article.seoTitle ?? article.title,
     description: article.seoDescription ?? article.excerpt,
@@ -94,7 +91,6 @@ export default async function ArticlePage({ params }: Props) {
   const copy = dictionary.knowledge.article;
   const routes = getKnowledgeRoutes(locale);
   const catalogRoutes = getCatalogRoutes(locale);
-  const other = otherLocale(locale);
   const articlePath = routes.article(article.slug);
   const siteUrl = getServerEnv().siteUrl;
 
@@ -102,13 +98,7 @@ export default async function ArticlePage({ params }: Props) {
     <div className="min-h-screen bg-ivory">
       <SiteHeader
         alternates={
-          article.alternateSlug
-            ? {
-                [other]: getKnowledgeRoutes(other).article(
-                  article.alternateSlug,
-                ),
-              }
-            : undefined
+          alternatePaths(article.alternateSlugs, (l, s) => getKnowledgeRoutes(l).article(s))
         }
         current="articles"
         locale={locale}

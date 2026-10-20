@@ -55,8 +55,8 @@ describe("getFreeEbookAction", () => {
   });
 
   it("redirects home for an invalid locale or book ID without acquiring", async () => {
-    await expect(getFreeEbookAction("fr", BOOK_ID, "a-book")).rejects.toThrow("NEXT_REDIRECT /vi");
-    await expect(getFreeEbookAction("en", "not-a-uuid", "a-book")).rejects.toThrow("NEXT_REDIRECT /vi");
+    await expect(getFreeEbookAction("fr", BOOK_ID, "a-book")).rejects.toThrow("NEXT_REDIRECT /en");
+    await expect(getFreeEbookAction("en", "not-a-uuid", "a-book")).rejects.toThrow("NEXT_REDIRECT /en");
     expect(acquireFreeOffer).not.toHaveBeenCalled();
   });
 

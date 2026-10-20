@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { isCouponCode, normalizeCouponCode } from "@/lib/commerce/coupon";
 import { knowledgeBlocksSchema } from "@/lib/knowledge/blocks";
+import { locales } from "@/lib/i18n/config";
 
 // kebab-case, lowercase ascii letters/digits, single hyphens between segments -
 // shared by canonical_key (books) and slug (book_localizations), which both
@@ -13,6 +14,13 @@ const kebabCase = z
   .min(1)
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and single hyphens.");
 
+// A content language is a registry code (content_languages), not a UI locale: a French original is
+// neither vi, en nor ja. The database foreign key decides which codes exist; this only rejects
+// malformed input early.
+export const contentLanguageSchema = z
+  .string()
+  .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, "Choose a valid language code.");
+
 // Locale is the UI language the localization is written in; language is the
 // book's own language (original_language / editions.language_code). They are
 // deliberately independent - a Vietnamese-locale page can describe an
@@ -23,8 +31,8 @@ export const createBookSchema = z
     canonicalKey: kebabCase,
     authorId: z.uuid({ error: "Choose a valid author." }).nullable().default(null),
     authorName: z.string().trim(),
-    locale: z.enum(["vi", "en"]),
-    language: z.enum(["vi", "en"]),
+    locale: z.enum(locales),
+    language: contentLanguageSchema,
     title: z.string().trim().min(1, "Enter a title."),
     slug: kebabCase,
     market: z
@@ -43,7 +51,7 @@ export const createBookSchema = z
 
 export type CreateBookInput = z.infer<typeof createBookSchema>;
 
-const localeSchema = z.enum(["vi", "en"]);
+const localeSchema = z.enum(locales);
 const nullableText = (max: number) => z.string().trim().max(max).nullable();
 
 export const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024;
@@ -486,3 +494,11 @@ export type CoverUploadInput = z.infer<typeof coverUploadSchema>;
 export type HeroUploadInput = z.infer<typeof heroUploadSchema>;
 export type AuthorImageInput = z.infer<typeof authorImageSchema>;
 export type MerchandisingInput = z.infer<typeof merchandisingSchema>;
+
+// The platform defaults (spec section 5). The RPC re-checks every code against the registries.
+export const platformSettingsSchema = z.object({
+  defaultUiLocale: localeSchema,
+  defaultContentLanguage: contentLanguageSchema,
+  defaultMetadataLocale: localeSchema,
+});
+export type PlatformSettingsInput = z.infer<typeof platformSettingsSchema>;

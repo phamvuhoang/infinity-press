@@ -21,7 +21,7 @@ import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { organizationSchema } from "@/lib/seo/json-ld";
-import { buildPageMetadata } from "@/lib/seo/metadata";
+import { buildPageMetadata, fixedPaths } from "@/lib/seo/metadata";
 
 const steps = ["explore", "language", "read"] as const;
 
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    paths: { vi: getLocaleRoutes("vi").home, en: getLocaleRoutes("en").home },
+    paths: fixedPaths((l) => getLocaleRoutes(l).home),
     description: copy.description,
   });
 }

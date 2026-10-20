@@ -47,7 +47,7 @@ beforeEach(() => {
 
 describe("claimTransferAction", () => {
   it("redirects to the locale home when the locale is not supported", async () => {
-    await expect(claimTransferAction("xx", ORDER_ID, new FormData())).rejects.toThrow("NEXT_REDIRECT /vi");
+    await expect(claimTransferAction("xx", ORDER_ID, new FormData())).rejects.toThrow("NEXT_REDIRECT /en");
     expect(requireUser).not.toHaveBeenCalled();
   });
 

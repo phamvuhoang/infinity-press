@@ -85,7 +85,7 @@ describe("applyCouponAction", () => {
   });
 
   it("refuses an unknown locale rather than guessing one", async () => {
-    await expect(applyCouponAction("de", ORDER, { status: "idle" }, form("TWENTY"))).rejects.toThrow("REDIRECT:/vi");
+    await expect(applyCouponAction("de", ORDER, { status: "idle" }, form("TWENTY"))).rejects.toThrow("REDIRECT:/en");
     expect(applyCouponToOrder).not.toHaveBeenCalled();
   });
 });

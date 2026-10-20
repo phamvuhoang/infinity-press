@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { type Locale } from "@/lib/i18n/config";
 
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -18,7 +19,7 @@ export function LocalizationForm({
   localization,
 }: {
   action: (state: AdminFormState, formData: FormData) => Promise<AdminFormState>;
-  locale: "vi" | "en";
+  locale: Locale;
   localization: BookLocalizationDTO | null;
 }) {
   const [state, formAction] = useActionState(action, initialAdminFormState);

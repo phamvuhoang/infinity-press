@@ -1,4 +1,5 @@
 import "server-only";
+import { alternateSlugsSchema } from "@/lib/i18n/alternates";
 
 import { headers } from "next/headers";
 import { cache } from "react";
@@ -179,7 +180,7 @@ const bookPageSchema = z.object({
     .catch([]),
   seoTitle: z.string().nullable(),
   seoDescription: z.string().nullable(),
-  alternateSlug: z.string().nullable(),
+  alternateSlugs: alternateSlugsSchema,
   isbn: z.string().nullable().catch(null),
   // One malformed row drops that row, not the whole block: a paperback button must not vanish for
   // every retailer because one stored link fails the enum or the URL rule.
@@ -279,7 +280,7 @@ const entityPageSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  alternateSlug: z.string().nullable(),
+  alternateSlugs: alternateSlugsSchema,
   quote: z.string().nullable().catch(null),
   imagePath: z.string().nullable().catch(null),
   imageAlt: z.string().nullable().catch(null),

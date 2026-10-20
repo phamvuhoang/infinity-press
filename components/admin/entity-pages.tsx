@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { locales, localeRegistry } from "@/lib/i18n/config";
+import { missingLocales } from "@/lib/i18n/completeness";
 
 import { AdminPageHeader, AdminSection } from "@/components/admin/admin-page-header";
 import { AuthorImageForm } from "@/components/admin/author-image-form";
@@ -42,7 +44,9 @@ export async function EntityListPage({ type }: { type: CatalogEntityType }) {
                   </Link>
                 </td>
                 <td className="break-all px-1 py-3 font-mono text-[0.8125rem]">{entity.canonicalSlug}</td>
-                <td className="break-words px-1 py-3">{entity.locales.join(", ") || "—"}</td>
+                <td className="break-words px-1 py-3">{entity.locales.join(", ") || "—"}
+                  {missingLocales(entity.locales).length > 0 ? <span className="block text-[0.75rem] text-sage-text">missing {missingLocales(entity.locales).join(", ")}</span> : null}
+                </td>
                 <td className="break-words px-1 py-3">{entity.status}</td>
               </tr>
             ))}
@@ -107,8 +111,8 @@ export async function EntityEditPage({ type, id }: { type: CatalogEntityType; id
             <AuthorImageForm authorId={id} image={portrait} />
           </AdminSection>
         ) : null}
-        {(["vi", "en"] as const).map((locale) => (
-          <AdminSection key={locale} title={locale === "vi" ? "Vietnamese copy" : "English copy"}>
+        {locales.map((locale) => (
+          <AdminSection key={locale} title={`${localeRegistry[locale].englishName} copy`}>
             <EntityLocalizationForm
               action={saveEntityLocalizationAction.bind(null, type, id, locale)}
               defaults={entity.localizations.find((localization) => localization.locale === locale) ?? null}

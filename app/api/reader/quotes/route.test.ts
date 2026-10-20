@@ -52,7 +52,7 @@ describe("POST /api/reader/quotes", () => {
   it.each([
     ["empty", { quote: "  ", locale: "vi" }],
     ["html", { quote: "<b>x</b>", locale: "vi" }],
-    ["bad locale", { quote: "x", locale: "ja" }],
+    ["bad locale", { quote: "x", locale: "fr" }],
     ["extra key", { quote: "x", locale: "vi", bookId: "b1" }],
   ])("returns 400 for %s", async (_name, body) => {
     expect((await post(body)).status).toBe(400);

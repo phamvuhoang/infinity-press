@@ -33,7 +33,7 @@ it("maps linked identities to minimal search DTOs", async () => {
   vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
   await expect(searchUsers("an@ex")).resolves.toEqual([{ profileId, email: "an@example.test", displayName: "An", verified: true }]);
 });
-it("builds user details with Vietnamese-first titles and null identity defaults", async () => {
+it("builds user details with default-locale-first titles and null identity defaults", async () => {
   const row = { id: "e1", book_id: "b1", source_type: "admin_grant", status: "active", reason: "Reviewer", granted_at: "2026-09-10", revoked_at: null };
   const fake = fakeSupabaseClient({ tables: {
     profiles: { data: { id: profileId, display_name: "An" }, error: null },
@@ -47,8 +47,8 @@ it("builds user details with Vietnamese-first titles and null identity defaults"
   vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
   const user = await getAdminUser(profileId);
   expect(user).toMatchObject({ profileId, email: null, displayName: "An", verified: false, isAdmin: true });
-  expect(user.entitlements[0]).toEqual({ id: "e1", bookId: "b1", bookTitle: "Quan sát", sourceType: "admin_grant", status: "active", reason: "Reviewer", grantedAt: "2026-09-10", revokedAt: null });
-  expect(user.entitlements.map((row) => row.bookTitle)).toEqual(["Quan sát", "fallback", "Unknown book"]);
+  expect(user.entitlements[0]).toEqual({ id: "e1", bookId: "b1", bookTitle: "Observe", sourceType: "admin_grant", status: "active", reason: "Reviewer", grantedAt: "2026-09-10", revokedAt: null });
+  expect(user.entitlements.map((row) => row.bookTitle)).toEqual(["Observe", "fallback", "Unknown book"]);
 });
 it("returns not-found for malformed IDs without reading the database", async () => {
   await expect(getAdminUser("invalid")).rejects.toThrow("NEXT_NOT_FOUND");

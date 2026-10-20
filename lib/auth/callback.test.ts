@@ -66,7 +66,7 @@ describe("readAuthCallback", () => {
       read("token_hash=hash-6&type=email&redirect_to=http%3A%2F%2F127.0.0.1%3A3000"),
     ).toMatchObject({
       credential: { type: "token_hash", tokenHash: "hash-6", otpType: "email" },
-      destination: "/vi/library",
+      destination: "/en/library",
     });
   });
 

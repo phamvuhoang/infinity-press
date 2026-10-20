@@ -64,7 +64,3 @@ export function getCommerceRoutes(locale: Locale) {
     giftClaim: (token: string) => withLocale(locale, `/gifts/claim/${encodeURIComponent(token)}`),
   };
 }
-
-export function otherLocale(locale: Locale): Locale {
-  return locale === "vi" ? "en" : "vi";
-}

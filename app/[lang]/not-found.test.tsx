@@ -18,6 +18,6 @@ describe("NotFound", () => {
   it("renders the default locale's copy", () => {
     render(NotFound());
 
-    expect(screen.getByText("Không tìm thấy trang")).toBeInTheDocument();
+    expect(screen.getByText("Page not found")).toBeInTheDocument();
   });
 });

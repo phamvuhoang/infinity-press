@@ -1,4 +1,5 @@
 import "server-only";
+import { type Locale } from "@/lib/i18n/config";
 
 import { notFound } from "next/navigation";
 
@@ -66,7 +67,7 @@ function assertUuid(value: string) {
 
 export type AdminBundleLocalizationDTO = {
   id: string;
-  locale: "vi" | "en";
+  locale: Locale;
   slug: string;
   title: string;
   subtitle: string | null;
@@ -139,7 +140,7 @@ type BundleRow = {
   updated_at: string;
   localizations: {
     id: string;
-    locale: "vi" | "en";
+    locale: Locale;
     slug: string;
     title: string;
     subtitle: string | null;

@@ -1376,3 +1376,83 @@ begin
   );
 end;
 $$;
+
+-- The two index functions return the alternate as a TABLE column; changing a column type needs a
+-- drop and create, then the grants again.
+drop function public.knowledge_idea_index(text);
+create function public.knowledge_idea_index(p_locale text)
+returns table (
+  idea_id uuid, slug text, question text, short_answer text,
+  created_at timestamptz, updated_at timestamptz, alternate_slugs jsonb, topics jsonb
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    i.id,
+    l.slug,
+    l.question,
+    l.short_answer,
+    i.created_at,
+    l.updated_at,
+    coalesce((select jsonb_object_agg(o.locale, o.slug) from public.idea_localizations o
+              where o.idea_id = i.id and o.locale <> l.locale), '{}'::jsonb),
+    public.knowledge_topic_refs('idea', i.id, l.locale)
+  from public.ideas i
+  join public.idea_localizations l on l.idea_id = i.id and l.locale = p_locale
+  where i.status = 'published'
+  order by l.question, i.id;
+$$;
+revoke all on function public.knowledge_idea_index(text) from public;
+grant execute on function public.knowledge_idea_index(text) to anon, authenticated, service_role;
+
+drop function public.knowledge_article_index(text);
+create function public.knowledge_article_index(p_locale text)
+returns table (
+  article_id uuid, slug text, title text, excerpt text,
+  published_at timestamptz, updated_at timestamptz, alternate_slugs jsonb, author jsonb
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    a.id,
+    l.slug,
+    l.title,
+    l.excerpt,
+    coalesce(a.published_at, a.created_at),
+    l.updated_at,
+    coalesce((select jsonb_object_agg(o.locale, o.slug) from public.article_localizations o
+              where o.article_id = a.id and o.locale <> l.locale), '{}'::jsonb),
+    public.knowledge_article_author(a.author_id, l.locale)
+  from public.articles a
+  join public.article_localizations l on l.article_id = a.id and l.locale = p_locale
+  where a.status = 'published'
+  order by coalesce(a.published_at, a.created_at) desc, a.id;
+$$;
+revoke all on function public.knowledge_article_index(text) from public;
+grant execute on function public.knowledge_article_index(text) to anon, authenticated, service_role;
+
+-- Metadata fallback (spec section 5): pick ONE whole localization, never a field-by-field mix.
+-- The requested locale if it has a row, else the platform default metadata locale if it does, else
+-- null. The catalog RPCs call this with the locales a work or entity is actually localized in.
+create function public.resolve_metadata_locale(p_requested text, p_available text[])
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select case
+    when p_requested is not null and p_requested = any (p_available) then p_requested
+    when (select s.default_metadata_locale from public.platform_settings s) = any (p_available)
+      then (select s.default_metadata_locale from public.platform_settings s)
+    else null
+  end;
+$$;
+revoke all on function public.resolve_metadata_locale(text, text[]) from public;
+grant execute on function public.resolve_metadata_locale(text, text[]) to anon, authenticated, service_role;

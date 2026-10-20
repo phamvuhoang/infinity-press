@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { locales, localeRegistry } from "@/lib/i18n/config";
 
 import {
   saveBookLocalizationAction,
@@ -88,10 +89,10 @@ export default async function AdminBookPage({ params }: { params: Promise<{ book
 
         <AdminSection id="localizations" title="Localizations">
           <div className="space-y-12">
-            {(["vi", "en"] as const).map((locale) => (
+            {locales.map((locale) => (
               <div key={locale}>
                 <h3 className="mb-4 text-[0.6875rem] font-medium tracking-[0.08em] text-sage-text uppercase">
-                  {locale === "vi" ? "Vietnamese" : "English"}
+                  {localeRegistry[locale].englishName}
                 </h3>
                 <LocalizationForm
                   action={saveBookLocalizationAction.bind(null, book.id, locale)}

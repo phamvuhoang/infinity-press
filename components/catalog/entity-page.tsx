@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { alternatePaths } from "@/lib/i18n/alternates";
 
 import { BookGrid } from "@/components/catalog/book-card";
 import { RecommendationShelf } from "@/components/catalog/recommendation-shelf";
@@ -16,7 +17,7 @@ import { getKnowledgeForTopic } from "@/lib/data/knowledge";
 import { getShelfRecommendations } from "@/lib/data/recommendations";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
-import { getCatalogRoutes, getLocaleRoutes, otherLocale } from "@/lib/i18n/routes";
+import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { breadcrumbSchema, personSchema } from "@/lib/seo/json-ld";
 import { buildPageMetadata, localePaths, SITE_NAME } from "@/lib/seo/metadata";
 
@@ -27,14 +28,13 @@ export async function entityMetadata(kind: CatalogEntityKind, params: EntityPara
   if (!isLocale(locale)) return {};
   const entity = await getEntityPage(kind, locale, slug);
   if (!entity) return {};
-  const other = otherLocale(locale);
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
     paths: localePaths(
       locale,
       getCatalogRoutes(locale).entity(kind, slug),
-      entity.alternateSlug ? getCatalogRoutes(other).entity(kind, entity.alternateSlug) : null,
+      alternatePaths(entity.alternateSlugs, (l, s) => getCatalogRoutes(l).entity(kind, s)),
     ),
     title: entity.name,
     description: entity.description ?? undefined,
@@ -61,7 +61,6 @@ export async function EntityPage({ kind, params }: { kind: CatalogEntityKind; pa
     kind === "topic" ? getKnowledgeForTopic(locale, entity.id) : Promise.resolve([]),
   ]);
   const copy = dictionary.catalog;
-  const other = otherLocale(locale);
   const siteUrl = getServerEnv().siteUrl;
   const path = getCatalogRoutes(locale).entity(kind, slug);
   const breadcrumbs = breadcrumbSchema(siteUrl, [
@@ -73,7 +72,7 @@ export async function EntityPage({ kind, params }: { kind: CatalogEntityKind; pa
   return (
     <div className="min-h-screen bg-ivory">
       <SiteHeader
-        alternates={entity.alternateSlug ? { [other]: getCatalogRoutes(other).entity(kind, entity.alternateSlug) } : undefined}
+        alternates={alternatePaths(entity.alternateSlugs, (l, s) => getCatalogRoutes(l).entity(kind, s))}
         locale={locale}
       />
       <JsonLd data={kind === "author" ? [personSchema({ siteUrl, path, entity }), breadcrumbs] : breadcrumbs} />

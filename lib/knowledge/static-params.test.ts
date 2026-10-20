@@ -16,7 +16,7 @@ function idea(slug: string): KnowledgeIdeaSummary {
     shortAnswer: "A.",
     createdAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-01T00:00:00+00:00",
-    alternateSlug: null,
+    alternateSlugs: {},
     topics: [],
   };
 }
@@ -29,7 +29,7 @@ function article(slug: string): KnowledgeArticleSummary {
     excerpt: "E",
     publishedAt: "2026-09-01T00:00:00+00:00",
     updatedAt: "2026-09-01T00:00:00+00:00",
-    alternateSlug: null,
+    alternateSlugs: {},
     author: { name: "Mai Tran", slug: null },
   };
 }

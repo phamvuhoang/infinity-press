@@ -137,13 +137,13 @@ set local role anon;
 -- Idea index ---------------------------------------------------------------------------------- (13)-(17)
 select is(
   (select array_agg(x.slug order by x.n)
-   from public.knowledge_idea_index('vi') with ordinality x(idea_id, slug, question, short_answer, created_at, updated_at, alternate_slug, topics, n)
+   from public.knowledge_idea_index('vi') with ordinality x(idea_id, slug, question, short_answer, created_at, updated_at, alternate_slugs, topics, n)
    where x.slug like 's12p-%'),
   array['s12p-an-sang', 's12p-doc-the-nao', 's12p-thoi-quen'],
   'the vi idea index lists only published vi ideas, ordered by question');
 select is(
   (select array_agg(x.slug order by x.n)
-   from public.knowledge_idea_index('en') with ordinality x(idea_id, slug, question, short_answer, created_at, updated_at, alternate_slug, topics, n)
+   from public.knowledge_idea_index('en') with ordinality x(idea_id, slug, question, short_answer, created_at, updated_at, alternate_slugs, topics, n)
    where x.slug like 's12p-%'),
   array['s12p-small-habits', 's12p-how-to-read'],
   'the en idea index lists only ideas localized in en');
@@ -155,8 +155,8 @@ select is(
   (select topics from public.knowledge_idea_index('vi') where slug = 's12p-an-sang'),
   '[]'::jsonb, 'an idea without topics carries an empty topic list');
 select is(
-  (select alternate_slug from public.knowledge_idea_index('vi') where slug = 's12p-thoi-quen'),
-  's12p-small-habits', 'the index row carries the other-locale slug');
+  (select alternate_slugs->>'en' from public.knowledge_idea_index('vi') where slug = 's12p-thoi-quen'),
+  's12p-small-habits', 'the index row carries the other-locale slugs');
 
 -- Idea page ----------------------------------------------------------------------------------- (18)-(30)
 select is(public.knowledge_idea_page('vi', 's12p-thoi-quen')->>'ideaId', 'd5730000-0000-0000-0000-000000000001', 'a published idea page resolves');
@@ -191,13 +191,13 @@ select ok(public.knowledge_idea_page('en', 's12p-thoi-quen') is null
 -- Article index ------------------------------------------------------------------------------- (31)-(35)
 select is(
   (select array_agg(x.slug order by x.n)
-   from public.knowledge_article_index('vi') with ordinality x(article_id, slug, title, excerpt, published_at, updated_at, alternate_slug, author, n)
+   from public.knowledge_article_index('vi') with ordinality x(article_id, slug, title, excerpt, published_at, updated_at, alternate_slugs, author, n)
    where x.slug like 's12p-%'),
   array['s12p-bai-hai', 's12p-bai-ba', 's12p-doc-sau'],
   'the vi article index is published_at desc, then id, and hides drafts and archives');
 select is(
   (select array_agg(x.slug order by x.n)
-   from public.knowledge_article_index('en') with ordinality x(article_id, slug, title, excerpt, published_at, updated_at, alternate_slug, author, n)
+   from public.knowledge_article_index('en') with ordinality x(article_id, slug, title, excerpt, published_at, updated_at, alternate_slugs, author, n)
    where x.slug like 's12p-%'),
   array['s12p-deep-reading'], 'the en article index lists only en localizations');
 select is((select author from public.knowledge_article_index('vi') where slug = 's12p-doc-sau'),

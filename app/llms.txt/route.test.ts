@@ -40,7 +40,7 @@ function card(overrides: Partial<CatalogBookCard> & { slug: string }): CatalogBo
   };
 }
 
-const cards: Record<Locale, CatalogBookCard[]> = {
+const cards: Record<Exclude<Locale, "ja">, CatalogBookCard[]> = {
   vi: [
     card({
       slug: "sach-mot",
@@ -66,7 +66,7 @@ const cards: Record<Locale, CatalogBookCard[]> = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getServerEnv).mockReturnValue({ siteUrl: SITE } as ReturnType<typeof getServerEnv>);
-  vi.mocked(getBookCards).mockImplementation(async (locale: Locale) => cards[locale]);
+  vi.mocked(getBookCards).mockImplementation(async (locale: Locale) => cards[locale as keyof typeof cards] ?? []);
   vi.mocked(getPublishedIdeas).mockImplementation(async (locale: Locale) => [
     {
       ideaId: `idea-${locale}`,
@@ -75,7 +75,7 @@ beforeEach(() => {
       shortAnswer: "Because\nattention.",
       createdAt: "2026-09-01T00:00:00Z",
       updatedAt: "2026-09-02T00:00:00Z",
-      alternateSlug: null,
+      alternateSlugs: {},
       topics: [],
     },
   ]);
@@ -87,7 +87,7 @@ beforeEach(() => {
       excerpt: "An excerpt.",
       publishedAt: "2026-09-01T00:00:00Z",
       updatedAt: "2026-09-02T00:00:00Z",
-      alternateSlug: null,
+      alternateSlugs: {},
       author: { name: "Mai Tran", slug: "mai-tran" },
     } as Awaited<ReturnType<typeof getArticleIndex>>[number],
   ]);
@@ -111,7 +111,8 @@ describe("GET /llms.txt", () => {
     expect(text).toContain("- [Book one](https://books.example/en/books/book-one)\n");
     expect(text).toContain("https://books.example/en/ideas/why-read-slowly");
     expect(text).toContain("https://books.example/en/articles/autumn-reading");
-    expect(text.indexOf("# Infinity Books")).toBeLessThan(text.indexOf("## English"));
+    expect(text.startsWith("# Infinity Books Press")).toBe(true);
+    expect(text.indexOf("# Infinity Books Press")).toBeLessThan(text.indexOf("## Tiếng Việt"));
   });
 
   it("prints a book's price, with the list price and last day while a sale runs", async () => {
@@ -136,8 +137,8 @@ describe("GET /llms.txt", () => {
 
   it("emits exactly one line per entity, even with a multi-line description", async () => {
     const text = await (await GET()).text();
-    // vi: 2 books, author, series, topic, idea, article; en: book, topic, idea, article.
-    expect(text.split("\n").filter((l) => l.startsWith("- ["))).toHaveLength(11);
+    // vi: 2 books, author, series, topic, idea, article; en: book, topic, idea, article; ja: idea, article.
+    expect(text.split("\n").filter((l) => l.startsWith("- ["))).toHaveLength(13);
   });
 
   it("fails rather than serving a partial index when a read fails", async () => {

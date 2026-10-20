@@ -19,9 +19,9 @@ import { getBookCards } from "@/lib/data/catalog";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { fillCountTemplate } from "@/lib/i18n/format";
-import { getLocaleRoutes, otherLocale } from "@/lib/i18n/routes";
+import { getLocaleRoutes } from "@/lib/i18n/routes";
 import { breadcrumbSchema } from "@/lib/seo/json-ld";
-import { buildPageMetadata, SITE_NAME } from "@/lib/seo/metadata";
+import { buildPageMetadata, fixedPaths, SITE_NAME } from "@/lib/seo/metadata";
 
 type Props = { params: Promise<{ lang: string }>; searchParams: Promise<CatalogSearchParams> };
 
@@ -34,7 +34,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
-    paths: { vi: getLocaleRoutes("vi").books, en: getLocaleRoutes("en").books },
+    paths: fixedPaths((l) => getLocaleRoutes(l).books),
     title: copy.title,
     description: copy.description,
     index: hasActiveFilters(parseCatalogFilters(query)) ? "noindex-follow" : "index",
@@ -49,13 +49,12 @@ export default async function BooksPage({ params, searchParams }: Props) {
   const copy = dictionary.catalog;
   const routes = getLocaleRoutes(locale);
   // Filter slugs are locale-specific, so the language switcher opens the other list unfiltered.
-  const other = otherLocale(locale);
   const filters = parseCatalogFilters(query);
   const books = filterAndSortBooks(cards, filters, locale);
 
   return (
     <div className="min-h-screen bg-ivory">
-      <SiteHeader alternates={{ [other]: getLocaleRoutes(other).books }} current="books" locale={locale} />
+      <SiteHeader alternates={fixedPaths((l) => getLocaleRoutes(l).books)} current="books" locale={locale} />
       <JsonLd
         data={breadcrumbSchema(getServerEnv().siteUrl, [
           { name: SITE_NAME, path: routes.home },

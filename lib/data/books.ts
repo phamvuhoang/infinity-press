@@ -1,4 +1,5 @@
 import "server-only";
+import { type Locale } from "@/lib/i18n/config";
 
 import { notFound } from "next/navigation";
 
@@ -107,7 +108,7 @@ export async function createBook(input: CreateBookInput): Promise<{ bookId: stri
 
 export type BookLocalizationDTO = {
   id: string;
-  locale: "vi" | "en";
+  locale: Locale;
   slug: string;
   title: string;
   subtitle: string | null;
@@ -193,7 +194,7 @@ type OfferRow = {
 
 type LocalizationRow = {
   id: string;
-  locale: "vi" | "en";
+  locale: Locale;
   slug: string;
   title: string;
   subtitle: string | null;

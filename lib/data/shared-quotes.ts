@@ -1,4 +1,5 @@
 import "server-only";
+import { locales } from "@/lib/i18n/config";
 
 import { headers } from "next/headers";
 import { cache } from "react";
@@ -32,7 +33,7 @@ const sharedQuoteSchema = z.object({
   id: z.string(),
   code: z.string().regex(SHARED_QUOTE_CODE),
   quote: z.string(),
-  locale: z.enum(["vi", "en"]),
+  locale: z.enum(locales),
   bookId: z.string(),
   createdAt: z.string(),
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { localeRegistry, locales } from "@/lib/i18n/config";
 
 import { createBundleAction } from "@/app/admin/bundles/actions";
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
@@ -21,8 +22,9 @@ export function BundleForm() {
       <div className="min-w-0 space-y-2">
         <Label htmlFor="bundle-locale">Locale</Label>
         <NativeSelect defaultValue="vi" id="bundle-locale" name="locale">
-          <option value="vi">Vietnamese (vi)</option>
-          <option value="en">English (en)</option>
+          {locales.map((code) => (
+<option key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</option>
+))}
         </NativeSelect>
         <FieldError id="bundle-locale-error" message={state.fieldErrors.locale} />
       </div>

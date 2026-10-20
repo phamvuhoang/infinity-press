@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { localeRegistry, locales } from "@/lib/i18n/config";
 
 import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import { SubmitButton } from "@/components/auth/submit-button";
@@ -22,8 +23,9 @@ export function EditionForm({ action, edition }: { action: FormAction; edition: 
         <div className="min-w-0 space-y-2">
           <Label htmlFor="edition-languageCode">Edition language</Label>
           <NativeSelect defaultValue={edition.languageCode} aria-invalid={Boolean(state.fieldErrors.languageCode)} aria-describedby={state.fieldErrors.languageCode ? "edition-languageCode-error" : undefined} id="edition-languageCode" name="languageCode">
-            <option value="vi">Vietnamese (vi)</option>
-            <option value="en">English (en)</option>
+            {locales.map((code) => (
+<option key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</option>
+))}
           </NativeSelect>
           <FieldError id="edition-languageCode-error" message={state.fieldErrors.languageCode} />
         </div>

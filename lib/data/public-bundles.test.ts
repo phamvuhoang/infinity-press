@@ -138,7 +138,7 @@ describe("getPublicBundle", () => {
     expect(bundle).toEqual({
       bundleId: BUNDLE_ID,
       slug: "starter-bundle",
-      alternateSlug: "goi-khoi-dau",
+      alternateSlugs: { vi: "goi-khoi-dau" },
       title: "Starter Bundle",
       subtitle: "Two books",
       description: "A set.",

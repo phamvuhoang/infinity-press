@@ -56,7 +56,7 @@ function makeEntity(kind: CatalogEntityPage["kind"], books: CatalogBookCard[]): 
     id: "40000000-0000-4000-8000-000000000001",
     name: "Habits",
     description: null,
-    alternateSlug: null,
+    alternateSlugs: {},
     quote: null,
     image: null,
     books,

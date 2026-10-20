@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { alternatePaths } from "@/lib/i18n/alternates";
 
 import { ActionErrorBanner } from "@/components/catalog/action-error-banner";
 import { BookGrid } from "@/components/catalog/book-card";
@@ -16,7 +17,7 @@ import { getServerEnv } from "@/lib/config/server-env";
 import { getPublicBundle, publicBundleAction } from "@/lib/data/public-bundles";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
-import { getCatalogRoutes, getLocaleRoutes, otherLocale } from "@/lib/i18n/routes";
+import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { breadcrumbSchema, bundleSchema } from "@/lib/seo/json-ld";
 import { buildPageMetadata, localePaths, SITE_NAME } from "@/lib/seo/metadata";
 
@@ -48,7 +49,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isLocale(locale)) return {};
   const bundle = await getPublicBundle(locale, slug);
   if (!bundle) return {};
-  const other = otherLocale(locale);
   return buildPageMetadata({
     siteUrl: getServerEnv().siteUrl,
     locale,
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     paths: localePaths(
       locale,
       getCatalogRoutes(locale).bundle(bundle.slug),
-      bundle.alternateSlug ? getCatalogRoutes(other).bundle(bundle.alternateSlug) : null,
+      alternatePaths(bundle.alternateSlugs, (l, s) => getCatalogRoutes(l).bundle(s)),
     ),
     title: bundle.title,
     description: bundle.description ?? bundle.subtitle ?? undefined,
@@ -81,7 +81,6 @@ export default async function BundlePage({ params }: Props) {
   const dictionary = await getDictionary(locale);
   const copy = dictionary.catalog;
   const routes = getCatalogRoutes(locale);
-  const other = otherLocale(locale);
   const env = getServerEnv();
   // What an anonymous visitor could do now, so the page can be prerendered: nobody owns anything.
   // ViewerBundleAction corrects this in the browser from /api/catalog/bundles/[bundleId]/action-state.
@@ -91,7 +90,7 @@ export default async function BundlePage({ params }: Props) {
   return (
     <div className="min-h-screen bg-ivory">
       <SiteHeader
-        alternates={bundle.alternateSlug ? { [other]: getCatalogRoutes(other).bundle(bundle.alternateSlug) } : undefined}
+        alternates={alternatePaths(bundle.alternateSlugs, (l, s) => getCatalogRoutes(l).bundle(s))}
         current="books"
         locale={locale}
       />

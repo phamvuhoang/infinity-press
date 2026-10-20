@@ -1,5 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
+import { type Locale } from "@/lib/i18n/config";
 
 import type { AnalyticsDeviceClass, Retailer } from "@/lib/analytics/browser";
 import { getRequestId } from "@/lib/observability/request-id";
@@ -36,7 +37,7 @@ export type TrackEventInput = {
   publicationId?: string;
   sharedQuoteId?: string;
   retailer?: Retailer;
-  locale?: "vi" | "en";
+  locale?: Locale;
   deviceClass?: AnalyticsDeviceClass;
 };
 

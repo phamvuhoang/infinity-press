@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { locales } from "@/lib/i18n/config";
 
 import { analyticsDeviceClasses, retailers } from "@/lib/analytics/browser";
 import { trackEventBestEffort, type TrackEventInput } from "@/lib/analytics/events";
@@ -22,7 +23,7 @@ const sessionBoundEvents = new Set(["view_library", "open_reader", "change_reade
 // Database ids are checked for shape only (any 8-4-4-4-12 hex), because seeded and imported rows are
 // not always RFC 4122 v4. The event ID is minted by crypto.randomUUID(), so it must be a real UUID.
 const id = z.guid();
-const locale = z.enum(["vi", "en"]);
+const locale = z.enum(locales);
 const common = {
   eventId: z.uuid(),
   locale,

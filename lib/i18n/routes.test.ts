@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getCatalogRoutes, getCommerceRoutes, getKnowledgeRoutes, getLocaleRoutes, otherLocale } from "@/lib/i18n/routes";
+import { getCatalogRoutes, getCommerceRoutes, getKnowledgeRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 
 describe("localized route graph", () => {
   it("keeps primary navigation in the selected locale", () => {
@@ -76,10 +76,5 @@ describe("localized route graph", () => {
     expect(getKnowledgeRoutes("en").idea("living-awake")).toBe("/en/ideas/living-awake");
     expect(getKnowledgeRoutes("en").articles).toBe("/en/articles");
     expect(getKnowledgeRoutes("en").article("reading-slowly")).toBe("/en/articles/reading-slowly");
-  });
-
-  it("names the other locale", () => {
-    expect(otherLocale("vi")).toBe("en");
-    expect(otherLocale("en")).toBe("vi");
   });
 });

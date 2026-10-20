@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n/config";
+import { type Locale, localeRegistry } from "@/lib/i18n/config";
 
 // Fills "{name}" placeholders in dictionary copy.
 export function fillTemplate(template: string, values: Record<string, string | number>): string {
@@ -12,12 +12,11 @@ export function fillCountTemplate(locale: Locale, count: number, forms: { one: s
   return fillTemplate(template, { count });
 }
 
-const dateLocaleTags: Record<Locale, string> = { vi: "vi-VN", en: "en-US" };
 
 // Order dates render on the server, so the time zone is fixed to the launch market rather than the
 // server's own zone.
 export function formatDate(iso: string, locale: Locale, options: { withTime?: boolean } = {}): string {
-  return new Intl.DateTimeFormat(dateLocaleTags[locale], {
+  return new Intl.DateTimeFormat(localeRegistry[locale].intlTag, {
     dateStyle: "medium",
     ...(options.withTime ? { timeStyle: "short" as const } : {}),
     timeZone: "Asia/Ho_Chi_Minh",

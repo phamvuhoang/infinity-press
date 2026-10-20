@@ -36,6 +36,7 @@ import {
   updateEdition,
   updateOffer,
 } from "@/lib/data/books";
+import { type Locale } from "@/lib/i18n/config";
 
 // Every runtime export of a "use server" module must be an async function. Each action calls
 // requireAdmin() before parsing, never returns raw database text, and revalidates the book pages.
@@ -75,7 +76,7 @@ export async function updateBookDetailsAction(bookId: string, _previous: AdminFo
 
 export async function saveBookLocalizationAction(
   bookId: string,
-  locale: "vi" | "en",
+  locale: Locale,
   _previous: AdminFormState,
   formData: FormData,
 ): Promise<AdminFormState> {

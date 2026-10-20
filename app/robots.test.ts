@@ -17,7 +17,7 @@ it("allows the storefront and points crawlers at the sitemap", async () => {
   expect(result.rules).toEqual([expect.objectContaining({ userAgent: "*", allow: "/" })]);
 });
 
-it("disallows application and private surfaces for both locales", async () => {
+it("disallows application and private surfaces for every locale", async () => {
   const [rule] = [(await robots()).rules].flat();
   expect(rule.disallow).toEqual([
     "/admin",
@@ -46,5 +46,16 @@ it("disallows application and private surfaces for both locales", async () => {
     "/en/sign-up",
     "/en/password-reset",
     "/en/password-update",
+    "/ja/account",
+    "/ja/ask",
+    "/ja/checkout",
+    "/ja/library",
+    "/ja/read/",
+    "/ja/read-sample",
+    "/ja/search",
+    "/ja/sign-in",
+    "/ja/sign-up",
+    "/ja/password-reset",
+    "/ja/password-update",
   ]);
 });
