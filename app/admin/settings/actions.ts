@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { fieldErrorsFrom, readText, type AdminFormState } from "@/lib/catalog/form";
 import { revalidateStorefront } from "@/lib/catalog/revalidate";
 import { platformSettingsSchema } from "@/lib/catalog/schemas";
 import { savePlatformSettings } from "@/lib/i18n/settings";
+import { getRequestId } from "@/lib/observability/request-id";
 
 const genericFailure = "Something went wrong saving. Try again.";
 
@@ -22,7 +24,8 @@ export async function savePlatformSettingsAction(_previous: AdminFormState, form
 
   try {
     await savePlatformSettings(parsed.data);
-  } catch {
+  } catch (error) {
+    console.error("Save platform settings failed.", { requestId: getRequestId(await headers()), error: String(error) });
     return { fieldErrors: {}, formError: genericFailure, savedAt: null };
   }
 

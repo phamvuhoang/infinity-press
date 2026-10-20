@@ -115,7 +115,7 @@ describe("updateEdition", () => {
   });
 
   it("explains a refused identity change once the edition has been sold", async () => {
-    const fake = fakeSupabaseClient({ rpc: { data: null, error: { code: "23514", message: "edition has orders or entitlements" } } });
+    const fake = fakeSupabaseClient({ rpc: { data: null, error: { code: "23514", message: "edition has orders or entitlements; its book and language cannot change" } } });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
     await expect(updateEdition(editionId, input)).rejects.toBeInstanceOf(EditionIdentityLockedError);
   });

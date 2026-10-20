@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { initialAdminFormState } from "@/lib/catalog/form";
+import { defaultLocale } from "@/lib/i18n/config";
 
 // Creating a bundle is creating its first localization; everything else is set in the editor, so
 // this form is deliberately three fields. It sits beside book-form.tsx rather than under
@@ -21,7 +22,7 @@ export function BundleForm() {
     <form action={formAction} className="space-y-5">
       <div className="min-w-0 space-y-2">
         <Label htmlFor="bundle-locale">Locale</Label>
-        <NativeSelect defaultValue="vi" id="bundle-locale" name="locale">
+        <NativeSelect defaultValue={defaultLocale} id="bundle-locale" name="locale">
           {locales.map((code) => (
 <option key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</option>
 ))}

@@ -375,8 +375,9 @@ export async function seedProcessedBook(options: {
   // Step 5 - publish, through the same RPCs the admin UI calls. publish_publication moves the
   // active pointer (superseding the placeholder publication); publish_book is what makes the book
   // and its author public.
-  await approveEditionDirectly(edition.id);
   const admin = await signedInAdmin();
+  // After the admin exists, which gives the approval a reviewer to record.
+  await approveEditionDirectly(edition.id);
   const { error: publishPublicationError } = await admin.rpc("publish_publication", {
     p_publication_id: publicationId,
   });

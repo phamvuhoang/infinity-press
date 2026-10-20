@@ -9,6 +9,7 @@ import { savePlatformSettings } from "@/lib/i18n/settings";
 
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers()) }));
 vi.mock("@/lib/i18n/settings", () => ({ savePlatformSettings: vi.fn() }));
 
 function form(values: Record<string, string>) {

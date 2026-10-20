@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { defaultLocale } from "@/lib/i18n/config";
 
 const initialFormState: CreateBookFormState = {
   fieldErrors: {},
@@ -83,7 +84,7 @@ export function BookForm({
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="locale-trigger">Locale</Label>
-          <Select defaultValue="vi" name="locale">
+          <Select defaultValue={defaultLocale} name="locale">
             <SelectTrigger className="w-full" id="locale-trigger">
               <SelectValue placeholder="Select a locale" />
             </SelectTrigger>

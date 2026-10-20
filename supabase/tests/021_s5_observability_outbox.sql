@@ -74,7 +74,7 @@ select is(
 insert into public.entitlements (profile_id, book_id, source_type, actor_profile_id, reason, status)
 select t_ids.reader_id, '82000000-0000-0000-0000-000000000001', 'admin_grant', t_ids.admin_id, 'Test fixture repeat', 'active'
 from t_ids
-on conflict (profile_id, edition_id) where status = 'active' and edition_id is not null do nothing;
+on conflict (profile_id, edition_id) where status = 'active' and edition_id is not null and source_type = 'admin_grant' do nothing;
 select is(
   (select count(*)::int from public.entitlements where profile_id = (select reader_id from t_ids) and book_id = '82000000-0000-0000-0000-000000000001'),
   1,

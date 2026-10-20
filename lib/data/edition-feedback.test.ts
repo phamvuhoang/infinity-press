@@ -26,6 +26,19 @@ beforeEach(() => {
 });
 
 describe("submitEditionFeedback", () => {
+  it("sends an explicit null locator when the reader has no place, so the RPC is still found", async () => {
+    const fake = fakeSupabaseClient({ rpc: { data: "id", error: null } });
+    vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
+
+    await submitEditionFeedback(publicationId, null, "A clause is missing.");
+
+    expect(fake.rpc).toHaveBeenCalledWith("submit_edition_feedback", {
+      p_publication_id: publicationId,
+      p_locator: null,
+      p_message: "A clause is missing.",
+    });
+  });
+
   it("sends the publication, the place and the words, and nothing about who", async () => {
     const fake = fakeSupabaseClient({ rpc: { data: "id", error: null } });
     vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);

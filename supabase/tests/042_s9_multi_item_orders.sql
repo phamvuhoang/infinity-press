@@ -204,15 +204,14 @@ select is((select cardinality(entitlement_ids) from t_b), 3,
 -- (13)
 select is(
   (select count(*)::int from public.entitlements where source_order_id = 'd6000000-0000-0000-0000-000000000002'),
-  2,
-  'the pre-owned book mints no second entitlement');
--- (14) Including the pre-owned admin_grant row, resolved by subject the way a single-book order
--- already resolved it.
+  3,
+  'a complimentary grant on one book does not stop the order minting its own entitlement for it');
+-- (14) The array is the order's own three entitlements; the complimentary row stays beside them.
 select results_eq(
   $$select entitlement_ids from t_b$$,
-  $$select array_agg(e.id order by e.book_id) from public.entitlements e, t_ids
-    where e.profile_id = t_ids.buyer_b_id and e.status = 'active'$$,
-  'the array carries the pre-owned entitlement alongside the two new ones');
+  $$select array_agg(e.id order by e.book_id) from public.entitlements e
+    where e.source_order_id = 'd6000000-0000-0000-0000-000000000002'$$,
+  'the array carries the order''s own entitlements, the complimentary one is separate');
 
 -- ============================================================================================
 -- Revoking a three-book order.
@@ -280,14 +279,14 @@ select results_eq(
 -- (21)
 select is(
   (select count(*)::int from public.entitlements where source_order_id = 'd6000000-0000-0000-0000-000000000003'),
-  0,
-  'an order whose every book is already owned mints no entitlement');
+  3,
+  'an order for books already held by complimentary grants still mints its own entitlements');
 -- (22)
 select results_eq(
   $$select entitlement_ids from t_c$$,
-  $$select array_agg(e.id order by e.book_id) from public.entitlements e, t_ids
-    where e.profile_id = t_ids.buyer_c_id and e.status = 'active'$$,
-  'the array is built entirely from the entitlements the buyer already held');
+  $$select array_agg(e.id order by e.book_id) from public.entitlements e
+    where e.source_order_id = 'd6000000-0000-0000-0000-000000000003'$$,
+  'the array is the order''s own entitlements');
 
 -- ============================================================================================
 -- A confirmed bank transfer can be revoked. Regression for the order-backed source set: until this

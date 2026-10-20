@@ -54,9 +54,18 @@ the cloud project.
 | Gate | Command | Result |
 | --- | --- | --- |
 | Lint, types, unit tests, build, prerender assertions | `npm run check` | pass (3438 unit tests; one pre-existing lint warning class remains, 0 errors) |
-| Database | `supabase db reset` then `supabase test db` on the owned local workdir | pass (84 files) |
+| Database | `supabase db reset` then `supabase test db` on the owned local workdir | pass (85 files) |
 | Legacy upgrade | `scripts/rehearse-upgrade.sh <workdir>` | clean fixture maps every row to its edition and keeps progress, annotations, pending order and gift; the ambiguous fixture stops the migration, names the row id, leaks no email, leaves the schema unchanged |
 | End to end | `npx playwright test --project=chromium`, then `--project=chromium-manual` | see "End to end" below |
+| Japanese reader, three engines | `e2e/reader-japanese.spec.ts` on Chromium, Firefox, WebKit | pass |
+
+### End to end
+
+`--project=chromium`: 109 tests passed from a freshly reset database at the commit that carries the second
+review's fixes. `--project=chromium-manual`: 5 passed. Two older assumptions surfaced on the clean database
+and were corrected in the specs: a book that exists only in Vietnamese is not listed while English is the
+platform language (so `/llms.txt` is checked with an English book), and only the offer on show can be
+bought (so the yen-refusal check makes the yen offer the default first).
 | Japanese reader, three engines | `e2e/reader-japanese.spec.ts` on Chromium, Firefox, WebKit | pass |
 
 ### End to end
@@ -112,3 +121,7 @@ are listed as open at the end; do not claim launch readiness while one remains.
 - Vertical writing is refused at processing time, not supported.
 - A staging pass of the QR transfer and admin confirm flow with a real Press bank account.
 - USD and JPY checkout (Task 12) is not built; those offers cannot be paid until it is.
+- Metadata fallback (requested locale, then platform default, then original language) is applied to
+  books only. Authors, series, topics, ideas, articles and bundles still match their own locale exactly,
+  so a Japanese page for one of them 404s unless it has a Japanese localization. Spec section 5 and A12
+  ask for the same fallback on every entity; this is not done.

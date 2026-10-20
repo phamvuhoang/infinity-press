@@ -102,7 +102,22 @@ test("a reader buys English then Japanese as two orders and ends with two librar
   const japaneseJpy = japanese.offerIds[1];
 
   // Money that is not dong is refused by the database, not merely hidden: no order, no bank details.
+  // Only the offer on show sells, so the yen offer is made the default for this check and the dong
+  // offer restored for the rest.
+  const defaultOffer = async (offerId: string) => {
+    const service = createServiceRoleClient();
+    const { data: offer, error: offerError } = await service.from("offers").select("sku_id").eq("id", offerId).single();
+    if (offerError) throw offerError;
+    const { error } = await service
+      .from("edition_default_offers")
+      .upsert({ edition_id: japanese.editionId, sku_id: offer.sku_id as string, offer_id: offerId }, { onConflict: "edition_id" });
+    if (error) throw error;
+  };
+  await defaultOffer(japaneseJpy);
   expect(await bookEditionOrderAs(reader.email, japanese.editionId, japaneseJpy)).toEqual({ code: "EB041" });
+  await defaultOffer(japaneseVnd);
+  // An offer that is active but not the one on show cannot be bought either.
+  expect(await bookEditionOrderAs(reader.email, japanese.editionId, japaneseJpy)).toEqual({ code: "EB012" });
   // A price the reader did not see is refused rather than charged.
   expect(await bookEditionOrderAs(reader.email, japanese.editionId, japaneseVnd, 149999)).toEqual({ code: "EB040" });
   // The offer of one edition never buys another.

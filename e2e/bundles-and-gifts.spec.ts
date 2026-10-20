@@ -262,16 +262,17 @@ test("a fully discounted bundle gift adds only the books the recipient is missin
   await expect(alreadyOwned.getByRole("link", { name: owned.title })).toBeVisible();
   await expect(alreadyOwned.getByRole("link", { name: missing.title })).toHaveCount(0);
 
-  expect([...(await activeEntitlementBookIds(recipient.profileId))].sort()).toEqual(
+  expect([...new Set(await activeEntitlementBookIds(recipient.profileId))].sort()).toEqual(
     [ownedBook.bookId, missingBook.bookId].sort(),
   );
-  // Two books, two rows: the pre-owned one was not duplicated by the claim.
-  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(2);
-  expect(await activeEntitlementCount(recipient.profileId, ownedBook.bookId)).toBe(1);
+  // Two books, three rows: the gift grants its own entitlement beside the recipient's complimentary
+  // one for the pre-owned book, so revoking either leaves the other.
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(3);
+  expect(await activeEntitlementCount(recipient.profileId, ownedBook.bookId)).toBe(2);
 
   await recipientPage.reload();
   await expect(recipientPage.getByRole("heading", { level: 1, name: "Your gift" })).toBeVisible();
-  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(2);
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(3);
 
   // A bundle is never a library item, however it was paid for or given.
   await recipientPage.goto("/en/library");
@@ -363,14 +364,15 @@ test("a gift keeps the editions it was bought with, however the bundle is edited
   await expect(claimGroup(recipientPage, "Already in your library").getByRole("link", { name: work.title })).toBeVisible();
   await expect(recipientPage.getByText(other.title)).toHaveCount(0);
 
-  // Exactly the snapshot: English (already held, not duplicated) and Japanese. Nothing from the edit.
-  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(2);
-  expect(await activeEditionEntitlementCount(recipient.profileId, english)).toBe(1);
+  // Exactly the snapshot: English (held already by a grant, and now by the gift too) and Japanese.
+  // Nothing from the edit.
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(3);
+  expect(await activeEditionEntitlementCount(recipient.profileId, english)).toBe(2);
   expect(await activeEditionEntitlementCount(recipient.profileId, japanese.editionId)).toBe(1);
   expect(await activeEditionEntitlementCount(recipient.profileId, otherEdition)).toBe(0);
 
   // Claiming again changes nothing.
   await recipientPage.reload();
-  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(2);
+  expect(await activeEntitlementRowCount(recipient.profileId)).toBe(3);
   await recipientContext.close();
 });

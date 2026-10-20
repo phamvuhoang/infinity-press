@@ -47,7 +47,7 @@ export default async function ReportErrorPage({
         <p className="mt-3 text-[0.9375rem] text-ink-soft">{fillTemplate(copy.intro, { title: edition.title })}</p>
         {href ? (
           <p className="mt-3 text-xs text-sage-text">
-            {copy.place}: {progression ? `${Math.round(Number(progression) * 100)}%` : edition.title}
+            {copy.place}: {Number.isFinite(Number(progression)) && progression ? `${Math.round(Number(progression) * 100)}%` : edition.title}
           </p>
         ) : null}
         <ReportForm

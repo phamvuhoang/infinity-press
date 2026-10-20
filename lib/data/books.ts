@@ -364,7 +364,7 @@ export async function listAdminBooks(search?: string): Promise<AdminBookListItem
       { storage_key: cover.storage_key ?? "", alt_text: cover.alt_text ?? "" },
     ]),
   );
-  const needle = search?.trim().toLocaleLowerCase("vi") ?? "";
+  const needle = search?.trim().toLocaleLowerCase() ?? "";
 
   return ((rows ?? []) as unknown as BookRow[])
     .map((row) => toDto(row, coverByBook.get(row.id) ?? null))
@@ -372,7 +372,7 @@ export async function listAdminBooks(search?: string): Promise<AdminBookListItem
       (book) =>
         needle === "" ||
         book.canonicalKey.includes(needle) ||
-        book.localizations.some((localization) => localization.title.toLocaleLowerCase("vi").includes(needle)),
+        book.localizations.some((localization) => localization.title.toLocaleLowerCase().includes(needle)),
     )
     .map((book) => ({
       id: book.id,

@@ -52,6 +52,9 @@ test("an admin saves every editor section, sees validation, and reloads saved va
   await page.getByLabel("Author name").fill(`Editor Author ${unique}`);
   await page.getByLabel("Title").fill("Editor book");
   await page.getByLabel("Slug").fill(`editor-${unique}`);
+  // The form defaults to the platform language (English); this flow edits the Vietnamese copy.
+  await page.locator("#locale-trigger").click();
+  await page.locator('[role="listbox"]').getByRole("option", { name: "Vietnamese (vi)" }).click();
   await page.getByLabel("Market").fill("VN");
   await page.getByLabel("Currency").fill("VND");
   await page.getByLabel("Price (minor units)").fill("0");

@@ -67,10 +67,11 @@ test("an admin adds a Shopee link and the book page shows it with UTM and two Of
 test("/llms.txt lists a published book", async ({ request }) => {
   const suffix = unique();
   const slug = `llms-${suffix}`;
-  await seedCatalogBook({ suffix, localizations: { vi: { slug, title: `LLMS ${suffix}` } } });
+  // English is the platform language, so a work whose edition is English is the one listed.
+  await seedCatalogBook({ suffix, localizations: { en: { slug, title: `LLMS ${suffix}` } } });
   await revalidateStorefront(request);
   const response = await request.get("/llms.txt");
   expect(response.status()).toBe(200);
   expect(response.headers()["content-type"]).toContain("text/plain");
-  expect(await response.text()).toContain(`/vi/books/${slug}`);
+  expect(await response.text()).toContain(`/en/books/${slug}`);
 });

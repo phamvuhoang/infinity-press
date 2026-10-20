@@ -204,6 +204,9 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
   await page.getByLabel("Author name").fill(authorName);
   await page.getByLabel("Title").fill(bookTitle);
   await page.getByLabel("Slug").fill(`gp-slug-${suffix}`);
+  // The form defaults to the platform language (English); this flow edits the Vietnamese copy.
+  await page.locator("#locale-trigger").click();
+  await page.locator('[role="listbox"]').getByRole("option", { name: "Vietnamese (vi)" }).click();
   await page.getByLabel("Market").fill("VN");
   await page.getByLabel("Currency").fill("VND");
   await page.getByLabel("Price (minor units)").fill("1500");

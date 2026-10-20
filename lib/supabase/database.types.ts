@@ -4326,6 +4326,7 @@ export type Database = {
         Args: { p_book_id: string; p_edition_id?: string }
         Returns: undefined
       }
+      edition_is_sellable: { Args: { p_edition_id: string }; Returns: boolean }
       fail_notification_outbox: {
         Args: { p_error_code: string; p_id: string; p_lease_token: string }
         Returns: boolean

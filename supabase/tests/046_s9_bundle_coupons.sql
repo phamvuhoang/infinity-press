@@ -256,9 +256,10 @@ select is((select cardinality(r.entitlement_ids) from t_result r where r.label =
 select ok(
   (select (select e.id from public.entitlements e
            where e.profile_id = (select reader_b from t_ids)
-             and e.book_id = 'e2000000-0000-0000-0000-000000000001') = any(r.entitlement_ids)
+             and e.book_id = 'e2000000-0000-0000-0000-000000000001'
+             and e.source_order_id = 'e7000000-0000-0000-0000-0000000000b1') = any(r.entitlement_ids)
    from t_result r where r.label = 'free-bundle'),
-  'the entitlement the reader already held is resolved by subject and returned, not re-granted');
+  'the order''s own entitlement for the book the reader already held by a comp is returned');
 select is(
   (select cardinality(r.entitlement_ids) from t_result r where r.label = 'free-bundle'),
   (select count(distinct id)::int from t_result r, unnest(r.entitlement_ids) as u(id) where r.label = 'free-bundle'),
@@ -269,17 +270,17 @@ select is(
 reset role;
 select is((select count(*) from public.entitlements e
            where e.profile_id = (select reader_b from t_ids) and e.status = 'active'),
-  3::bigint, 'the reader ends with exactly three active entitlements');
+  4::bigint, 'the reader ends with three order entitlements and the complimentary one');
 select is((select count(*) from public.entitlements e
            where e.profile_id = (select reader_b from t_ids)
              and e.book_id = 'e2000000-0000-0000-0000-000000000001'),
-  1::bigint, 'the pre-owned book has no second entitlement row of any status');
+  2::bigint, 'the pre-owned book has the complimentary row and the order''s own, nothing more');
 select is((select e.source_type::text from public.entitlements e
            where e.profile_id = (select reader_b from t_ids)
-             and e.book_id = 'e2000000-0000-0000-0000-000000000001'),
-  'admin_grant', 'and the pre-owned entitlement is left exactly as it was');
+             and e.book_id = 'e2000000-0000-0000-0000-000000000001' and e.source_order_id is null),
+  'admin_grant', 'and the complimentary entitlement is left exactly as it was');
 select is((select count(*) from public.entitlements e where e.source_order_id = 'e7000000-0000-0000-0000-0000000000b1'),
-  2::bigint, 'only the two books the reader was missing were granted by the order');
+  3::bigint, 'the order granted its three books, beside the complimentary one');
 
 -- (27)-(28)
 select is((select count(*) from public.library_items li where li.profile_id = (select reader_b from t_ids)),

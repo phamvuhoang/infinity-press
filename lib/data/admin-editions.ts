@@ -55,7 +55,7 @@ function failure(operation: string, error: DatabaseError): Error {
   }
   if (error.code === "23503" && error.message.includes("language")) return new UnknownLanguageError();
   if (error.code === "EB044") return new ProvenanceIncompleteError();
-  if (error.code === "23514") return new EditionIdentityLockedError();
+  if (error.code === "23514" && error.message.includes("cannot change")) return new EditionIdentityLockedError();
   return new Error(`${operation} failed.`);
 }
 

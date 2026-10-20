@@ -93,6 +93,15 @@ insert into public.editions (id, book_id, language_code) values
   ('99000000-0000-0000-0000-000000000022', '99000000-0000-0000-0000-000000000012', 'en'),
   ('99000000-0000-0000-0000-000000000023', '99000000-0000-0000-0000-000000000013', 'en');
 
+-- A free claim needs a sellable edition: published work, published edition, live publication.
+update public.books set status = 'published' where id = '99000000-0000-0000-0000-000000000010';
+insert into public.ebook_assets (id, edition_id, source_storage_key, version, status)
+values ('99000000-0000-0000-0000-000000000040', '99000000-0000-0000-0000-000000000020', 'ent/free.epub', 1, 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, epub_language)
+values ('99000000-0000-0000-0000-000000000041', '99000000-0000-0000-0000-000000000040', 1, 'ent/free.json', 'published', 'en');
+update public.editions set status = 'published', active_publication_id = '99000000-0000-0000-0000-000000000041'
+where id = '99000000-0000-0000-0000-000000000020';
+
 insert into public.skus (id, edition_id, sku_code) values
   ('99000000-0000-0000-0000-000000000030', '99000000-0000-0000-0000-000000000020', 'entitlements-book-free-ebook'),
   ('99000000-0000-0000-0000-000000000031', '99000000-0000-0000-0000-000000000021', 'entitlements-book-no-offer-ebook'),
@@ -730,16 +739,16 @@ grant select on t_pay_cross_source to public;
 -- minting a second one - the entitlement returned is the one already granted, not null.
 select is(
   (select entitlement_ids from t_pay_cross_source),
-  (select array[entitlement_id] from t_grant_cross_payment),
-  'a succeeded event for a reader with an existing cross-source entitlement returns that entitlement'
+  (select array_agg(id) from public.entitlements where source_order_id = '97000000-0000-0000-0000-000000000005'),
+  'a succeeded event for a reader holding a complimentary grant returns the order''s own entitlement'
 );
 -- (55) Still exactly one entitlement row for this (profile, book) - no orphan simulated_payment
 -- row was created alongside the pre-existing admin_grant one.
 select is(
   (select count(*)::bigint from public.entitlements
    where profile_id = (select cross_payment_id from t_profile_ids) and book_id = '99000000-0000-0000-0000-000000000013'),
-  1::bigint,
-  'still exactly one entitlement row after the cross-source success'
+  2::bigint,
+  'the complimentary grant and the paid entitlement sit side by side after the cross-source success'
 );
 
 set local role service_role;

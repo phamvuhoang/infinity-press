@@ -9,7 +9,7 @@ import { requireUser } from "@/lib/auth/session";
 import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { getBookCardById } from "@/lib/data/catalog";
 import { getOwnedEditionsOfBook } from "@/lib/data/library";
-import { getMyBookReview } from "@/lib/data/reviews";
+import { ChooseEditionToReviewError, getMyBookReview } from "@/lib/data/reviews";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
@@ -47,7 +47,14 @@ export default async function ReviewPage({
     editions.length === 1 ? editions[0] : (editions.find((candidate) => candidate.editionId === requestedEdition) ?? null);
   const mustChoose = editions.length > 1 && selected === null;
   const owned = selected !== null;
-  const review = mustChoose ? null : await getMyBookReview(bookId, selected?.editionId);
+  // A revoked owner still sees their review, but one with reviews on two editions and none held now has
+  // no edition to name: show nothing rather than fail.
+  const review = mustChoose
+    ? null
+    : await getMyBookReview(bookId, selected?.editionId).catch((error: unknown) => {
+        if (error instanceof ChooseEditionToReviewError) return null;
+        throw error;
+      });
   const copy = dictionary.library.reviews;
   const languageLabel = selected && editions.length > 1 ? editionLanguageLabel(selected.languageCode) : null;
 

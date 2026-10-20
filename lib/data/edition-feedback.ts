@@ -39,7 +39,8 @@ export async function submitEditionFeedback(publicationId: string, locator: Repo
   const supabase = await createClient();
   const { error } = await supabase.rpc("submit_edition_feedback", {
     p_publication_id: publicationId,
-    p_locator: locator ?? undefined,
+    // Always sent: the function has no default, and an omitted key makes PostgREST find no function.
+    p_locator: locator,
     p_message: message,
   });
   if (!error) return;

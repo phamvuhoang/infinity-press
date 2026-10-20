@@ -313,3 +313,16 @@ editions is live and no older application instance is still running: it removes 
 - Not reversible in place: restore from a backup, or re-create the dropped column and functions from the
   earlier migrations. The upgrade rehearsal (`scripts/rehearse-upgrade.sh`) runs the contract migration
   against the legacy fixture; reset the scratch database afterwards.
+
+## Review follow-ups (migrations 220000 and 230000)
+
+- `edition_is_sellable(edition)` is the one rule for "can be offered": edition published and not blocked,
+  work published, live publication published. Catalog, selector, orders, free claims and bundles use it.
+- Editorial columns of `editions` are not granted to `anon`/`authenticated` (column-level SELECT); the
+  admin edition page reads them with the service role after `requireAdmin()`.
+- Entitlements: one active row per kind. Unique indexes `entitlements_active_edition_key` (bought/free)
+  and `entitlements_active_comp_key` (complimentary). `press_grant_edition_access` conflicts only with
+  the first kind.
+- `create_edition_order` and `acquire_free_edition` accept only the offer the page shows
+  (`catalog_edition_offer`).
+- `reader_edition_for_publication` answers only about the caller's own profile (service role: anyone).

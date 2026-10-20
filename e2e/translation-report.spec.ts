@@ -65,3 +65,26 @@ test("a reader reports an error from the reader menu and an admin resolves it", 
   expect(response?.status()).toBe(404);
   await strangerContext.close();
 });
+
+test("a report sent without a place in the book is still saved", async ({ page }) => {
+  test.setTimeout(120_000);
+  const suffix = unique();
+  const book = await seedProcessedBook({
+    suffix,
+    localizations: { en: { slug: `report-noloc-${suffix}`, title: `Report No Place ${suffix}` } },
+  });
+  const reader = await createReader("report-noloc-reader");
+  await grantEntitlement(book.bookId, reader.email);
+  const service = createServiceRoleClient();
+  const { data: edition, error: editionError } = await service.from("editions").select("id").eq("book_id", book.bookId).single();
+  if (editionError) throw editionError;
+
+  await signInAs(page, reader.email, `/en/library/report/${edition.id}`);
+  await page.getByLabel("What is wrong?").fill("The title page has a typo in the translator's name.");
+  await page.getByRole("button", { name: "Send report" }).click();
+  await expect(page.getByText("Thank you. The editors will look at it.")).toBeVisible();
+
+  const { data: rows, error } = await service.from("edition_feedback").select("message").eq("publication_id", book.publicationId);
+  if (error) throw error;
+  expect(rows).toHaveLength(1);
+});

@@ -433,12 +433,14 @@ reset role;
 select is(
   (select e.source_type::text from public.entitlements e
    where e.source_order_id = 'e8000000-0000-0000-0000-000000000004'
+     and e.book_id = 'e2000000-0000-0000-0000-000000000002'
      and e.profile_id = (select other_id from t_ids)),
   'free_order', 'a gift order that cost nothing grants under free_order');
 select is(
   (select e.id from public.entitlements e
    where e.profile_id = (select other_id from t_ids)
-     and e.book_id = 'e2000000-0000-0000-0000-000000000001' and e.status = 'active'),
+     and e.book_id = 'e2000000-0000-0000-0000-000000000001' and e.status = 'active'
+     and e.source_order_id is null),
   'ea000000-0000-0000-0000-000000000001'::uuid,
   'the book the claimant already owned keeps the entitlement it already had');
 

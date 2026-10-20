@@ -162,3 +162,16 @@ Readers flag a translation error from the reader menu; the place they were readi
 note; reopen if needed. Reports are limited to 5 an hour and 20 a day per reader, plain text, 2000
 characters, and only for editions the reader holds. They go to the editors; nothing is emailed to the
 original author.
+
+### Blocking, and access beside access
+
+- **Blocked** stops the edition being listed, ordered, claimed free or sold in a bundle. Readers who
+  already hold it keep reading; remove their access explicitly (revoke the order or the grant) if the
+  rights problem requires it.
+- Withdrawing approval (editing the evidence, or changing an approved edition's language) does not stop a
+  live edition selling; it makes the next publish need a fresh approval.
+- A **complimentary grant** is a separate entitlement beside a bought or free one. Revoking the grant
+  leaves what the reader bought, and revoking the order leaves the grant. The shelf entry follows
+  whichever remains.
+- A language default cannot be an archived or blocked edition, and an archived edition cannot be rolled
+  back to life.

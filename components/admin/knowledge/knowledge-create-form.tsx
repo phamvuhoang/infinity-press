@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { initialAdminFormState } from "@/lib/catalog/form";
+import { defaultLocale } from "@/lib/i18n/config";
 
 export type KnowledgeAuthorOption = { id: string; name: string; canonicalSlug: string };
 
@@ -60,7 +61,7 @@ export function KnowledgeCreateForm({ kind, authors = [] }: { kind: "idea" | "ar
       ) : null}
       <div className="min-w-0 space-y-2">
         <Label htmlFor="knowledge-new-locale">Locale</Label>
-        <NativeSelect defaultValue="vi" id="knowledge-new-locale" name="locale">
+        <NativeSelect defaultValue={defaultLocale} id="knowledge-new-locale" name="locale">
           {locales.map((code) => (
 <option key={code} value={code}>{`${localeRegistry[code].englishName} (${code})`}</option>
 ))}
