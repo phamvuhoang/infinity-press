@@ -4516,6 +4516,21 @@ export type Database = {
       }
       knowledge_uuid_ok: { Args: { p_value: Json }; Returns: boolean }
       mask_email: { Args: { p_email: string }; Returns: string }
+      my_library_editions: {
+        Args: { p_locale: string }
+        Returns: {
+          author_name: string
+          book_id: string
+          cover_alt_text: string | null
+          cover_storage_key: string | null
+          edition_id: string
+          in_catalog: boolean
+          language_code: string
+          publication_id: string | null
+          slug: string
+          title: string
+        }[]
+      }
       my_shared_quotes: { Args: Record<PropertyKey, never>; Returns: Json }
       offer_effective_price_minor: {
         Args: { o: Database["public"]["Tables"]["offers"]["Row"] }
@@ -4590,6 +4605,7 @@ export type Database = {
       }
       reader_locator_is_valid: { Args: { p_locator: Json }; Returns: boolean }
       reader_percent_decode: { Args: { p_value: string }; Returns: string }
+      reader_publication_for_edition: { Args: { p_edition_id: string }; Returns: string }
       reader_publication_href_membership: {
         Args: { p_href: string; p_publication_id: string; p_session_id: string }
         Returns: {

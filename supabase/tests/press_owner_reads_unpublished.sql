@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(31);
 
 -- Owners keep reading after unpublish or rollback
 -- (docs/superpowers/specs/2026-10-21-owner-reads-unpublished-design.md). Every reader gate follows
@@ -52,6 +52,12 @@ insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key
   ('e7300000-0000-0000-0000-000000000053', 'e7300000-0000-0000-0000-000000000043', 1, 'pub-unpub/ja-v1.json', 'published', now());
 update public.editions set active_publication_id = 'e7300000-0000-0000-0000-000000000052' where id = 'e7300000-0000-0000-0000-000000000030';
 update public.editions set active_publication_id = 'e7300000-0000-0000-0000-000000000053' where id = 'e7300000-0000-0000-0000-000000000031';
+
+-- Lets catalog_resolved_editions resolve the book again once it is republished (my_library_editions.in_catalog).
+insert into public.book_language_editions (book_id, language_code, edition_id) values
+  ('e7300000-0000-0000-0000-000000000020', 'en', 'e7300000-0000-0000-0000-000000000030'),
+  ('e7300000-0000-0000-0000-000000000020', 'ja', 'e7300000-0000-0000-0000-000000000031')
+on conflict do nothing;
 
 insert into public.entitlements (profile_id, book_id, edition_id, source_type, actor_profile_id, reason, status)
 select owner_id, 'e7300000-0000-0000-0000-000000000020', 'e7300000-0000-0000-0000-000000000030', 'admin_grant', owner_id, 'test fixture', 'active' from t_readers;
@@ -200,6 +206,58 @@ select lives_ok(
 );
 reset role;
 update public.editions set status = 'published' where id = 'e7300000-0000-0000-0000-000000000030';
+
+-- ============================================================================================
+-- my_library_editions: the owner's library lists the unpublished book, scoped to the caller
+-- (the book is still 'draft'; after (g) the en pointer is on v1)
+-- ============================================================================================
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e7300000-0000-0000-0000-000000000001', true);
+select is((select count(*) from public.my_library_editions('vi'))::int, 1, 'the library lists the one owned edition of the unpublished book');
+select is(
+  (select language_code || '|' || cover_storage_key from public.my_library_editions('vi')),
+  'en|covers/pub-unpub.jpg',
+  'the library row carries the edition language and the work cover key'
+);
+select is(
+  (select publication_id from public.my_library_editions('vi')),
+  'e7300000-0000-0000-0000-000000000051'::uuid,
+  'the library row carries the readable publication (v1 after rollback)'
+);
+select is((select in_catalog from public.my_library_editions('vi')), false, 'an unpublished book is not in the catalog');
+select is(
+  (select title || '|' || slug from public.my_library_editions('en')),
+  'Sách đã gỡ|pub-unpub-book',
+  'with no en localization the library falls back to the vi title and slug'
+);
+select is((select author_name from public.my_library_editions('en')), 'Unpub Author', 'the library row falls back to the author display name');
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e7300000-0000-0000-0000-000000000002', true);
+select is((select count(*) from public.my_library_editions('vi'))::int, 0, 'a reader with no entitlement gets an empty library');
+reset role;
+select is(has_function_privilege('anon', 'public.my_library_editions(text)', 'EXECUTE'), false, 'anon cannot call my_library_editions');
+select is(has_function_privilege('service_role', 'public.my_library_editions(text)', 'EXECUTE'), false, 'service_role cannot call my_library_editions');
+
+-- The admin owns only the ja edition: the library is filtered on auth.uid(), never on admin RLS.
+insert into public.entitlements (profile_id, book_id, edition_id, source_type, actor_profile_id, reason, status)
+select admin_id, 'e7300000-0000-0000-0000-000000000020', 'e7300000-0000-0000-0000-000000000031', 'admin_grant', admin_id, 'test fixture', 'active' from t_readers;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e7300000-0000-0000-0000-000000000004', true);
+select is((select count(*) from public.my_library_editions('vi'))::int, 1, 'an admin gets only their own library rows');
+select is(
+  (select edition_id from public.my_library_editions('vi')),
+  'e7300000-0000-0000-0000-000000000031'::uuid,
+  'the admin''s only row is the ja edition they own, not the reader''s en edition'
+);
+reset role;
+
+update public.books set status = 'published' where id = 'e7300000-0000-0000-0000-000000000020';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'e7300000-0000-0000-0000-000000000001', true);
+select is((select in_catalog from public.my_library_editions('en')), true, 'a republished book is in the catalog');
+reset role;
 
 select * from finish();
 rollback;
