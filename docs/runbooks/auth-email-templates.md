@@ -4,8 +4,8 @@ Paste-ready HTML for every Supabase Auth email. Copy each block into **Supabase 
 Authentication → Emails → Templates**, one template per tab.
 
 These are English-only. Supabase serves one template per type with no per-user locale switch, so a
-Vietnamese reader gets this English mail and then lands on the Vietnamese site — that is the
-trade the free plan gives. See [Locale](#locale) if you want the links to land on `/en` instead.
+Vietnamese or Japanese reader gets this English mail and lands on the English site (English is the
+platform default). See [Locale](#locale) to send the links to `/vi` or `/ja` instead.
 
 ## 1. Which link each template uses
 
@@ -33,21 +33,21 @@ That is why invite and email-change stay on `{{ .ConfirmationURL }}`.
 
 To move invite or email change onto the direct style, add `invite` and `email_change` to `otpTypes`
 in `lib/auth/callback.ts` first. Until then the direct style would send those users to
-`/vi/sign-in?error=callback`.
+`/en/sign-in?error=callback`.
 
 ## 2. Subjects
 
-The SMTP sender name is already `Infinity Books Press`, so a `[InfinityBooksPress]` subject prefix repeats
-itself in every inbox row. These read better without it:
+Every subject starts with `[InfinityBooksPress]`, so the mail is easy to find and filter in a shared
+inbox. Paste the subject into the template's **Subject** field exactly as shown:
 
 | Template | Subject |
 | --- | --- |
-| Magic Link | `Your sign-in link` |
-| Confirm signup | `Confirm your email address` |
-| Reset Password | `Reset your password` |
-| Reauthentication | `Your verification code` |
-| Invite user | `You have been invited to Infinity Books Press` |
-| Change Email Address | `Confirm your new email address` |
+| Magic Link | `[InfinityBooksPress] Your sign-in link` |
+| Confirm signup | `[InfinityBooksPress] Confirm your email address` |
+| Reset Password | `[InfinityBooksPress] Reset your password` |
+| Reauthentication | `[InfinityBooksPress] Your verification code` |
+| Invite user | `[InfinityBooksPress] You have been invited` |
+| Change Email Address | `[InfinityBooksPress] Confirm your new email address` |
 
 ## 3. House style
 
@@ -68,9 +68,9 @@ Every template below shares one skeleton, so a change to one is easy to mirror a
 
 ### Locale
 
-Links default to Vietnamese because `lib/auth/callback.ts` falls back to `defaultLocale` when no
-destination is given: the reader lands on `/vi/library`. To send readers of these English mails to
-the English library instead, append `&next=%2Fen%2Flibrary&locale=en` to the magic-link and
+Links land on the English library because `lib/auth/callback.ts` falls back to `defaultLocale`
+(`en`) when no destination is given. To send readers to another library, append
+`&next=%2Fvi%2Flibrary&locale=vi` (or `%2Fja%2Flibrary` and `ja`) to the magic-link and
 confirm-signup hrefs.
 
 ### Hardcoded origin
@@ -85,7 +85,7 @@ Press readers to the wrong site.
 
 ## 4. Magic Link
 
-Subject: `Your sign-in link`
+Subject: `[InfinityBooksPress] Your sign-in link`
 
 ```html
 <!DOCTYPE html>
@@ -133,7 +133,7 @@ Subject: `Your sign-in link`
 
 ## 5. Confirm signup
 
-Subject: `Confirm your email address`
+Subject: `[InfinityBooksPress] Confirm your email address`
 
 Sent instead of the magic link the first time an address is seen, because `requestMagicLink()`
 passes `shouldCreateUser: true`. Keep the two consistent: a reader cannot tell which one they
@@ -185,10 +185,10 @@ triggered.
 
 ## 6. Reset Password
 
-Subject: `Reset your password`
+Subject: `[InfinityBooksPress] Reset your password`
 
 Password access is the internal staff fallback, not a customer path, so this link carries
-`next=/internal/vi/update-password` — the same destination `requestPasswordReset()` asks for. The
+`next=/internal/en/update-password` — the same destination `requestPasswordReset()` asks for. The
 wording says so, to keep a customer who receives it from expecting a second way in.
 
 ```html
@@ -214,10 +214,10 @@ wording says so, to keep a customer who receives it from expecting a second way 
 <p style="margin:0 0 28px 0;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#3a413d;">Follow the link below to choose a new password for your staff account. Your current password keeps working until you do.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
 <td bgcolor="#34473e" style="border-radius:8px;">
-<a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=%2Finternal%2Fvi%2Fupdate-password" style="display:inline-block;padding:14px 30px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;line-height:1;color:#f7f4ed;text-decoration:none;border-radius:8px;">Choose a new password</a>
+<a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=%2Finternal%2Fen%2Fupdate-password" style="display:inline-block;padding:14px 30px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;line-height:1;color:#f7f4ed;text-decoration:none;border-radius:8px;">Choose a new password</a>
 </td></tr></table>
 <p style="margin:28px 0 8px 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#5f6e64;">Button not working? Paste this into your browser:</p>
-<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#5f6e64;word-break:break-all;"><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=%2Finternal%2Fvi%2Fupdate-password" style="color:#34473e;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=%2Finternal%2Fvi%2Fupdate-password</a></p>
+<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#5f6e64;word-break:break-all;"><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=%2Finternal%2Fen%2Fupdate-password" style="color:#34473e;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=%2Finternal%2Fen%2Fupdate-password</a></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;"><tr>
 <td style="border-left:3px solid #b59a64;padding:4px 0 4px 16px;">
 <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#5f6e64;">This link expires in one hour and can be used once. If you did not ask for it, ignore this email — your password stays as it is. Readers do not need a password: sign in from the site and we send you a link instead.</p>
@@ -237,7 +237,7 @@ wording says so, to keep a customer who receives it from expecting a second way 
 
 ## 7. Reauthentication
 
-Subject: `Your verification code`
+Subject: `[InfinityBooksPress] Your verification code`
 
 A code, not a link — Supabase asks the reader to type it back into the page they are already on.
 
@@ -285,10 +285,10 @@ A code, not a link — Supabase asks the reader to type it back into the page th
 
 ## 8. Invite user
 
-Subject: `You have been invited to Infinity Books Press`
+Subject: `[InfinityBooksPress] You have been invited`
 
 Uses `{{ .ConfirmationURL }}`: `lib/auth/callback.ts` does not accept `type=invite` today, so a
-direct link would land the guest on `/vi/sign-in?error=callback`. That also means this link depends
+direct link would land the guest on `/en/sign-in?error=callback`. That also means this link depends
 on the redirect allow-list — keep `{{ .SiteURL }}/auth/callback**` listed under
 Authentication → URL Configuration.
 
@@ -338,7 +338,7 @@ Authentication → URL Configuration.
 
 ## 9. Change Email Address
 
-Subject: `Confirm your new email address`
+Subject: `[InfinityBooksPress] Confirm your new email address`
 
 Uses `{{ .ConfirmationURL }}` for the same reason as the invite: `type=email_change` is not in
 `otpTypes`. Supabase sends this to both the old and the new address when "Secure email change" is
@@ -390,9 +390,9 @@ on, which is why the copy names both.
 
 ## 10. After pasting
 
-1. Send yourself one of each from the app (`/vi/sign-in` for the magic link,
-   `/internal/vi/forgot-password` for the reset) and open them on a phone and in Gmail's web client.
-2. Confirm the link lands signed in on `/vi/library`, not on `/vi/sign-in?error=callback`. An
+1. Send yourself one of each from the app (`/en/sign-in` for the magic link,
+   `/internal/en/forgot-password` for the reset) and open them on a phone and in Gmail's web client.
+2. Confirm the link lands signed in on `/en/library`, not on `/en/sign-in?error=callback`. An
    `error=callback` means the `type` in the href is not one `otpTypes` accepts.
 3. Watch the Resend dashboard, not just your inbox: a template that fails to render reaches Supabase
    as a 500 and never becomes a Resend delivery at all.
