@@ -53,7 +53,7 @@ does not count as a saved change. Keep the request ID from an error when investi
 
 - Publishing or rolling back an EPUB version changes its lifecycle and the active version pointer.
   It does not publish the book. **Publish book** makes the book and primary author public.
-- **Unpublish book** hides the book and stops new reader sessions, including for existing owners.
+- **Unpublish book** hides the book from the catalog and blocks new purchases. Readers who already own an edition keep it in their library and can still read it.
 - Renaming a published book, author, series, or topic records a permanent redirect from its old
   localized URL. Later renames flatten old URLs to the newest destination. Renaming back removes
   loops; draft renames add no redirect. S1 stores these mappings; public slug pages and redirect

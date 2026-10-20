@@ -69,7 +69,7 @@ export default async function ReadEditionPage({
           coverUrl,
         }))}
         reportHref={getCatalogRoutes(locale).reportError(book.editionId)}
-        reviewHref={getCatalogRoutes(locale).review(book.bookId, book.editionId)}
+        reviewHref={book.inCatalog ? getCatalogRoutes(locale).review(book.bookId, book.editionId) : null}
         signInHref={getCatalogRoutes(locale).signInFor(withLocale(locale, `/read/editions/${book.editionId}`))}
       />
     </main>

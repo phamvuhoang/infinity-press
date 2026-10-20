@@ -30,6 +30,12 @@ describe("ReaderCompletionPanel", () => {
     expect(screen.getByRole("link", { name: "Ask the author" })).toHaveAttribute("href", "/vi/ask?book=b1");
   });
 
+  it("leaves the review link out when the book is no longer in the catalog", () => {
+    render(<ReaderCompletionPanel copy={copy} libraryHref="/en/library" {...links} reviewHref={null} onOpenSaved={vi.fn()} relatedBooks={[]} />);
+    expect(screen.queryByRole("link", { name: "Rate this book" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Ask the author" })).toBeInTheDocument();
+  });
+
   it("leaves ask-the-author out when the author does not take questions", () => {
     render(<ReaderCompletionPanel copy={copy} libraryHref="/en/library" {...links} askHref={null} onOpenSaved={vi.fn()} relatedBooks={[]} />);
     expect(screen.getByRole("link", { name: "Rate this book" })).toBeInTheDocument();

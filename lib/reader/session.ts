@@ -23,7 +23,7 @@ import type { ReaderLocator } from "@/lib/reader/types";
 // privileged client is never constructed for a request that was going to be refused.
 
 // One opaque denial for every refusal reason. This is the whole 401/403/404 model in one type:
-// "no such publication", "not published", "superseded version", "no active entitlement",
+// "no such publication", "not readable", "superseded version", "no active entitlement",
 // "session expired", "session revoked", "session belongs to another profile", "href is not a
 // resource of this publication", and "href is not in the sample allowlist" are indistinguishable
 // to the caller. Route handlers map this to a single 404 with one body, so a request for a real
@@ -51,7 +51,7 @@ export class ReaderAccessDeniedError extends Error {
 // database fault in loadServablePublication is resource-independent by construction, occurring
 // regardless of which publication was asked for.
 //
-// What deliberately does NOT become this error: "no such row" and "not published". Those are the
+// What deliberately does NOT become this error: "no such row" and "not servable". Those are the
 // existence facts the 404 model exists to hide, so they stay ReaderAccessDeniedError.
 export class ReaderUnavailableError extends Error {
   constructor() {
@@ -125,7 +125,7 @@ export async function createReaderSession(publicationId: string): Promise<Reader
   });
 
   // Every failure collapses to the same denial, and no Postgres text is forwarded: the RPC
-  // raises one code (EB008) for all of "no entitlement", "not published", and "no such
+  // raises one code (EB008) for all of "no entitlement", "not readable", and "no such
   // publication" precisely so this layer cannot accidentally tell them apart either.
   if (error) throw new ReaderAccessDeniedError();
 
@@ -317,12 +317,14 @@ async function loadStoredManifest(
   }
 }
 
-// Only a 'published' publication is servable. publish_publication moves the previously active
-// publication to 'superseded' in the same transaction, so status = 'published' is equivalent to
-// "is this book's active publication" without needing a second read of books.
+// Only a 'published' publication is servable, except for an entitled manifest, which may also be
+// 'superseded': authorize_reader_session has already decided it is the caller's readable
+// publication (reader_publication_for_edition rule step 2 keeps an edition's latest superseded one
+// readable when no published pointer remains). Sample manifests and resources stay published-only.
 async function loadServablePublication(
   admin: ReturnType<typeof createAdminClient>,
   publicationId: string,
+  allowSuperseded = false,
 ): Promise<{ manifestKey: string; positionsJson: unknown }> {
   const { data, error } = await admin
     .from("ebook_publications")
@@ -335,10 +337,12 @@ async function loadServablePublication(
   // to surface as 502.
   if (error) throw new ReaderUnavailableError();
 
-  // These two stay 404, deliberately. "No such row" and "not published" are exactly the existence
+  // These two stay 404, deliberately. "No such row" and "not servable" are exactly the existence
   // facts the whole non-disclosure model hides; turning either into a distinguishable status would
   // re-open the Critical this task closed, by letting a caller confirm a publication exists.
-  if (!data || data.status !== "published") throw new ReaderAccessDeniedError();
+  if (!data || !(data.status === "published" || (allowSuperseded && data.status === "superseded"))) {
+    throw new ReaderAccessDeniedError();
+  }
   return { manifestKey: data.manifest_key, positionsJson: data.positions_json };
 }
 
@@ -440,7 +444,7 @@ function filterTocToServable(
 // at this application's authenticated Route Handlers rather than a Supabase object URL.
 export async function resolveEntitledManifest(publicationId: string): Promise<ReaderManifest> {
   const admin = createAdminClient();
-  const { manifestKey, positionsJson } = await loadServablePublication(admin, publicationId);
+  const { manifestKey, positionsJson } = await loadServablePublication(admin, publicationId, true);
   const stored = await loadStoredManifest(admin, manifestKey);
 
   const readingOrderHrefs = new Set(stored.readingOrder.map((item) => item.href));

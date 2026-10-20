@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { requireUser } from "@/lib/auth/session";
+import { coverPublicUrl } from "@/lib/catalog/covers";
 import { getBookCards } from "@/lib/data/catalog";
 import {
   deriveLibraryState,
@@ -87,9 +88,31 @@ function queryBuilder(rows: Row[]) {
   return builder;
 }
 
-function fakeClient(tables: Record<string, Row[]>) {
+// `my_library_editions` is owner-scoped in SQL (any book or edition status, active entitlement only),
+// so the fake hands back whatever rows the test says the caller owns - the scoping is pinned by
+// pgTAP (supabase/tests/press_owner_reads_unpublished.sql), not here.
+function fakeClient(tables: Record<string, Row[]>, owned: Row[] = []) {
   const from = vi.fn((table: string) => queryBuilder(tables[table] ?? []));
-  return { from } as unknown as Awaited<ReturnType<typeof createClient>>;
+  const rpc = vi.fn(() => queryBuilder(owned));
+  return { from, rpc } as unknown as Awaited<ReturnType<typeof createClient>>;
+}
+
+// One row of my_library_editions: the owner's localized title, slug, author and cover for an
+// edition, whatever its status, with the publication they can read (null when nothing is readable).
+function ownedEdition(overrides: Row = {}): Row {
+  return {
+    book_id: BOOK_ID,
+    edition_id: EDITION_ID,
+    language_code: "en",
+    slug: "a-book",
+    title: "A Book",
+    author_name: "An Author",
+    cover_storage_key: null,
+    cover_alt_text: null,
+    publication_id: PUBLICATION_ID,
+    in_catalog: true,
+    ...overrides,
+  };
 }
 
 // The stored `state` column matters in exactly one direction, which is what these fixtures set up.
@@ -109,11 +132,6 @@ function libraryRow(
     state: storedState,
     added_at: "2026-09-01T00:00:00.000Z",
     entitlements: { status: entitlementStatus },
-    editions: { id: EDITION_ID, language_code: "en", status: "published", active_publication_id: PUBLICATION_ID },
-    books: {
-      id: BOOK_ID,
-      book_localizations: [{ locale: "en", slug: "a-book", title: "A Book" }],
-    },
   };
 }
 
@@ -121,15 +139,18 @@ function libraryClient(options: {
   items: Row[];
   progress: { publication_id: string; progression: number; total_progression?: number | null }[];
   profileId?: string;
+  owned?: Row[];
 }) {
-  return fakeClient({
-    library_items: options.items,
-    reading_progress: options.progress.map((row) => ({
-      profile_id: options.profileId ?? PROFILE_ID,
-      ...row,
-    })),
-    media_assets: [],
-  });
+  return fakeClient(
+    {
+      library_items: options.items,
+      reading_progress: options.progress.map((row) => ({
+        profile_id: options.profileId ?? PROFILE_ID,
+        ...row,
+      })),
+    },
+    options.owned ?? [ownedEdition()],
+  );
 }
 
 beforeEach(() => {
@@ -146,29 +167,15 @@ beforeEach(() => {
   vi.mocked(getBookCards).mockResolvedValue([]);
 });
 
-function readableBookClient(options: { entitlements?: Row[]; progress?: Row[]; edition?: Row } = {}) {
-  return fakeClient({
-    entitlements: options.entitlements ?? [
-      { id: "entitlement-id", profile_id: PROFILE_ID, book_id: BOOK_ID, edition_id: EDITION_ID, status: "active" },
+// `owned` is what my_library_editions returns for the caller; an empty list is a reader who owns
+// nothing here (the RPC filters on auth.uid() itself, so another reader's entitlement never shows).
+function readableBookClient(options: { owned?: Row[]; progress?: Row[] } = {}) {
+  return fakeClient(
+    { reading_progress: options.progress ?? [] },
+    options.owned ?? [
+      ownedEdition({ slug: "source-book", title: "Source title", author_name: "Localized author" }),
     ],
-    editions: [
-      {
-        id: EDITION_ID,
-        book_id: BOOK_ID,
-        language_code: "en",
-        status: "published",
-        active_publication_id: PUBLICATION_ID,
-        books: {
-          id: BOOK_ID,
-          status: "published",
-          author: { display_name: "Author display name", author_localizations: [{ locale: "en", name: "Localized author" }] },
-          book_localizations: [{ locale: "en", slug: "source-book", title: "Source title" }],
-        },
-        ...options.edition,
-      },
-    ],
-    reading_progress: options.progress ?? [],
-  });
+  );
 }
 
 function card(overrides: Record<string, unknown> = {}) {
@@ -228,23 +235,12 @@ describe("getReadableEdition attribution", () => {
     expect(getBookCards).toHaveBeenCalledWith("en");
   });
 
-  it("falls back to the author's display name, and returns no relations when this locale has no related cards", async () => {
-    vi.mocked(createClient).mockResolvedValue(
-      readableBookClient({
-        edition: {
-          books: {
-            id: BOOK_ID,
-            status: "published",
-            author: { display_name: "Display-name fallback", author_localizations: [] },
-            book_localizations: [{ locale: "en", slug: "source-book", title: "Source title" }],
-          },
-        },
-      }),
-    );
+  it("returns no relations when the work has no related cards in this locale", async () => {
+    vi.mocked(createClient).mockResolvedValue(readableBookClient());
     vi.mocked(getBookCards).mockResolvedValue([card({ bookId: BOOK_ID, slug: "source-book" })] as never);
 
     await expect(getReadableEdition("en", EDITION_ID)).resolves.toMatchObject({
-      authorName: "Display-name fallback",
+      authorName: "Localized author",
       relatedBooks: [],
     });
   });
@@ -260,6 +256,28 @@ describe("getReadableEdition attribution", () => {
       publicationId: PUBLICATION_ID,
       relatedBooks: [],
     });
+  });
+
+  it("opens an owned edition of an unpublished book: no catalog card, not in the catalog, canonical URL from the owned slug", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      readableBookClient({ owned: [ownedEdition({ slug: "owned-slug", in_catalog: false })] }),
+    );
+    vi.mocked(getBookCards).mockResolvedValue([]);
+
+    const book = await getReadableEdition("en", EDITION_ID);
+
+    expect(book).toMatchObject({ publicationId: PUBLICATION_ID, inCatalog: false, relatedBooks: [] });
+    expect(book?.canonicalBookUrl).toMatch(/\/owned-slug$/);
+  });
+
+  it("is null when my_library_editions has no row for the edition", async () => {
+    vi.mocked(createClient).mockResolvedValue(readableBookClient({ owned: [ownedEdition({ edition_id: JA_EDITION_ID })] }));
+    await expect(getReadableEdition("en", EDITION_ID)).resolves.toBeNull();
+  });
+
+  it("is null when the owned edition has no readable publication", async () => {
+    vi.mocked(createClient).mockResolvedValue(readableBookClient({ owned: [ownedEdition({ publication_id: null })] }));
+    await expect(getReadableEdition("en", EDITION_ID)).resolves.toBeNull();
   });
 
   it("excludes a related book that is localized only outside the current catalog locale", async () => {
@@ -445,21 +463,22 @@ describe("getLibrary state (Ruling CQ)", () => {
 // which getReadableBook rethrows and the page turns into a 500. lib/data/orders.ts already states
 // the rule this file was missing: RLS is the floor, not the filter - every read of an owner-scoped
 // table also filters on the caller's own profile ID.
-// The shelf used to render a hashed brand colour for every book because the DTO carried only the
-// cover's alt text and no URL. Covers live in the public `covers` bucket and the catalog's card
-// projection already turns them into a URL, so the library reads them from there.
+// Covers live in the public `covers` bucket. storage_key is withheld from the browser roles at the
+// column grant, so my_library_editions is the only session-client path to the key; the URL is built
+// from it here and the key itself never crosses to the Client Component.
 describe("getLibrary cover art", () => {
-  it("projects the public cover URL and alt text from the catalog card", async () => {
+  it("projects the public cover URL and alt text from the owned edition", async () => {
     vi.mocked(createClient).mockResolvedValue(
-      libraryClient({ items: [libraryRow("unread")], progress: [] }),
+      libraryClient({
+        items: [libraryRow("unread")],
+        progress: [],
+        owned: [ownedEdition({ cover_storage_key: "covers/a-book.jpg", cover_alt_text: "A Book cover" })],
+      }),
     );
-    vi.mocked(getBookCards).mockResolvedValue([
-      card({ bookId: BOOK_ID, cover: { url: "https://cdn.example/a-book.jpg", alt: "A Book cover" } }),
-    ] as never);
 
     const [item] = await getLibrary("en");
 
-    expect(item.coverUrl).toBe("https://cdn.example/a-book.jpg");
+    expect(item.coverUrl).toBe(coverPublicUrl("covers/a-book.jpg"));
     expect(item.coverAltText).toBe("A Book cover");
   });
 
@@ -467,7 +486,6 @@ describe("getLibrary cover art", () => {
     vi.mocked(createClient).mockResolvedValue(
       libraryClient({ items: [libraryRow("unread")], progress: [] }),
     );
-    vi.mocked(getBookCards).mockResolvedValue([card({ bookId: BOOK_ID, cover: null })] as never);
 
     const [item] = await getLibrary("en");
 
@@ -477,9 +495,12 @@ describe("getLibrary cover art", () => {
 
   it("never exposes a storage key", async () => {
     vi.mocked(createClient).mockResolvedValue(
-      libraryClient({ items: [libraryRow("unread")], progress: [] }),
+      libraryClient({
+        items: [libraryRow("unread")],
+        progress: [],
+        owned: [ownedEdition({ cover_storage_key: "covers/a-book.jpg" })],
+      }),
     );
-    vi.mocked(getBookCards).mockResolvedValue([card({ bookId: BOOK_ID })] as never);
 
     const [item] = await getLibrary("en");
 
@@ -491,6 +512,7 @@ describe("getLibrary cover art", () => {
         "coverAltText",
         "coverUrl",
         "editionId",
+        "inCatalog",
         "languageCode",
         "progressPercent",
         "slug",
@@ -501,16 +523,64 @@ describe("getLibrary cover art", () => {
   });
 });
 
-describe("owner scoping under an admin session", () => {
-  it("opens a book for an admin while another reader holds an active entitlement to it", async () => {
+describe("getLibrary owned editions after unpublish", () => {
+  it("lists an edition that my_library_editions returns and the published catalog does not", async () => {
+    const NEWER_PUBLICATION_ID = "50000000-0000-0000-0000-0000000000aa";
     vi.mocked(createClient).mockResolvedValue(
-      readableBookClient({
-        entitlements: [
-          { id: "mine", profile_id: PROFILE_ID, book_id: BOOK_ID, edition_id: EDITION_ID, status: "active" },
-          { id: "theirs", profile_id: OTHER_PROFILE_ID, book_id: BOOK_ID, edition_id: EDITION_ID, status: "active" },
+      libraryClient({
+        items: [libraryRow("unread")],
+        progress: [{ publication_id: NEWER_PUBLICATION_ID, progression: 0.3, total_progression: 0.3 }],
+        owned: [
+          ownedEdition({
+            publication_id: NEWER_PUBLICATION_ID,
+            cover_storage_key: "covers/gone.jpg",
+            cover_alt_text: "Gone cover",
+            in_catalog: false,
+          }),
         ],
       }),
     );
+    vi.mocked(getBookCards).mockResolvedValue([]);
+
+    const [item] = await getLibrary("en");
+
+    expect(item).toMatchObject({
+      editionId: EDITION_ID,
+      title: "A Book",
+      coverUrl: coverPublicUrl("covers/gone.jpg"),
+      // Progress is matched on the RPC's readable publication, not on any pointer in the browser.
+      progressPercent: 30,
+      state: "reading",
+      inCatalog: false,
+    });
+  });
+
+  it("omits an owned edition with no readable publication, and one with no RPC row", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      libraryClient({
+        items: [libraryRow("unread"), japaneseRow()],
+        progress: [],
+        owned: [ownedEdition({ publication_id: null })],
+      }),
+    );
+    expect(await getLibrary("en")).toEqual([]);
+  });
+
+  it("asks my_library_editions for the interface locale", async () => {
+    const client = libraryClient({ items: [libraryRow("unread")], progress: [] });
+    vi.mocked(createClient).mockResolvedValue(client);
+
+    await getLibrary("vi");
+
+    expect(client.rpc).toHaveBeenCalledWith("my_library_editions", { p_locale: "vi" });
+  });
+});
+
+describe("owner scoping under an admin session", () => {
+  // The RPC filters on auth.uid() itself, so another reader's entitlement never reaches the page
+  // even under an admin session.
+  it("opens a book for an admin while another reader also owns it", async () => {
+    vi.mocked(createClient).mockResolvedValue(readableBookClient());
     vi.mocked(getBookCards).mockResolvedValue([
       card({ bookId: BOOK_ID, slug: "source-book", title: "Source title" }),
     ] as never);
@@ -522,11 +592,7 @@ describe("owner scoping under an admin session", () => {
   });
 
   it("refuses to open a book the caller does not own, even when another reader does", async () => {
-    vi.mocked(createClient).mockResolvedValue(
-      readableBookClient({
-        entitlements: [{ id: "theirs", profile_id: OTHER_PROFILE_ID, book_id: BOOK_ID, edition_id: EDITION_ID, status: "active" }],
-      }),
-    );
+    vi.mocked(createClient).mockResolvedValue(readableBookClient({ owned: [] }));
     vi.mocked(getBookCards).mockResolvedValue([
       card({ bookId: BOOK_ID, slug: "source-book", title: "Source title" }),
     ] as never);
@@ -610,9 +676,12 @@ function japaneseRow(overrides: Row = {}) {
     ...libraryRow("unread"),
     edition_id: JA_EDITION_ID,
     added_at: "2026-09-02T00:00:00.000Z",
-    editions: { id: JA_EDITION_ID, language_code: "ja", status: "published", active_publication_id: JA_PUBLICATION_ID },
     ...overrides,
   };
+}
+
+function ownedJapanese(overrides: Row = {}) {
+  return ownedEdition({ edition_id: JA_EDITION_ID, language_code: "ja", publication_id: JA_PUBLICATION_ID, ...overrides });
 }
 
 describe("getLibrary holds every owned edition", () => {
@@ -624,6 +693,7 @@ describe("getLibrary holds every owned edition", () => {
           { publication_id: PUBLICATION_ID, progression: 0.2, total_progression: 0.2 },
           { publication_id: JA_PUBLICATION_ID, progression: 0.6, total_progression: 0.6 },
         ],
+        owned: [ownedEdition(), ownedJapanese()],
       }),
     );
 
@@ -641,20 +711,21 @@ describe("getLibrary holds every owned edition", () => {
   });
 
   it("keeps showing both after the interface language changes", async () => {
-    vi.mocked(createClient).mockResolvedValue(libraryClient({ items: [libraryRow("unread"), japaneseRow()], progress: [] }));
+    vi.mocked(createClient).mockResolvedValue(libraryClient({ items: [libraryRow("unread"), japaneseRow()], progress: [], owned: [ownedEdition(), ownedJapanese()] }));
     expect(await getLibrary("ja")).toHaveLength(2);
     expect(await getLibrary("vi")).toHaveLength(2);
   });
 
-  it("hides an edition that is a draft, but keeps an archived one its owner already has", async () => {
+  it("hides an edition with nothing readable, but keeps one whose book or edition is no longer live", async () => {
     vi.mocked(createClient).mockResolvedValue(
       libraryClient({
-        items: [
-          libraryRow("unread"),
-          japaneseRow({ editions: { id: JA_EDITION_ID, language_code: "ja", status: "archived", active_publication_id: JA_PUBLICATION_ID } }),
-          japaneseRow({ edition_id: "40000000-0000-0000-0000-000000000003", editions: { id: "x", language_code: "vi", status: "draft", active_publication_id: null } }),
-        ],
+        items: [libraryRow("unread"), japaneseRow(), japaneseRow({ edition_id: "40000000-0000-0000-0000-000000000003" })],
         progress: [],
+        owned: [
+          ownedEdition({ in_catalog: false }),
+          ownedJapanese(),
+          ownedEdition({ edition_id: "40000000-0000-0000-0000-000000000003", language_code: "vi", publication_id: null }),
+        ],
       }),
     );
     expect((await getLibrary("en")).map((item) => item.languageCode)).toEqual(["en", "ja"]);
@@ -662,7 +733,11 @@ describe("getLibrary holds every owned edition", () => {
 
   it("drops a revoked edition without touching the other", async () => {
     vi.mocked(createClient).mockResolvedValue(
-      libraryClient({ items: [libraryRow("unread"), japaneseRow({ entitlements: { status: "revoked" } })], progress: [] }),
+      libraryClient({
+        items: [libraryRow("unread"), japaneseRow({ entitlements: { status: "revoked" } })],
+        progress: [],
+        owned: [ownedEdition(), ownedJapanese()],
+      }),
     );
     expect((await getLibrary("en")).map((item) => item.languageCode)).toEqual(["en"]);
   });
@@ -684,40 +759,40 @@ describe("groupLibraryByWork", () => {
 });
 
 describe("getOwnedEditionsOfBook", () => {
-  function ownedClient(rows: Row[]) {
-    return fakeClient({ entitlements: rows });
+  // The RPC returns the caller's own editions (any book or edition status); the book filter is the
+  // query's own `.eq("book_id", ...)`, which the fake applies like PostgREST.
+  function ownedClient(owned: Row[]) {
+    return fakeClient({}, owned);
   }
-  const owned = (editionId: string, language: string, overrides: Row = {}) => ({
-    profile_id: PROFILE_ID,
-    book_id: BOOK_ID,
-    status: "active",
-    edition_id: editionId,
-    editions: {
-      language_code: language,
-      status: "published",
-      active_publication_id: "pub",
-      books: { status: "published", book_localizations: [{ locale: "en", slug: "a-book", title: "A Book" }] },
-    },
-    ...overrides,
-  });
 
-  it("returns only the caller's own editions of the work, whatever the interface language", async () => {
+  it("returns the caller's editions of the work, whatever the interface language", async () => {
     vi.mocked(createClient).mockResolvedValue(
-      ownedClient([owned("ed-ja", "ja"), owned("ed-en", "en"), owned("ed-other", "vi", { profile_id: OTHER_PROFILE_ID })]),
+      ownedClient([
+        ownedEdition({ edition_id: "ed-ja", language_code: "ja" }),
+        ownedEdition({ edition_id: "ed-en", language_code: "en" }),
+        ownedEdition({ edition_id: "ed-other-book", book_id: "another-book", language_code: "vi" }),
+      ]),
     );
     const editions = await getOwnedEditionsOfBook("vi", BOOK_ID);
     expect(editions.map((edition) => edition.editionId)).toEqual(["ed-en", "ed-ja"]);
   });
 
   it("is empty for a reader who owns nothing of the work", async () => {
-    vi.mocked(createClient).mockResolvedValue(ownedClient([owned("ed-x", "en", { profile_id: OTHER_PROFILE_ID })]));
+    vi.mocked(createClient).mockResolvedValue(ownedClient([]));
     expect(await getOwnedEditionsOfBook("en", BOOK_ID)).toEqual([]);
   });
 
-  it("skips an edition that is not live", async () => {
+  it("skips an edition with nothing readable", async () => {
     vi.mocked(createClient).mockResolvedValue(
-      ownedClient([owned("ed-draft", "ja", { editions: { language_code: "ja", status: "draft", active_publication_id: null, books: { status: "published", book_localizations: [{ locale: "en", slug: "a", title: "A" }] } } })]),
+      ownedClient([ownedEdition({ edition_id: "ed-draft", language_code: "ja", publication_id: null })]),
     );
     expect(await getOwnedEditionsOfBook("en", BOOK_ID)).toEqual([]);
+  });
+
+  it("keeps an edition of an unpublished book", async () => {
+    vi.mocked(createClient).mockResolvedValue(ownedClient([ownedEdition({ in_catalog: false })]));
+    expect(await getOwnedEditionsOfBook("en", BOOK_ID)).toEqual([
+      { editionId: EDITION_ID, languageCode: "en", title: "A Book" },
+    ]);
   });
 });

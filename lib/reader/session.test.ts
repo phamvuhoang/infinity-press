@@ -912,7 +912,22 @@ describe("resolveEntitledManifest", () => {
     expect(serialized).not.toContain('"OEBPS/');
   });
 
-  it.each(["ready_for_preview", "rejected", "superseded"])(
+  // authorize_reader_session has already decided this is the caller's readable publication, and an
+  // edition with no active pointer keeps its latest superseded one readable
+  // (reader_publication_for_edition, rule step 2). Sample manifests and resources stay published-only.
+  it("serves an entitled manifest for a superseded publication", async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      entitledClient({
+        ebook_publications: { id: publicationId, manifest_key: "edition/asset/manifest.json", status: "superseded" },
+      }),
+    );
+
+    await expect(resolveEntitledManifest(publicationId)).resolves.toMatchObject({
+      readingOrder: [{ href: resourceUrl("OEBPS/text/chapter1.xhtml") }, { href: resourceUrl("OEBPS/text/chapter2.xhtml") }],
+    });
+  });
+
+  it.each(["ready_for_preview", "rejected"])(
     "refuses an entitled manifest for a %s publication",
     async (status) => {
       vi.mocked(createAdminClient).mockReturnValue(

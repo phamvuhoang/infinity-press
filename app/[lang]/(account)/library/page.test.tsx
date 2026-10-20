@@ -44,6 +44,7 @@ function libraryItem(bookId: string, title: string): LibraryItemDTO {
     state: "unread",
     progressPercent: 0,
     continueReadingUrl: `/en/read/editions/edition-of-${bookId}`,
+    inCatalog: true,
   };
 }
 
@@ -101,6 +102,17 @@ describe("LibraryPage review link", () => {
     render(await LibraryPage({ params }));
 
     expect(screen.getByRole("link", { name: "Review" })).toHaveAttribute("href", `/en/library/reviews/${OWNED_A}`);
+  });
+
+  // The review page is catalog-gated: an unpublished book would link to a 404.
+  it("leaves the review link out for a book that is no longer in the catalog", async () => {
+    vi.mocked(getLibrary).mockResolvedValue([{ ...libraryItem(OWNED_A, "Book Zulu"), inCatalog: false }]);
+    vi.mocked(getShelfRecommendations).mockResolvedValue([]);
+
+    render(await LibraryPage({ params }));
+
+    expect(screen.getAllByRole("link", { name: "Continue reading" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "Review" })).not.toBeInTheDocument();
   });
 });
 
