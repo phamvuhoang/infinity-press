@@ -607,7 +607,11 @@
     "relatedBooks": "続けて読む",
     "noRelatedBooks": "おすすめはまだありません。",
     "rateBook": "この作品を評価",
-    "askAuthor": "編集部に質問する"
+    "askAuthor": "編集部に質問する",
+    "chooseEdition": {
+      "title": "読む版を選んでください",
+      "description": "この作品の言語版を複数お持ちです。"
+    }
   },
   "forbidden": {
     "title": "アクセスが拒否されました",

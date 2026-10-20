@@ -165,7 +165,7 @@ test("a purchaser gifts a book, and the recipient signs in, claims it, and reads
   expect(claimed.claimPath).toBeNull();
 
   await recipientPage.getByRole("link", { name: title }).click();
-  await expect(recipientPage).toHaveURL(new RegExp(`/en/read/${bookId}$`));
+  await expect(recipientPage).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
   await expect(recipientPage.getByRole("heading", { level: 1, name: title })).toBeAttached();
   await recipientContext.close();
 });

@@ -5,6 +5,7 @@ import { strToU8, zipSync, type Zippable } from "fflate";
 
 import { seedCatalogBook } from "./catalog";
 import { createAnonClient, createServiceRoleClient } from "./supabase";
+import { soleEditionId } from "./editions";
 
 // ================================================================================================
 // The fixture EPUB
@@ -408,7 +409,7 @@ export async function grantEntitlement(bookId: string, email: string): Promise<v
   const admin = await signedInAdmin();
   const { error } = await admin.rpc("grant_complimentary_entitlement", {
     p_profile_id: profile.profile_id,
-    p_book_id: bookId,
+    p_edition_id: await soleEditionId(bookId),
     p_reason: "E2E reader journey",
   });
   if (error) throw error;

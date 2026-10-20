@@ -48,7 +48,7 @@ export class MissingGrantReasonError extends Error {
 
 export class GrantTargetNotFoundError extends Error {
   constructor() {
-    super("That reader or book could not be found.");
+    super("That reader or edition could not be found.");
     this.name = "GrantTargetNotFoundError";
   }
 }
@@ -103,6 +103,26 @@ export async function acquireFreeOffer(locale: Locale, bookId: string): Promise<
   return { entitlementId: data };
 }
 
+// Free acquisition of ONE named edition (spec 6.2 and section 8). The edition is explicit: there is no
+// search across the work's languages. Idempotent through the (profile, edition) unique index.
+export async function acquireFreeEdition(locale: Locale, editionId: string): Promise<{ entitlementId: string }> {
+  await requireUser(locale);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("acquire_free_edition", { p_edition_id: editionId });
+
+  if (error) {
+    if (error.code === "EB005") throw new EmailNotVerifiedError();
+    if (error.code === "EB006") throw new NoFreeOfferError();
+    throw new Error(`acquireFreeEdition: acquire_free_edition failed: ${error.message}`);
+  }
+  if (typeof data !== "string" || data.length === 0) {
+    throw new Error("acquireFreeEdition: acquire_free_edition returned no entitlement id");
+  }
+
+  return { entitlementId: data };
+}
+
 // Complimentary access (spec 6.3). No order or payment is ever created here - the RPC's own
 // entitlements_source_consistency CHECK constraint forbids an admin_grant from carrying a
 // source_order_id at all, so there is no code path that could fabricate one. The RPC records the
@@ -110,7 +130,7 @@ export async function acquireFreeOffer(locale: Locale, bookId: string): Promise<
 // write is not available if the two were ever split).
 export async function grantComplimentaryEntitlement(
   profileId: string,
-  bookId: string,
+  editionId: string,
   reason: string,
 ): Promise<{ entitlementId: string }> {
   await requireAdmin();
@@ -118,7 +138,7 @@ export async function grantComplimentaryEntitlement(
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("grant_complimentary_entitlement", {
     p_profile_id: profileId,
-    p_book_id: bookId,
+    p_edition_id: editionId,
     p_reason: reason,
   });
 

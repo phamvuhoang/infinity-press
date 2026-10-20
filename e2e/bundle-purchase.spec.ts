@@ -121,7 +121,7 @@ test("a reader buys a two-book bundle, transfers, and an admin confirms", async 
     { id: bookB.bookId, title: second.title },
   ]) {
     await page.goto(`/en/read/${book.id}`);
-    await expect(page).toHaveURL(new RegExp(`/en/read/${book.id}$`));
+    await expect(page).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
     await expect(page.getByRole("heading", { level: 1, name: book.title })).toBeAttached();
   }
 });

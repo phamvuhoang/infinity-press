@@ -607,7 +607,11 @@
     "relatedBooks": "Continue reading",
     "noRelatedBooks": "No recommendations yet.",
     "rateBook": "Rate this book",
-    "askAuthor": "Ask the author"
+    "askAuthor": "Ask the author",
+    "chooseEdition": {
+      "title": "Choose an edition to read",
+      "description": "You own more than one language edition of this work."
+    }
   },
   "forbidden": {
     "title": "Access denied",

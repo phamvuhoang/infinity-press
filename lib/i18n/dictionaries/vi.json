@@ -607,7 +607,11 @@
     "relatedBooks": "Đọc tiếp",
     "noRelatedBooks": "Chưa có gợi ý sách.",
     "rateBook": "Đánh giá sách",
-    "askAuthor": "Hỏi tác giả"
+    "askAuthor": "Hỏi tác giả",
+    "chooseEdition": {
+      "title": "Chọn bản để đọc",
+      "description": "Bạn sở hữu nhiều bản ngôn ngữ của tác phẩm này."
+    }
   },
   "forbidden": {
     "title": "Không có quyền truy cập",

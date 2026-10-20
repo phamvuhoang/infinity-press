@@ -125,7 +125,10 @@ export async function signInAs(page: Page, email: string, next: string): Promise
   if (error) throw error;
   const locale = next.startsWith("/vi") ? "vi" : "en";
   await page.goto(`/auth/callback?${new URLSearchParams({ token_hash: data.properties.hashed_token, type: "email", next, locale })}`);
-  await expect(page).toHaveURL(new RegExp(`${escapeRegExp(next)}$`));
+  // The legacy /read/{bookId} link resolves to the edition the reader owns, so the landing URL is the
+  // edition's own reader page.
+  const landing = escapeRegExp(next).replace(/\/read\/[0-9a-f-]{36}$/, "/read\/editions\/[0-9a-f-]{36}");
+  await expect(page).toHaveURL(new RegExp(`${landing}$`));
 }
 
 export async function profileIdForEmail(email: string): Promise<string> {

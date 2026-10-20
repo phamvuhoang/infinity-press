@@ -53,7 +53,7 @@ async function loadEpubJobs(client: Client, now: Date): Promise<EpubJobRow[]> {
   const staleBefore = new Date(now.getTime() - STALE_EPUB_JOB_MS).toISOString();
   const { data, error } = await client
     .from("processing_jobs")
-    .select("id, status, updated_at, lease_expires_at, ebook_assets!inner(editions!inner(book_id))")
+    .select("id, status, updated_at, lease_expires_at, ebook_assets!inner(edition_id, editions!inner(book_id))")
     .in("status", ["queued", "processing"])
     .or(`updated_at.lt.${staleBefore},lease_expires_at.lt.${now.toISOString()}`)
     .order("updated_at", { ascending: true })
@@ -61,12 +61,15 @@ async function loadEpubJobs(client: Client, now: Date): Promise<EpubJobRow[]> {
   if (error) fail("processing_jobs", error);
 
   return (data ?? []).flatMap((row) => {
-    const bookId = one(one(row.ebook_assets)?.editions)?.book_id;
-    if (!bookId) return [];
+    const asset = one(row.ebook_assets);
+    const bookId = one(asset?.editions)?.book_id;
+    const editionId = asset?.edition_id;
+    if (!bookId || !editionId) return [];
     return [
       {
         id: row.id,
         bookId,
+        editionId,
         status: row.status,
         updatedAt: row.updated_at,
         leaseExpiresAt: row.lease_expires_at,

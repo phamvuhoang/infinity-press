@@ -1,51 +1,62 @@
-import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import ReadBookPage from "@/app/[lang]/(reader)/read/[bookId]/page";
+import ReadBookPage from "./page";
 import { requireUser } from "@/lib/auth/session";
-import { getReadableBook } from "@/lib/data/library";
+import { getOwnedEditionsOfBook } from "@/lib/data/library";
 
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
-vi.mock("@/lib/data/library", () => ({ getReadableBook: vi.fn() }));
-vi.mock("@/lib/i18n/dictionary", () => ({ getDictionary: vi.fn().mockResolvedValue({ reader: {} }) }));
-vi.mock("@/components/reader/reader-mount", () => ({
-  ReaderMount: (props: Record<string, unknown>) => <output>{JSON.stringify(props)}</output>,
+vi.mock("@/lib/data/library", () => ({ getOwnedEditionsOfBook: vi.fn() }));
+vi.mock("@/lib/i18n/dictionary", async () => ({
+  getDictionary: async () => (await import("@/lib/i18n/dictionaries/en.json")).default,
 }));
+vi.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
+  redirect: (path: string) => {
+    throw new Error(`NEXT_REDIRECT ${path}`);
+  },
+}));
+
+const bookId = "30000000-0000-0000-0000-000000000001";
+const props = (lang: string) => ({ params: Promise.resolve({ lang, bookId }) });
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireUser).mockResolvedValue({} as never);
-  vi.mocked(getReadableBook).mockResolvedValue({
-    acceptsQuestions: true,
-    bookId: "book-id",
-    title: "Reader title",
-    publicationId: "publication-id",
-    initialLocator: null,
-    authorName: "Author",
-    canonicalBookUrl: "https://books.example/en/books/reader-title",
-    relatedBooks: [
-      {
-        title: "Related",
-        authorName: "Other",
-        href: "/en/books/related",
-        coverUrl: null,
-        publicationId: "related-publication-must-not-cross",
-      },
-    ],
-    storageKey: "source-storage-key-must-not-cross",
-  } as never);
+  vi.mocked(requireUser).mockResolvedValue({} as Awaited<ReturnType<typeof requireUser>>);
 });
 
-it("authorizes independently and supplies only reader presentation attribution across the mount boundary", async () => {
-  const html = renderToStaticMarkup(
-    await ReadBookPage({ params: Promise.resolve({ lang: "en", bookId: "book-id" }) }),
-  );
+describe("the legacy /read/{bookId} deep link", () => {
+  it("authorizes before resolving anything", async () => {
+    vi.mocked(requireUser).mockRejectedValue(new Error("NEXT_REDIRECT /en/sign-in"));
+    await expect(ReadBookPage(props("en"))).rejects.toThrow("NEXT_REDIRECT /en/sign-in");
+    expect(getOwnedEditionsOfBook).not.toHaveBeenCalled();
+  });
 
-  expect(requireUser).toHaveBeenCalledWith("en", "/en/read/book-id");
-  const props = html.replaceAll("&quot;", '"');
-  expect(props).toContain('"authorName":"Author"');
-  expect(props).toContain('"canonicalBookUrl":"https://books.example/en/books/reader-title"');
-  expect(props).toContain('"relatedBooks":[{"title":"Related","authorName":"Other","href":"/en/books/related","coverUrl":null}]');
-  expect(props).not.toContain("source-storage-key-must-not-cross");
-  expect(props).not.toContain("related-publication-must-not-cross");
+  it("sends a reader who owns one edition straight to it, whatever the interface language", async () => {
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([{ editionId: "ed-1", languageCode: "ja", title: "Book" }]);
+    await expect(ReadBookPage(props("vi"))).rejects.toThrow("NEXT_REDIRECT /vi/read/editions/ed-1");
+  });
+
+  it("asks which edition when the reader owns several, never choosing by interface language", async () => {
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([
+      { editionId: "ed-en", languageCode: "en", title: "Book" },
+      { editionId: "ed-ja", languageCode: "ja", title: "Book" },
+    ]);
+    render(await ReadBookPage(props("en")));
+
+    expect(screen.getByRole("heading", { level: 1, name: "Choose an edition to read" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /English/ })).toHaveAttribute("href", "/en/read/editions/ed-en");
+    expect(screen.getByRole("link", { name: /Japanese/ })).toHaveAttribute("href", "/en/read/editions/ed-ja");
+  });
+
+  it("is a 404 for a reader who owns none, so a stranger cannot tell the work exists", async () => {
+    vi.mocked(getOwnedEditionsOfBook).mockResolvedValue([]);
+    await expect(ReadBookPage(props("en"))).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("is a 404 for an unsupported locale", async () => {
+    await expect(ReadBookPage(props("fr"))).rejects.toThrow("NEXT_NOT_FOUND");
+  });
 });

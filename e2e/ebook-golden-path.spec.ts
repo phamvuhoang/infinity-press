@@ -9,6 +9,7 @@ import {
   buildFixtureEpub,
 } from "./support/publication";
 import { createAnonClient, createServiceRoleClient } from "./support/supabase";
+import { soleEditionId } from "./support/editions";
 
 // The complete one-book golden path, end to end:
 //
@@ -226,7 +227,7 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
   await page.getByLabel("Description (vi)").fill("Localized author copy for the golden path.");
   await page.getByRole("button", { name: "Save vi copy", exact: true }).click();
   await expect(page.locator("form").filter({ has: page.getByRole("button", { name: "Save vi copy", exact: true }) }).getByRole("status")).toHaveText("Saved.");
-  await page.goto(`/admin/books/${bookId}`);
+  await page.goto(`/admin/books/${bookId}/editions/${await soleEditionId(bookId)}`);
 
   // ---- upload the EPUB -------------------------------------------------------------------------
   await page.locator("#epub-file").setInputFiles({
@@ -461,7 +462,7 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
 
   const { error: grantError } = await adminClient.rpc("grant_complimentary_entitlement", {
     p_profile_id: readerProfile.id,
-    p_book_id: bookId,
+    p_edition_id: await soleEditionId(bookId),
     p_reason: "Golden path end-to-end verification",
   });
   if (grantError) throw grantError;
@@ -474,7 +475,7 @@ test("an admin publishes a book and a reader reads it, leaves, and returns to th
   const libraryItem = reader.getByRole("listitem").filter({ hasText: bookTitle });
   await expect(libraryItem).toBeVisible();
   await libraryItem.getByRole("link", { name: "Continue reading" }).click();
-  await expect(reader).toHaveURL(new RegExp(`/en/read/${bookId}$`));
+  await expect(reader).toHaveURL(/\/en\/read\/editions\/[0-9a-f-]{36}$/);
 
   // The engine mounts only after POST /api/reader/sessions succeeds, so reaching a rendered
   // chapter proves session minting, the entitled manifest, and entitled resource delivery all

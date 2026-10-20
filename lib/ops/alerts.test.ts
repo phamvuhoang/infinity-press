@@ -260,7 +260,7 @@ describe("reconcileOperationsAlerts", () => {
 
   const twoRules = report({
     stale_epub_job: [
-      { id: "job-1", rule: "stale_epub_job", occurredAt: EARLIER, summary: "s", repairPath: "/admin/books/book-1#epub" },
+      { id: "job-1", rule: "stale_epub_job", occurredAt: EARLIER, summary: "s", repairPath: "/admin/books/book-1/editions/edition-1#epub" },
     ],
     stuck_notification: [
       { id: "n-1", rule: "stuck_notification", occurredAt: EARLIER, summary: "s", repairPath: "/admin/users/p-1" },
@@ -291,7 +291,7 @@ describe("reconcileOperationsAlerts", () => {
     for (const body of [message.text, message.html]) {
       expect(body).toContain("Stale EPUB jobs: 1");
       expect(body).toContain("Stuck book-ready emails: 2");
-      expect(body).toContain(`${SITE}/admin/books/book-1#epub`);
+      expect(body).toContain(`${SITE}/admin/books/book-1/editions/edition-1#epub`);
       expect(body).toContain(`${SITE}/admin/users/p-1`);
       expect(body).toContain(`${SITE}/admin/users/p-2`);
       expect(body).toContain(`${SITE}/admin/operations`);

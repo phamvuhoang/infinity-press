@@ -25,7 +25,10 @@ export function getCatalogRoutes(locale: Locale) {
     // S16: a shared quote card. Public, noindex, not localized by the viewer's locale: the card
     // renders in the locale the quote was shared in.
     quoteCard: (code: string) => withLocale(locale, `/q/${encodeURIComponent(code)}`),
+    // Legacy deep link: resolves to an edition the reader owns (redirect or chooser), never by the
+    // interface locale. Prefer readEdition wherever the edition is known.
     read: (bookId: string) => withLocale(locale, `/read/${bookId}`),
+    readEdition: (editionId: string) => withLocale(locale, `/read/editions/${editionId}`),
     // S13 reader voice: the review form is a library page; ask-the-author is prefilled by query.
     review: (bookId: string) => withLocale(locale, `/library/reviews/${bookId}`),
     ask: (target: { book: string } | { idea: string }) => `${withLocale(locale, "/ask")}?${new URLSearchParams(target)}`,

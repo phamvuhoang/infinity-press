@@ -24,6 +24,7 @@ describe("localized route graph", () => {
     expect(routes.entity("topic", "habits")).toBe("/vi/topics/habits");
     expect(routes.sample("dac-nhan-tam")).toBe("/vi/read-sample/dac-nhan-tam");
     expect(routes.read("30000000-0000-4000-8000-000000000001")).toBe("/vi/read/30000000-0000-4000-8000-000000000001");
+    expect(routes.readEdition("40000000-0000-4000-8000-000000000002")).toBe("/vi/read/editions/40000000-0000-4000-8000-000000000002");
     expect(routes.signInFor("/vi/books/dac-nhan-tam")).toBe("/vi/sign-in?next=%2Fvi%2Fbooks%2Fdac-nhan-tam");
     expect(routes.bundle("goi-khoi-dau")).toBe("/vi/bundles/goi-khoi-dau");
   });

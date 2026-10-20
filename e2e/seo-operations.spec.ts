@@ -3,6 +3,7 @@ import { type APIRequestContext, type Page, expect, test } from "@playwright/tes
 import { seedBundle, seedCatalogBook } from "./support/catalog";
 import { createReader, enablePayments, signInAs } from "./support/commerce";
 import { markOutboxFailedFourTimes } from "./support/database";
+import { soleEditionId } from "./support/editions";
 import { serverEnvironmentValue } from "./support/server-env";
 import { grantEntitlement } from "./support/publication";
 import { createServiceRoleClient } from "./support/supabase";
@@ -472,7 +473,7 @@ test("an admin sees each seeded operational fault with its repair link, but not 
     await expect(link).toHaveText("Review");
   };
 
-  await expectRepairLink("Stale EPUB jobs", `/admin/books/${bookId}#epub`);
+  await expectRepairLink("Stale EPUB jobs", `/admin/books/${bookId}/editions/${await soleEditionId(bookId)}#epub`);
   await expectRepairLink("Completed orders without an entitlement", `/admin/orders/${brokenOrder.id}`);
   await expectRepairLink("Unprocessed payment events", `/admin/orders/${pendingOrder.id}`);
   await expectRepairLink("Stuck book-ready emails", `/admin/users/${recipient.profileId}`);

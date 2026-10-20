@@ -34,7 +34,7 @@ export default async function LibraryPage({ params }: { params: Promise<{ lang: 
 
   // The reader's complete owned set is both the seed and the exclude list, so a reader is never
   // recommended a book they already hold.
-  const ownedBookIds = items.map((item) => item.bookId);
+  const ownedBookIds = [...new Set(items.map((item) => item.bookId))];
   // This page is already request-scoped (requireUser reads cookies), so reading headers() here
   // costs nothing and lets a failed shelf read be correlated with the request that saw it.
   const recommendations = await getShelfRecommendations({
@@ -85,6 +85,9 @@ export default async function LibraryPage({ params }: { params: Promise<{ lang: 
                   <p className="mb-2 text-xs font-medium tracking-[0.1em] text-sage-text uppercase">{copy.lastRead}</p>
                   <h2 className="mb-5 font-serif text-[1.875rem] leading-tight font-normal" id="featured-title">
                     {featured.title}
+                    <span className="ml-3 inline-block rounded-sm border border-sand px-1.5 align-middle font-sans text-[0.75rem] font-medium tracking-[0.06em] text-sage-text uppercase" lang={featured.languageCode}>
+                      {featured.languageCode}
+                    </span>
                   </h2>
                   <div className="mb-1.5 flex justify-between text-[0.8125rem]">
                     <span>{copy.states[featured.state]}</span>
@@ -108,10 +111,15 @@ export default async function LibraryPage({ params }: { params: Promise<{ lang: 
                 {/* The shelf: covers aligned to their base on a single Ink rule (board 1d). */}
                 <ul className="grid grid-cols-2 items-end gap-x-6 gap-y-10 border-b border-ink pb-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-8">
                   {items.map((item) => (
-                    <li key={item.bookId}>
+                    <li key={item.editionId}>
                       <LibraryCover item={item} sizes="(min-width: 1280px) 12rem, (min-width: 640px) 15vw, 40vw" size="sm" />
                       <ProgressLine className="mt-3" percent={item.state === "completed" ? 100 : item.progressPercent} />
-                      <p className="mt-2 font-serif text-[0.9375rem] leading-snug">{item.title}</p>
+                      <p className="mt-2 font-serif text-[0.9375rem] leading-snug">
+                        {item.title}
+                        <span className="ml-2 inline-block rounded-sm border border-sand px-1.5 align-middle font-sans text-[0.6875rem] font-medium tracking-[0.06em] text-sage-text uppercase" lang={item.languageCode} title={new Intl.DisplayNames([locale], { type: "language" }).of(item.languageCode) ?? item.languageCode}>
+                          {item.languageCode}
+                        </span>
+                      </p>
                       <p className="mt-0.5 text-[0.8125rem] text-sage-text">
                         {copy.states[item.state]} · {item.progressPercent}% {copy.progressLabel}
                       </p>

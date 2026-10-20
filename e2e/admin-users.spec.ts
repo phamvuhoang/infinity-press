@@ -1,5 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
 import { createAnonClient, createServiceRoleClient } from "./support/supabase";
+import { soleEditionId } from "./support/editions";
 
 async function user(isAdmin = false) {
   const service = createServiceRoleClient();
@@ -49,12 +50,12 @@ test("an admin searches a verified reader, grants and revokes access with reason
   await page.getByRole("link", { name: reader.email, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/users/${reader.profileId}$`));
   await expect(page.getByText(/verified email/)).toBeVisible();
-  await page.getByLabel("Book", { exact: true }).selectOption(bookId);
+  await page.getByLabel("Edition", { exact: true }).selectOption(await soleEditionId(bookId));
   const reason = "Reviewer".repeat(30);
   await page.getByLabel("Reason", { exact: true }).fill(reason);
   await page.getByRole("button", { name: "Grant access" }).click();
   await expect(page.getByTestId("entitlement-message")).toHaveText("Access granted.");
-  const row = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: title, exact: true }) });
+  const row = page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: `${title} (vi)`, exact: true }) });
   await expect(row.getByRole("cell", { name: "admin_grant", exact: true })).toBeVisible();
   await expect(row.getByRole("cell", { name: "active", exact: true })).toBeVisible();
   const skipLink = page.getByRole("link", { name: "Skip to main content", exact: true });
@@ -113,7 +114,7 @@ test("user routes and identity reads deny anonymous and non-admin callers", asyn
   const slug = `private-grant-${Date.now()}`;
   const { data: bookId, error: bookError } = await adminSession.rpc("admin_create_book", { p_canonical_key: slug, p_author_name: slug, p_locale: "vi", p_language: "vi", p_title: slug, p_slug: slug, p_market: "VN", p_currency: "VND", p_price_minor: 0 });
   if (bookError) throw bookError;
-  const { error: grantError } = await adminSession.rpc("grant_complimentary_entitlement", { p_profile_id: other.profileId, p_book_id: bookId, p_reason: "Foreign entitlement privacy fixture" });
+  const { error: grantError } = await adminSession.rpc("grant_complimentary_entitlement", { p_profile_id: other.profileId, p_edition_id: await soleEditionId(bookId), p_reason: "Foreign entitlement privacy fixture" });
   if (grantError) throw grantError;
   for (const table of ["customer_identities", "entitlements"]) {
     const { count, error } = await createServiceRoleClient().from(table).select("id", { count: "exact", head: true }).eq("profile_id", other.profileId);

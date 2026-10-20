@@ -7,9 +7,9 @@ import type { AdminUserEntitlementDTO } from "@/lib/data/users";
 const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 vi.mock("@/app/admin/users/[profileId]/entitlements/actions", () => ({ grantComplimentaryEntitlementAction: vi.fn(), revokeComplimentaryEntitlementAction: vi.fn() }));
-const row: AdminUserEntitlementDTO = { id: "e1", bookId: "b1", bookTitle: "Observe", sourceType: "admin_grant", status: "active", reason: "Reviewer", grantedAt: "2026-09-10", revokedAt: null };
-function show(entitlements = [row], books = [{ id: "b1", title: "Observe" }, { id: "b2", title: "Another book" }]) {
-  return render(<UserEntitlements profileId="p1" entitlements={entitlements} books={books} />);
+const row: AdminUserEntitlementDTO = { id: "e1", bookId: "b1", editionId: "ed1", languageCode: "en", bookTitle: "Observe", sourceType: "admin_grant", status: "active", reason: "Reviewer", grantedAt: "2026-09-10", revokedAt: null };
+function show(entitlements = [row], editions = [{ id: "ed1", label: "Observe (en)" }, { id: "ed2", label: "Observe (ja)" }]) {
+  return render(<UserEntitlements profileId="p1" entitlements={entitlements} editions={editions} />);
 }
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 beforeEach(() => { vi.resetAllMocks(); vi.spyOn(window, "prompt").mockReturnValue("Campaign ended"); });
@@ -26,17 +26,17 @@ it("keeps grant inputs after a failure and clears only the reason after a succes
   vi.mocked(grantComplimentaryEntitlementAction).mockResolvedValueOnce({ ok: false, error: "Identity is not verified." }).mockResolvedValueOnce({ ok: true, entitlementId: "e1" });
   show();
   expect(screen.getByRole("button", { name: "Grant access" })).toBeDisabled();
-  fireEvent.change(screen.getByLabelText("Book"), { target: { value: "b2" } });
+  fireEvent.change(screen.getByLabelText("Edition"), { target: { value: "ed2" } });
   fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Early reviewer" } });
   fireEvent.submit(screen.getByRole("form", { name: "Grant complimentary access" }));
   await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Identity is not verified."));
-  expect(screen.getByLabelText("Book")).toHaveValue("b2");
+  expect(screen.getByLabelText("Edition")).toHaveValue("ed2");
   expect(screen.getByLabelText("Reason")).toHaveValue("Early reviewer");
   expect(refresh).not.toHaveBeenCalled();
   await waitFor(() => expect(screen.getByRole("button", { name: "Grant access" })).toBeEnabled());
   fireEvent.click(screen.getByRole("button", { name: "Grant access" }));
   await waitFor(() => expect(screen.getByTestId("entitlement-message")).toHaveTextContent("Access granted."));
-  expect(grantComplimentaryEntitlementAction).toHaveBeenLastCalledWith("p1", "b2", "Early reviewer");
+  expect(grantComplimentaryEntitlementAction).toHaveBeenLastCalledWith("p1", "ed2", "Early reviewer");
   expect(screen.getByLabelText("Reason")).toHaveValue("");
   expect(refresh).toHaveBeenCalledOnce();
 });
@@ -72,9 +72,9 @@ it("disables all mutation controls while awaiting a result", async () => {
   await act(async () => resolve({ ok: false, error: "Try again." }));
   expect(screen.getByLabelText("Reason")).toBeEnabled();
 });
-it("explains empty books and entitlements", () => {
+it("explains empty editions and entitlements", () => {
   show([], []);
   expect(screen.getByText("No entitlements.")).toBeVisible();
-  expect(screen.getByText("No books available to grant.")).toBeVisible();
+  expect(screen.getByText("No editions available to grant.")).toBeVisible();
   expect(screen.getByRole("button", { name: "Grant access" })).toBeDisabled();
 });

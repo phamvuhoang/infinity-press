@@ -1,14 +1,13 @@
 import { AdminPageHeader, AdminSection } from "@/components/admin/admin-page-header";
 import { UserEntitlements } from "@/components/admin/user-entitlements";
 import { requireAdmin } from "@/lib/auth/admin";
-import { listAdminBooks } from "@/lib/data/books";
-import { getAdminUser } from "@/lib/data/users";
+import { getAdminUser, listGrantableEditions } from "@/lib/data/users";
 
 export default async function AdminUserPage({ params }: { params: Promise<{ profileId: string }> }) {
   const { profileId } = await params;
   await requireAdmin({ next: `/admin/users/${profileId}` });
 
-  const [user, books] = await Promise.all([getAdminUser(profileId), listAdminBooks()]);
+  const [user, editions] = await Promise.all([getAdminUser(profileId), listGrantableEditions()]);
 
   return (
     <div className="min-w-0 max-w-[56rem] [overflow-wrap:anywhere]">
@@ -20,7 +19,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ prof
       </AdminPageHeader>
       <AdminSection title="Entitlements">
         <UserEntitlements
-          books={books.map((book) => ({ id: book.id, title: book.title }))}
+          editions={editions}
           entitlements={user.entitlements}
           profileId={user.profileId}
         />

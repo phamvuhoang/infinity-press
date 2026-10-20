@@ -47,7 +47,7 @@ it("builds user details with default-locale-first titles and null identity defau
   vi.mocked(createClient).mockResolvedValue(fake.client as SessionClient);
   const user = await getAdminUser(profileId);
   expect(user).toMatchObject({ profileId, email: null, displayName: "An", verified: false, isAdmin: true });
-  expect(user.entitlements[0]).toEqual({ id: "e1", bookId: "b1", bookTitle: "Observe", sourceType: "admin_grant", status: "active", reason: "Reviewer", grantedAt: "2026-09-10", revokedAt: null });
+  expect(user.entitlements[0]).toEqual({ id: "e1", bookId: "b1", editionId: null, languageCode: null, bookTitle: "Observe", sourceType: "admin_grant", status: "active", reason: "Reviewer", grantedAt: "2026-09-10", revokedAt: null });
   expect(user.entitlements.map((row) => row.bookTitle)).toEqual(["Observe", "fallback", "Unknown book"]);
 });
 it("returns not-found for malformed IDs without reading the database", async () => {
