@@ -943,6 +943,27 @@ describe("readium engine depth", () => {
     }
   });
 
+  it("keeps touchmove from Readium's swipe, which deselects, while text is selected", async () => {
+    const { engine, handle, calls } = await mountEngine();
+    const { iframe, doc } = addFrame(handle);
+    calls[0].listeners.frameLoaded!(iframe.contentWindow!);
+    // Stands in for ColumnSnapper's window listener: its first touchmove deselects and swipes.
+    const snapper = vi.fn();
+    iframe.contentWindow!.addEventListener("touchmove", snapper, { passive: true });
+    const move = () => doc.querySelector("p")!.dispatchEvent(new Event("touchmove", { bubbles: true }));
+    move();
+    expect(snapper).toHaveBeenCalledTimes(1);
+    const range = doc.createRange(); range.selectNodeContents(doc.querySelector("p")!);
+    iframe.contentWindow!.getSelection()!.addRange(range);
+    // An iOS handle drag delivers touchmove; the swipe must not see it.
+    move();
+    expect(snapper).toHaveBeenCalledTimes(1);
+    await engine.destroy();
+    move();
+    expect(snapper).toHaveBeenCalledTimes(2);
+    iframe.remove();
+  });
+
   it("settles a widened selection synchronously before an action, even after the frame collapsed it", async () => {
     vi.useFakeTimers();
     try {

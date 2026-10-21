@@ -673,12 +673,18 @@ export function createReadiumEngine(
       // A mouse drag is still reported by Readium's pointerup; only handle drags need the timer.
       if (!pressed) schedule();
     }
+    // Readium's column snapper turns the first touchmove into a page swipe and deselects. iOS delivers
+    // touchmove while a long press or a handle drag widens the selection (Android does not), so the
+    // selection collapsed and the toolbar kept the first word. While text is selected, it never sees them.
+    const hold = (event: Event) => { if (doc.getSelection()?.isCollapsed === false) event.stopImmediatePropagation(); };
+    doc.defaultView?.addEventListener("touchmove", hold, { capture: true, passive: true });
     doc.addEventListener("selectionchange", changed);
     doc.addEventListener("pointerdown", down);
     doc.addEventListener("pointerup", up);
     doc.addEventListener("pointercancel", up);
     selectionCleanups.set(doc, () => {
       if (pendingSelection?.doc === doc) { clearTimeout(pendingTimer); pendingSelection = null; }
+      doc.defaultView?.removeEventListener("touchmove", hold, { capture: true });
       doc.removeEventListener("selectionchange", changed);
       doc.removeEventListener("pointerdown", down);
       doc.removeEventListener("pointerup", up);
