@@ -4526,6 +4526,7 @@ export type Database = {
           edition_id: string
           in_catalog: boolean
           language_code: string
+          metadata_locale: string
           publication_id: string | null
           slug: string
           title: string

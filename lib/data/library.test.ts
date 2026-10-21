@@ -111,6 +111,7 @@ function ownedEdition(overrides: Row = {}): Row {
     cover_alt_text: null,
     publication_id: PUBLICATION_ID,
     in_catalog: true,
+    metadata_locale: "en",
     ...overrides,
   };
 }
@@ -268,6 +269,17 @@ describe("getReadableEdition attribution", () => {
 
     expect(book).toMatchObject({ publicationId: PUBLICATION_ID, inCatalog: false, relatedBooks: [] });
     expect(book?.canonicalBookUrl).toMatch(/\/owned-slug$/);
+  });
+
+  it("builds the canonical URL for the locale the slug was taken from, not the interface locale", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      readableBookClient({ owned: [ownedEdition({ slug: "sach-vi", metadata_locale: "vi" })] }),
+    );
+    vi.mocked(getBookCards).mockResolvedValue([]);
+
+    const book = await getReadableEdition("en", EDITION_ID);
+
+    expect(book?.canonicalBookUrl).toBe("http://127.0.0.1:3000/vi/books/sach-vi");
   });
 
   it("is null when my_library_editions has no row for the edition", async () => {

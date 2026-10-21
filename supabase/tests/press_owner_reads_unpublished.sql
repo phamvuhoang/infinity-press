@@ -1,5 +1,5 @@
 begin;
-select plan(33);
+select plan(34);
 
 -- Owners keep reading after unpublish or rollback
 -- (docs/superpowers/specs/2026-10-21-owner-reads-unpublished-design.md). Every reader gate follows
@@ -243,6 +243,7 @@ select is(
   'with no en localization the library falls back to the vi title and slug'
 );
 select is((select author_name from public.my_library_editions('en')), 'Unpub Author', 'the library row falls back to the author display name');
+select is((select metadata_locale from public.my_library_editions('en')), 'vi', 'the library row names the locale its slug and title came from');
 reset role;
 
 set local role authenticated;

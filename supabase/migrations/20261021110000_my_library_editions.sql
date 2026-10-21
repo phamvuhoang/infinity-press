@@ -1,7 +1,8 @@
 -- The caller's own editions with an active entitlement, whatever the book or edition status
 -- (docs/superpowers/specs/2026-10-21-owner-reads-unpublished-design.md). The library and the
 -- reader take titles, covers, language codes and the readable publication from here instead of
--- the published catalog, so an owner keeps their books after "Unpublish book".
+-- the published catalog, so an owner keeps their books after "Unpublish book". metadata_locale is
+-- the locale the slug and title were taken from: a URL built from the slug must use that locale.
 --
 -- Filtered on auth.uid(), not on RLS: an admin sees only their own entitlements. It is a definer
 -- function because media_assets.storage_key is withheld from browser roles.
@@ -16,7 +17,8 @@ returns table (
   cover_storage_key text,
   cover_alt_text text,
   publication_id uuid,
-  in_catalog boolean
+  in_catalog boolean,
+  metadata_locale text
 )
 language sql
 stable
@@ -33,14 +35,15 @@ as $$
     cover.storage_key,
     cover.alt_text,
     public.reader_publication_for_edition(e.id),
-    exists (select 1 from public.catalog_resolved_editions(p_locale, b.id))
+    exists (select 1 from public.catalog_resolved_editions(p_locale, b.id)),
+    bl.locale
   from public.profiles p
   join public.entitlements en on en.profile_id = p.id and en.status = 'active' and en.edition_id is not null
   join public.editions e on e.id = en.edition_id
   join public.books b on b.id = e.book_id
   -- Requested locale, then the platform default, then the book's original language, then any other.
   join lateral (
-    select l.slug, l.title
+    select l.slug, l.title, l.locale
     from public.book_localizations l
     where l.book_id = b.id
     order by (l.locale = p_locale) desc,

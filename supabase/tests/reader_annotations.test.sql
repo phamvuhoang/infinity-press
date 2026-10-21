@@ -30,11 +30,13 @@ values
   ('d1000000-0000-0000-0000-000000000040', 'd1000000-0000-0000-0000-000000000030', 'annotation/live-1.epub', 1, 'published'),
   ('d1000000-0000-0000-0000-000000000041', 'd1000000-0000-0000-0000-000000000030', 'annotation/live-2.epub', 2, 'superseded'),
   ('d1000000-0000-0000-0000-000000000042', 'd1000000-0000-0000-0000-000000000031', 'annotation/draft.epub', 1, 'published');
-insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status)
+-- processed_at is explicit: reader_publication_for_edition orders by it, and now() is identical inside
+-- one transaction, so without it the superseded-vs-published tests would ride on uuid order.
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, processed_at)
 values
-  ('d1000000-0000-0000-0000-000000000050', 'd1000000-0000-0000-0000-000000000040', 1, 'annotation/live-1.json', 'published'),
-  ('d1000000-0000-0000-0000-000000000051', 'd1000000-0000-0000-0000-000000000041', 2, 'annotation/live-2.json', 'superseded'),
-  ('d1000000-0000-0000-0000-000000000052', 'd1000000-0000-0000-0000-000000000042', 1, 'annotation/draft.json', 'published');
+  ('d1000000-0000-0000-0000-000000000050', 'd1000000-0000-0000-0000-000000000040', 1, 'annotation/live-1.json', 'published', now() - interval '1 day'),
+  ('d1000000-0000-0000-0000-000000000051', 'd1000000-0000-0000-0000-000000000041', 2, 'annotation/live-2.json', 'superseded', now()),
+  ('d1000000-0000-0000-0000-000000000052', 'd1000000-0000-0000-0000-000000000042', 1, 'annotation/draft.json', 'published', now());
 update public.ebook_publications
 set positions_json = '[{"href":"OEBPS/text/ch1.xhtml","progression":0.2,"totalProgression":null,"locations":{"position":1}},{"href":"OEBPS/text/chương.xhtml","progression":0.4,"totalProgression":null,"locations":{"position":2}}]'::jsonb
 where id = 'd1000000-0000-0000-0000-000000000050';

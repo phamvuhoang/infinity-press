@@ -5,7 +5,7 @@ import { getBookAcceptsQuestions, getBookCards } from "@/lib/data/catalog";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getServerEnv } from "@/lib/config/server-env";
 import { coverPublicUrl } from "@/lib/catalog/covers";
-import { type Locale, locales, withLocale } from "@/lib/i18n/config";
+import { isLocale, type Locale, locales, withLocale } from "@/lib/i18n/config";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
 import { FINISHED_TOTAL_PROGRESSION } from "@/lib/reader/completion";
 import { isReaderLocator, parseReaderLocator } from "@/lib/reader/engine";
@@ -224,7 +224,12 @@ export async function getReadableEdition(
     acceptsQuestions,
     // Built from the owned slug, not the card: it must stay a non-empty URL (the reader's
     // highlight/notes toolbar renders only for a truthy one) even when the public page is gone.
-    canonicalBookUrl: absoluteUrl(getServerEnv().siteUrl, getCatalogRoutes(locale).book(edition.slug)),
+    // The slug belongs to the localization's own locale (metadata_locale), so its URL is built for
+    // that locale: catalog_book_page resolves a slug only under the locale it was taken from.
+    canonicalBookUrl: absoluteUrl(
+      getServerEnv().siteUrl,
+      getCatalogRoutes(isLocale(edition.metadata_locale) ? edition.metadata_locale : locale).book(edition.slug),
+    ),
     relatedBooks: card ? relatedBooks(card, cards, locale) : [],
     publicationId,
     inCatalog: edition.in_catalog,
