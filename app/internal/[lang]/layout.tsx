@@ -5,6 +5,8 @@ import "../../globals.css";
 import { beVietnamPro, lora } from "@/lib/fonts";
 import { isLocale } from "@/lib/i18n/config";
 import { cn } from "@/lib/utils";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -41,6 +43,8 @@ export default async function InternalLayout({
           Skip to main content
         </a>
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
