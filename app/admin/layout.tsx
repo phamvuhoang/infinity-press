@@ -4,6 +4,8 @@ import "../globals.css";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { beVietnamPro, lora } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Keeps the admin out of search results (S5 spec 7.2).
 export const metadata: Metadata = {
@@ -25,6 +27,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           Skip to main content
         </a>
         <AdminShell>{children}</AdminShell>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
