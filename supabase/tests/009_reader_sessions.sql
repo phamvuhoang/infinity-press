@@ -229,6 +229,12 @@ update public.entitlements set status = 'active', revoked_at = null
 where profile_id = (select entitled_id from t_readers)
   and book_id = 'a8000000-0000-0000-0000-000000000020';
 update public.ebook_publications set status = 'superseded' where id = 'a8000000-0000-0000-0000-000000000050';
+-- A newer published publication exists, so this one is no longer the edition's readable one: a lone
+-- superseded publication would stay readable (rule step 2).
+insert into public.ebook_assets (id, edition_id, source_storage_key, version, status) values
+  ('a8000000-0000-0000-0000-000000000041', 'a8000000-0000-0000-0000-000000000030', 'newer/source.epub', 2, 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, processed_at) values
+  ('a8000000-0000-0000-0000-000000000051', 'a8000000-0000-0000-0000-000000000041', 2, 'newer/manifest.json', 'published', now() + interval '1 hour');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a8000000-0000-0000-0000-000000000001', true);
@@ -239,27 +245,24 @@ select is(
 );
 reset role;
 
+delete from public.ebook_publications where id = 'a8000000-0000-0000-0000-000000000051';
+delete from public.ebook_assets where id = 'a8000000-0000-0000-0000-000000000041';
 update public.ebook_publications set status = 'published' where id = 'a8000000-0000-0000-0000-000000000050';
 
 -- ============================================================================================
--- (22)-(25) create_reader_session's three publication-state guards, one at a time
+-- (22)-(25) create_reader_session's publication-state guard, one input at a time
 --
--- create_reader_session refuses on a composite of THREE conditions
--- (20260911200000_reader_sessions.sql):
+-- create_reader_session asks public.reader_edition_for_publication, which accepts only the
+-- edition's readable publication (public.reader_publication_for_edition): the active pointer's
+-- publication while it is published, else the edition's latest published or superseded one.
+-- (20261021100000_owner_reads_unpublished.sql; docs/superpowers/specs/2026-10-21-owner-reads-unpublished-design.md)
 --
---     if v_publication_status <> 'published'
---        or v_active_publication_id is distinct from p_publication_id
---        or v_book_status <> 'published' then
+--   (22) a publication that is not published and not the readable one is refused;
+--   (23) a cleared pointer keeps the latest published publication readable (rule step 2);
+--   (24) the book's own status plays no part: an owner keeps reading after "Unpublish book".
 --
--- Until these tests, removing any one of them left this file green: the refusal tests above
--- cover a publication that does not exist and a caller with no (or a revoked) entitlement, and
--- every one of those fails earlier in the function, before the composite is ever evaluated. So
--- the guard that stops an entitled reader opening a book that is *not currently published* was
--- held by nothing but the code itself.
---
--- Latent rather than exploitable today, because nothing in the application writes books.status
--- to a non-published value. That is exactly the reasoning that already proved wrong once in this
--- plan, so it is pinned rather than argued.
+-- The rollback case (an owner moved to an older version, a newer-version session stops
+-- authorizing) lives in press_owner_reads_unpublished.sql.
 --
 -- Each case mutates ONE input, asserts, and restores it immediately, so the three are genuinely
 -- independent and the fourth test proves the restores worked. The same update-assert-restore
@@ -270,6 +273,12 @@ update public.ebook_publications set status = 'published' where id = 'a8000000-0
 -- (22) The publication's own status. Entitlement, book status and the active pointer all stay
 -- correct, so this is the only failing condition.
 update public.ebook_publications set status = 'superseded' where id = 'a8000000-0000-0000-0000-000000000050';
+-- A newer published publication exists, so this one is no longer the edition's readable one: a lone
+-- superseded publication would stay readable (rule step 2).
+insert into public.ebook_assets (id, edition_id, source_storage_key, version, status) values
+  ('a8000000-0000-0000-0000-000000000041', 'a8000000-0000-0000-0000-000000000030', 'newer/source.epub', 2, 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, processed_at) values
+  ('a8000000-0000-0000-0000-000000000051', 'a8000000-0000-0000-0000-000000000041', 2, 'newer/manifest.json', 'published', now() + interval '1 hour');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a8000000-0000-0000-0000-000000000001', true);
 select throws_ok(
@@ -278,33 +287,31 @@ select throws_ok(
   'an entitled reader cannot mint a session for a publication that is not published'
 );
 reset role;
+delete from public.ebook_publications where id = 'a8000000-0000-0000-0000-000000000051';
+delete from public.ebook_assets where id = 'a8000000-0000-0000-0000-000000000041';
 update public.ebook_publications set status = 'published' where id = 'a8000000-0000-0000-0000-000000000050';
 
--- (23) The edition's active pointer. The publication stays 'published' and the book stays
--- 'published' - only the pointer moves away, which is the rollback case: a superseded-but-still-
--- published-looking publication must not remain openable after the book points elsewhere.
+-- (23) The edition's active pointer is cleared; the publication stays 'published', so rule step 2
+-- still finds it.
 update public.editions set active_publication_id = null where id = 'a8000000-0000-0000-0000-000000000030';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a8000000-0000-0000-0000-000000000001', true);
-select throws_ok(
+select lives_ok(
   $$select * from public.create_reader_session('a8000000-0000-0000-0000-000000000050', 900)$$,
-  'EB008', null,
-  'an entitled reader cannot mint a session for a publication its edition no longer points at'
+  'an entitled reader still mints a session after the edition''s active pointer is cleared'
 );
 reset role;
 update public.editions e set active_publication_id = pub.id, status = 'published'
 from public.books b, public.ebook_publications pub join public.ebook_assets pa on pa.id = pub.ebook_asset_id
 where b.id = e.book_id and pa.edition_id = e.id and pub.id = 'a8000000-0000-0000-0000-000000000050' and (b.id = 'a8000000-0000-0000-0000-000000000020');
 
--- (24) The book's own status (Ruling BL: a published book is the condition for the catalog being
--- visible at all). The publication stays published and actively pointed at.
+-- (24) The book's own status no longer gates reading.
 update public.books set status = 'draft' where id = 'a8000000-0000-0000-0000-000000000020';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a8000000-0000-0000-0000-000000000001', true);
-select throws_ok(
+select lives_ok(
   $$select * from public.create_reader_session('a8000000-0000-0000-0000-000000000050', 900)$$,
-  'EB008', null,
-  'an entitled reader cannot mint a session for a book that is not published'
+  'an entitled reader still mints a session after the book is unpublished'
 );
 reset role;
 update public.books set status = 'published' where id = 'a8000000-0000-0000-0000-000000000020';

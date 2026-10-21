@@ -78,8 +78,8 @@ The database decides the rule in one place.
 - `public.my_library_editions(p_locale text)` returns the caller's own editions with an active
   entitlement, whatever the book or edition status. Each row has the fields the library and the
   reader need: `book_id`, `edition_id`, `language_code`, `slug`, `title`, `author_name`,
-  `cover_storage_key`, `cover_alt_text`, `publication_id` (the readable publication, or null), and
-  `in_catalog`. The localization follows the catalog's own order: the requested locale, then the
+  `cover_storage_key`, `cover_alt_text`, `publication_id` (the readable publication, or null),
+  `in_catalog`, and `metadata_locale` (the locale the slug and title were taken from). The localization follows the catalog's own order: the requested locale, then the
   platform's default metadata locale, then the book's original language, then any other locale.
   The author name and cover selection mirror `catalog_book_card_rows` (the edition's cover, else
   the work's). `in_catalog` is true when `catalog_resolved_editions(p_locale, book_id)` returns a
@@ -98,5 +98,7 @@ The database decides the rule in one place.
 - `resolveEntitledManifest` serves a `superseded` publication. `authorize_reader_session` has
   already decided it is the caller's readable one. Sample manifests and resources stay
   published-only.
-- `canonicalBookUrl` is still built from the owned slug. The reader's selection toolbar, which
+- `create_shared_quote` relied on `reader_edition_for_publication` for the published-book check. It
+  now checks `books.status` itself, so a public share card is still refused for an unpublished book.
+- `canonicalBookUrl` is still built from the owned slug, in the slug's own `metadata_locale`. The reader's selection toolbar, which
   provides highlights and notes, only renders when this URL is truthy.

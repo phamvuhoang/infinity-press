@@ -65,7 +65,8 @@ export type ReaderClientProps = ReaderClientBaseProps &
         mode: "entitled";
         authorName: string;
         canonicalBookUrl: string;
-        reviewHref: string;
+        // Null once the book leaves the catalog: the review page 404s for it, so no link is offered.
+        reviewHref: string | null;
         // Where "Report a translation error" goes; the reader adds the place they are reading.
         reportHref?: string;
         askHref: string | null;
@@ -999,7 +1000,7 @@ export function ReaderClient({
       {depthEnabled && selection && authorName && canonicalBookUrl ? <ReaderSelectionToolbar createShareUrl={createShareUrl} onBeforeAction={() => engineRef.current?.settleSelection()} book={{ title: bookTitle, author: authorName, canonicalBookUrl }} copy={copy} dark={preferences.theme === "dark"} onAddNote={() => { setEditor({ mode: "note", selection }); setSelection(null); }} onDismiss={dismissSelection} onHighlight={(color: HighlightColor) => { void annotations.create({ kind: "highlight", locator: selection.locator, selectedText: selection.annotationText ?? selection.locator.text?.highlight ?? selection.text, color, noteText: null }); setSelection(null); }} selection={selection} touch={viewportWidth < 640} viewport={{ width: viewportWidth, height: typeof window === "undefined" ? 0 : window.innerHeight }} /> : null}
       {depthEnabled && editor ? <ReaderAnnotationEditor chapterTitle={chapterTitle ?? ""} copy={copy} dark={preferences.theme === "dark"} finalFocus={() => menuTriggerRef.current ?? containerRef.current} initialValue={editorInitialValue} mode={editor.mode} onOpenChange={(open) => { if (!open) { setEditor(null); setSelection(null); } }} onSave={saveEditor} open trigger={<button className="sr-only" type="button">{copy.addBookmark}</button>} /> : null}
 
-      {finished && !completionDismissed && reviewHref ? <ReaderCompletionPanel askHref={askHref ?? null} copy={copy} dark={preferences.theme === "dark"} libraryHref={libraryHref} reviewHref={reviewHref} onOpenSaved={(tab) => { setSelection(null); setSidebarTab(tab); setCompletionDismissed(true); if (viewportWidth < 1280) setDrawerOpen(true); }} relatedBooks={relatedBooks} /> : null}
+      {finished && !completionDismissed && mode === "entitled" ? <ReaderCompletionPanel askHref={askHref ?? null} copy={copy} dark={preferences.theme === "dark"} libraryHref={libraryHref} reviewHref={reviewHref ?? null} onOpenSaved={(tab) => { setSelection(null); setSidebarTab(tab); setCompletionDismissed(true); if (viewportWidth < 1280) setDrawerOpen(true); }} relatedBooks={relatedBooks} /> : null}
 
       {/* `phase === "ready"` is load-bearing, not belt-and-braces: `navigation` initialises to
           `canGoForward: false`, so without it "That is the end of the sample" is on screen from the

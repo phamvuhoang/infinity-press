@@ -111,7 +111,8 @@ Publishing a version makes it the book's active EPUB but does **not** make the b
 
 `publish_book` refuses a book with no complete localization, author, cover, active offer, or
 published EPUB version, and it publishes the primary author with the book. Unpublishing hides the
-book again and blocks new reader sessions for it — see Step 6.
+book from the catalog and blocks new purchases — see Step 6. Readers who already own an edition keep
+it in their library and can still read it.
 
 ## Step 5 — grant access and read
 

@@ -130,12 +130,15 @@ export default async function LibraryPage({ params }: { params: Promise<{ lang: 
                         {copy.continueReading}
                         <span aria-hidden="true" className="ml-1.5">→</span>
                       </Link>
-                      <Link
-                        className="mt-1 block min-h-11 text-sm text-sage-text hover:text-ink"
-                        href={getCatalogRoutes(locale).review(item.bookId)}
-                      >
-                        {copy.review}
-                      </Link>
+                      {/* The review page is catalog-gated: an unpublished book would link to a 404. */}
+                      {item.inCatalog ? (
+                        <Link
+                          className="mt-1 block min-h-11 text-sm text-sage-text hover:text-ink"
+                          href={getCatalogRoutes(locale).review(item.bookId)}
+                        >
+                          {copy.review}
+                        </Link>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

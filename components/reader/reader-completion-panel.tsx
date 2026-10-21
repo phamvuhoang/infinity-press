@@ -26,7 +26,7 @@ export function ReaderCompletionPanel({
 }: {
   copy: ReaderCompletionCopy;
   libraryHref: string;
-  reviewHref: string;
+  reviewHref: string | null;
   askHref: string | null;
   relatedBooks: Array<{ title: string; authorName: string; href: string; coverUrl: string | null }>;
   onOpenSaved: (tab: "bookmarks" | "notes") => void;
@@ -45,7 +45,7 @@ export function ReaderCompletionPanel({
           <button className={`min-h-11 rounded-md px-3 text-sm outline-none ${hoverSurface} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest`} onClick={() => onOpenSaved("notes")} type="button">{copy.notes}</button>
           <button className={`min-h-11 rounded-md px-3 text-sm outline-none ${hoverSurface} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest`} onClick={() => onOpenSaved("bookmarks")} type="button">{copy.highlights}</button>
           <button className={`min-h-11 rounded-md px-3 text-sm outline-none ${hoverSurface} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest`} onClick={() => onOpenSaved("bookmarks")} type="button">{copy.bookmarks}</button>
-          <Link className={linkClass} href={reviewHref}>{copy.rateBook}</Link>
+          {reviewHref ? <Link className={linkClass} href={reviewHref}>{copy.rateBook}</Link> : null}
           {askHref ? <Link className={linkClass} href={askHref}>{copy.askAuthor}</Link> : null}
         </div>
         <section aria-label={copy.relatedBooks} className="mt-4 text-left">

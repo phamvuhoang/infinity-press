@@ -248,11 +248,9 @@ select throws_ok(
   null,
   'a superseded publication accepts no progress, even from an entitled reader'
 );
-select throws_ok(
+select lives_ok(
   $$select public.save_reading_progress('ab000000-0000-0000-0000-000000000051', '{"href":"a.xhtml","progression":0,"totalProgression":null,"locations":{}}'::jsonb, 0, 0, 'device-x', 1)$$,
-  'EB009',
-  null,
-  'a publication whose book is not published accepts no progress'
+  'an entitled reader still saves progress after the book is unpublished'
 );
 select throws_ok(
   $$select public.save_reading_progress('ab000000-0000-0000-0000-0000000000ff', '{"href":"a.xhtml","progression":0,"totalProgression":null,"locations":{}}'::jsonb, 0, 0, 'device-x', 1)$$,
@@ -272,8 +270,8 @@ select is(
 );
 select is(
   (select count(*) from public.reading_progress)::int,
-  1,
-  'every save in this file resolved to exactly one row, never a second for another profile'
+  2,
+  'every save in this file resolved to one row per publication (050 and the unpublished book''s 051), never a row for another profile'
 );
 
 -- ============================================================================================

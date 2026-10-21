@@ -110,6 +110,11 @@ reset role;
 
 update public.entitlements set status = 'active', revoked_at = null where profile_id = (select id from t_reader);
 update public.ebook_publications set status = 'superseded' where id = 'd2000000-0000-0000-0000-000000000050';
+-- A newer published publication makes this one non-readable (a lone superseded one stays readable).
+insert into public.ebook_assets (id, edition_id, source_storage_key, version, status) values
+  ('d2000000-0000-0000-0000-000000000041', 'd2000000-0000-0000-0000-000000000030', 'newer/source.epub', 2, 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status, processed_at) values
+  ('d2000000-0000-0000-0000-000000000051', 'd2000000-0000-0000-0000-000000000041', 2, 'newer/manifest.json', 'published', now() + interval '1 hour');
 set local role authenticated; select set_config('request.jwt.claim.sub', 'd2000000-0000-0000-0000-000000000001', true);
 select is((select count(*) from public.search_reader_publication((select id from t_session), 'd2000000-0000-0000-0000-000000000050', 'needle'))::int, 0, 'superseded publication cannot be searched');
 reset role;
