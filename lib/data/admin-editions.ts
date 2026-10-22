@@ -47,6 +47,13 @@ export class EditionIdentityLockedError extends Error {
   }
 }
 
+export class SampleNotFreeError extends Error {
+  constructor() {
+    super("Only a free edition can open the whole book as a sample");
+    this.name = "SampleNotFreeError";
+  }
+}
+
 type DatabaseError = { code?: string; message: string };
 
 function failure(operation: string, error: DatabaseError): Error {
@@ -404,12 +411,14 @@ export async function setSampleFull(publicationId: string, full: boolean): Promi
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("admin_set_sample_full", { p_publication_id: publicationId, p_full: full });
+  // 22023 is the RPC's free-edition refusal, the only 22023 it raises.
+  if (error?.code === "22023") throw new SampleNotFreeError();
   if (error) throw failure("setSampleFull", error);
 }
 
-// The rule admin_set_sample_full enforces, for the editor's checkbox and its message: the default
-// offer is active and free, or the edition has no active offer at all. The database function is the
-// boundary; this only decides what the form offers.
+// A hint for the editor's checkbox only, never the gate: admin_set_sample_full decides, and the
+// action reports its refusal. Same rule as the RPC (the default offer is active and free, or there is
+// no active offer), minus the offer time windows the DTO does not carry.
 export function editionIsFree(offers: AdminOfferDTO[]): boolean {
   const shown = offers.find((offer) => offer.isDefault);
   return (shown?.active === true && shown.priceMinor === 0) || !offers.some((offer) => offer.active);

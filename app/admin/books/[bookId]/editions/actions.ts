@@ -21,10 +21,10 @@ import {
   createOffer,
   DuplicateEditionError,
   EditionIdentityLockedError,
-  editionIsFree,
   EditionNotFoundError,
   getAdminEdition,
   ProvenanceIncompleteError,
+  SampleNotFreeError,
   saveEditionProvenance,
   setDefaultEdition,
   setDefaultOffer,
@@ -51,7 +51,9 @@ function knownFailure(error: unknown): AdminFormState {
     return { fieldErrors: { languageCode: error.message }, formError: null, savedAt: null };
   }
   if (error instanceof ProvenanceIncompleteError) return { fieldErrors: {}, formError: error.message, savedAt: null };
-  if (error instanceof EditionNotFoundError) return { fieldErrors: {}, formError: error.message, savedAt: null };
+  if (error instanceof EditionNotFoundError || error instanceof SampleNotFreeError) {
+    return { fieldErrors: {}, formError: error.message, savedAt: null };
+  }
   return { fieldErrors: {}, formError: "Something went wrong saving. Try again.", savedAt: null };
 }
 
@@ -212,8 +214,8 @@ export async function setReviewAction(
   return saved();
 }
 
-// The whole edition as a free sample. Opening it needs a live EPUB and a free default offer, checked
-// here on the server rather than trusted from the disabled checkbox; closing it is always allowed.
+// The whole edition as a free sample. admin_set_sample_full is the one authority on "free": it
+// refuses a paid edition (22023, reported here as a form error) and always allows closing.
 export async function setSampleFullAction(
   bookId: string,
   editionId: string,
@@ -226,9 +228,6 @@ export async function setSampleFullAction(
   const edition = await getAdminEdition(bookId, editionId);
   if (!edition.activePublicationId) {
     return { fieldErrors: {}, formError: "No EPUB version is live for this edition yet.", savedAt: null };
-  }
-  if (full && !editionIsFree(edition.offers)) {
-    return { fieldErrors: {}, formError: "Only a free edition can be opened in full.", savedAt: null };
   }
 
   try {

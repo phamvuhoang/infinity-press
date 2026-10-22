@@ -313,7 +313,7 @@ export function SampleFullForm({ action, sampleFull, canOpen }: { action: FormAc
         <input className="size-4 shrink-0 accent-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest" defaultChecked={sampleFull} disabled={!enabled} id="sample-full" name="full" type="checkbox" />
         Mở toàn bộ bản này cho đọc thử
       </label>
-      {enabled ? <SubmitButton pendingLabel="Saving…">Save sample</SubmitButton> : <p className="text-sm text-ink-soft">Only a free edition can be opened in full.</p>}
+      {enabled ? <SubmitButton pendingLabel="Saving…">Save sample</SubmitButton> : <p className="text-sm text-ink-soft">Only a free edition can open the whole book as a sample.</p>}
     </form>
   );
 }

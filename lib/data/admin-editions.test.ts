@@ -10,6 +10,8 @@ import {
   editionIsFree,
   getAdminEdition,
   listPricingDefaults,
+  SampleNotFreeError,
+  setSampleFull,
   setDefaultEdition,
   ProvenanceIncompleteError,
   saveEditionProvenance,
@@ -309,5 +311,16 @@ describe("editionIsFree", () => {
     expect(editionIsFree([offer(50000, false, true)])).toBe(true);
     expect(editionIsFree([offer(50000, true, true)])).toBe(false);
     expect(editionIsFree([offer(0, false, true), offer(50000, true, false)])).toBe(false);
+  });
+});
+
+describe("setSampleFull", () => {
+  const publicationId = "9a1b2c3d-0000-4000-8000-000000000001";
+
+  it("turns the RPC's 22023 refusal into SampleNotFreeError", async () => {
+    vi.mocked(createClient).mockResolvedValue({
+      rpc: vi.fn().mockResolvedValue({ data: null, error: { code: "22023", message: "only a free edition" } }),
+    } as unknown as Awaited<ReturnType<typeof createClient>>);
+    await expect(setSampleFull(publicationId, true)).rejects.toBeInstanceOf(SampleNotFreeError);
   });
 });
