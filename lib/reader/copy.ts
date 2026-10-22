@@ -15,4 +15,5 @@ export type ReaderCopy = {
   annotationsFailed: string; page: string; pages: string; searchOpen: string; menu: string; onePage: string; twoPages: string;
   relatedBooks: string; noRelatedBooks: string; rateBook: string; askAuthor: string; reportError: string; reportHere: string;
   annotationTooLong: string; compare: string; compareNone: string; compareOpenOther: string;
+  shareQuestionLabel: string; textKind: { verbatim: string; translation: string; paraphrase: string };
 };

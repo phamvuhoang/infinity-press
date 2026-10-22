@@ -9,7 +9,7 @@ import { ReaderAnnotationEditor } from "@/components/reader/reader-annotation-ed
 import { ReaderComparePanel } from "@/components/reader/reader-compare-panel";
 import { ReaderCompletionPanel } from "@/components/reader/reader-completion-panel";
 import { ReaderSearchPanel } from "@/components/reader/reader-search-panel";
-import { ReaderSelectionToolbar } from "@/components/reader/reader-selection-toolbar";
+import { ReaderSelectionToolbar, type ShareQuoteInput } from "@/components/reader/reader-selection-toolbar";
 import { ReaderSidebar, reportPlaceHref } from "@/components/reader/reader-sidebar";
 import { ReaderSettingsPanel } from "@/components/reader/reader-settings-panel";
 import { ReaderTocDrawer } from "@/components/reader/reader-toc-drawer";
@@ -328,9 +328,10 @@ export function ReaderClient({
     return client.request<T>(path, init);
   }, []);
   // S16: the toolbar hands back the selection; this mints the card through the reader session.
-  const createShareUrl = useCallback(async (quote: string): Promise<string | null> => {
+  const createShareUrl = useCallback(async ({ quote, question, textKind, locator }: ShareQuoteInput): Promise<string | null> => {
     const result = await request<{ url: string }>(`/api/reader/quotes?publicationId=${publicationId}`, {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ quote, locale }),
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ quote, locale, question, textKind, locator: { href: locator.href, progression: locator.progression } }),
       // Sharing must never block on an unavailable server: give up after 3s and let the toolbar fall back.
       signal: AbortSignal.timeout(3000),
     });

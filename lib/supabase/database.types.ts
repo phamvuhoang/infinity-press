@@ -3431,42 +3431,51 @@ export type Database = {
       shared_quotes: {
         Row: {
           book_id: string
+          chunk_ordinal: number | null
           code: string
           created_at: string
           id: string
           locale: string
           profile_id: string
           publication_id: string | null
+          question: string | null
           quote: string
           removed_by: string | null
           status: string
+          text_kind: string
           updated_at: string
           shared_quote_json: Json | null
         }
         Insert: {
           book_id: string
+          chunk_ordinal?: number | null
           code: string
           created_at?: string
           id?: string
           locale: string
           profile_id: string
           publication_id?: string | null
+          question?: string | null
           quote: string
           removed_by?: string | null
           status?: string
+          text_kind?: string
           updated_at?: string
         }
         Update: {
           book_id?: string
+          chunk_ordinal?: number | null
           code?: string
           created_at?: string
           id?: string
           locale?: string
           profile_id?: string
           publication_id?: string | null
+          question?: string | null
           quote?: string
           removed_by?: string | null
           status?: string
+          text_kind?: string
           updated_at?: string
         }
         Relationships: [
@@ -4656,7 +4665,14 @@ export type Database = {
         }[]
       }
       create_shared_quote: {
-        Args: { p_locale: string; p_publication_id: string; p_quote: string }
+        Args: {
+          p_chunk_ordinal?: number
+          p_locale: string
+          p_publication_id: string
+          p_question?: string
+          p_quote: string
+          p_text_kind?: string
+        }
         Returns: Json
       }
       currency_is_payable: { Args: { p_currency: string }; Returns: boolean }

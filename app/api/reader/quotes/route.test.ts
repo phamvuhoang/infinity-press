@@ -18,7 +18,7 @@ vi.mock("@/lib/config/server-env", () => ({ getServerEnv: () => ({ siteUrl: "htt
 
 const PUB = "40000000-0000-4000-8000-000000000001";
 const context = { profileId: "p1", publicationId: PUB, publicationVersion: 1, sessionId: "s1" };
-const card = { id: "q1", code: "AbCdEfGh12", quote: "x", locale: "vi" as const, bookId: "b1", createdAt: "" };
+const card = { id: "q1", code: "AbCdEfGh12", quote: "x", locale: "vi" as const, bookId: "b1", createdAt: "", chunkOrdinal: null, question: null, textKind: "verbatim" as const };
 
 function post(body: unknown, publicationId = PUB) {
   return POST(new NextRequest(`http://localhost/api/reader/quotes?publicationId=${publicationId}`, {
@@ -38,7 +38,21 @@ describe("POST /api/reader/quotes", () => {
     const response = await post({ quote: "Một câu.", locale: "vi" });
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ code: "AbCdEfGh12", url: "https://books.example/vi/q/AbCdEfGh12" });
-    expect(createSharedQuote).toHaveBeenCalledWith(PUB, "Một câu.", "vi");
+    expect(createSharedQuote).toHaveBeenCalledWith(PUB, { quote: "Một câu.", locale: "vi", textKind: "verbatim", locator: undefined });
+  });
+
+  it("passes the question, the kind, and the locator converted to its publication href", async () => {
+    vi.mocked(createSharedQuote).mockResolvedValue(card);
+    const href = `/api/reader/publications/${PUB}/resources/OEBPS/c1.xhtml`;
+    const response = await post({ quote: "x", locale: "vi", question: " Vì sao? ", textKind: "paraphrase", locator: { href, progression: 0.4, totalProgression: 0.1, locations: {} } });
+    expect(response.status).toBe(201);
+    expect(createSharedQuote).toHaveBeenCalledWith(PUB, { quote: "x", locale: "vi", question: "Vì sao?", textKind: "paraphrase", locator: { href: "OEBPS/c1.xhtml", progression: 0.4 } });
+  });
+
+  it("shares without an anchor when the locator is not one of this publication's", async () => {
+    vi.mocked(createSharedQuote).mockResolvedValue(card);
+    await post({ quote: "x", locale: "vi", locator: { href: "/api/reader/publications/40000000-0000-4000-8000-0000000000ff/resources/c1.xhtml", progression: 0 } });
+    expect(vi.mocked(createSharedQuote).mock.calls[0][1].locator).toBeUndefined();
   });
 
   it("truncates to 300 graphemes before the database sees it", async () => {
@@ -46,7 +60,7 @@ describe("POST /api/reader/quotes", () => {
     // Decomposed e + combining circumflex + combining acute: 3 code points, 1 grapheme.
     const cluster = "ế";
     await post({ quote: cluster.repeat(301), locale: "vi" });
-    expect(vi.mocked(createSharedQuote).mock.calls[0][1]).toBe(cluster.repeat(300));
+    expect(vi.mocked(createSharedQuote).mock.calls[0][1].quote).toBe(cluster.repeat(300));
   });
 
   it.each([
@@ -54,6 +68,8 @@ describe("POST /api/reader/quotes", () => {
     ["html", { quote: "<b>x</b>", locale: "vi" }],
     ["bad locale", { quote: "x", locale: "fr" }],
     ["extra key", { quote: "x", locale: "vi", bookId: "b1" }],
+    ["281-character question", { quote: "x", locale: "vi", question: "?".repeat(281) }],
+    ["unknown text kind", { quote: "x", locale: "vi", textKind: "poem" }],
   ])("returns 400 for %s", async (_name, body) => {
     expect((await post(body)).status).toBe(400);
     expect(createSharedQuote).not.toHaveBeenCalled();

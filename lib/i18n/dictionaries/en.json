@@ -153,7 +153,14 @@
       "eyebrow": "A quote from",
       "sharedFrom": "Shared from Infinity Books Press",
       "readSample": "Read a sample",
-      "openBook": "About the book"
+      "openBook": "About the book",
+      "continueReading": "Continue reading from here",
+      "kind": {
+        "verbatim": "Verbatim",
+        "translation": "Translation",
+        "paraphrase": "Paraphrase"
+      },
+      "readIn": "Read in"
     },
     "retail": {
       "title": "Paperback",
@@ -666,6 +673,12 @@
     "chooseEdition": {
       "title": "Choose an edition to read",
       "description": "You own more than one language edition of this work."
+    },
+    "shareQuestionLabel": "Your question (optional)",
+    "textKind": {
+      "verbatim": "Verbatim",
+      "translation": "Translation",
+      "paraphrase": "Paraphrase"
     }
   },
   "forbidden": {

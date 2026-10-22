@@ -98,3 +98,19 @@ the reader cancelling it, the text goes to the clipboard.
   book is unpublished; so does the Open Graph image. Next serves that image at a hashed
   `opengraph-image-<hash>` path, so read it from the page's `og:image` tag. Views are the
   `view_quote` analytics rows for the card.
+
+### Passage cards (S20)
+
+Share first opens a small dialog: an optional question (280 characters at most) and the kind of
+text (verbatim, translation, or paraphrase; verbatim by default). The card shows both. The share
+also records the passage the selection falls in (`shared_quotes.chunk_ordinal`, resolved with
+`reader_chunk_for_locator`); a selection that maps to no passage is shared without one.
+
+- The card shows "Continue reading from here" only while that passage still exists and the sample
+  allows it (the same rule as `sample_chunk_locator`, which also needs the shared publication to
+  still be the edition's live one). The link opens `/{locale}/read-sample/{slug}?edition=…&anchor=…`.
+- When passage alignment pairs the passage with another live edition, the card lists each language
+  under "Read in". A language whose sample does not allow its aligned passage is named without a link.
+- A share with a passage writes `passage_shared` (identifier columns only). A click on "Continue
+  reading from here" sends `passage_opened`, which the analytics route accepts without a session.
+  Neither event carries the quote or the question.

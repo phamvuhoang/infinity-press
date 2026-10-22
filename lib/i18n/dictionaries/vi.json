@@ -153,7 +153,14 @@
       "eyebrow": "Trích dẫn từ",
       "sharedFrom": "Chia sẻ từ Infinity Books Press",
       "readSample": "Đọc thử",
-      "openBook": "Về cuốn sách"
+      "openBook": "Về cuốn sách",
+      "continueReading": "Đọc tiếp từ đây",
+      "kind": {
+        "verbatim": "Nguyên văn",
+        "translation": "Bản dịch",
+        "paraphrase": "Diễn giải"
+      },
+      "readIn": "Đọc bằng"
     },
     "retail": {
       "title": "Sách giấy",
@@ -666,6 +673,12 @@
     "chooseEdition": {
       "title": "Chọn bản để đọc",
       "description": "Bạn sở hữu nhiều bản ngôn ngữ của tác phẩm này."
+    },
+    "shareQuestionLabel": "Câu hỏi của bạn (không bắt buộc)",
+    "textKind": {
+      "verbatim": "Nguyên văn",
+      "translation": "Bản dịch",
+      "paraphrase": "Diễn giải"
     }
   },
   "forbidden": {

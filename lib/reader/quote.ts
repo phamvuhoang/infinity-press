@@ -28,3 +28,9 @@ export function buildAttributedQuote(input: {
   const { quote, truncated } = truncateBookQuote(input.selection);
   return { text: `“${quote}”\n- ${input.title}, ${input.author}\n${input.canonicalBookUrl}`, truncated };
 }
+
+// S20 passage cards: the reader's optional question and what kind of text the quote is. The
+// database (shared_quotes) enforces both again.
+export const MAX_SHARE_QUESTION_CHARS = 280;
+export const textKinds = ["verbatim", "translation", "paraphrase"] as const;
+export type TextKind = (typeof textKinds)[number];

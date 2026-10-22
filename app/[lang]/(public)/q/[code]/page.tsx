@@ -6,8 +6,10 @@ import { buyEbookAction, getFreeEbookAction } from "@/app/[lang]/(public)/books/
 import { AnalyticsEvent } from "@/components/analytics/analytics-event";
 import { CoverImage } from "@/components/catalog/cover-image";
 import { BookEditionPanel } from "@/components/catalog/book-edition-panel";
+import { PassageLink } from "@/components/catalog/passage-link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getBookCardById } from "@/lib/data/catalog";
@@ -84,6 +86,14 @@ export default async function QuoteCardPage({ params }: Props) {
   const bookPath = routes.book(book.slug);
   // The card stands for one edition; this page sells exactly that one, with no selector.
   const editions = (await getBookEditions(book.bookId, locale)).filter((edition) => edition.editionId === book.editionId);
+  // S20: the sample reader at the shared passage, only while the chunk exists and the sample lets a
+  // visitor read it. Other languages come from passage alignment; one whose sample refuses its
+  // aligned passage is named without a link.
+  const passageHref = (editionId: string, ordinal: number) =>
+    `${routes.sample(book.slug)}?${new URLSearchParams({ edition: editionId, anchor: String(ordinal) })}`;
+  const continueHref = card.chunkExists && card.sampleAllowsChunk && card.editionId && card.chunkOrdinal !== null
+    ? passageHref(card.editionId, card.chunkOrdinal)
+    : null;
 
   return (
     <div className="min-h-screen bg-ivory">
@@ -94,6 +104,32 @@ export default async function QuoteCardPage({ params }: Props) {
         <blockquote className="mt-6 font-serif text-3xl leading-[1.3] sm:text-4xl" lang={locale}>
           {`“${card.quote}”`}
         </blockquote>
+        <p className="mt-4 text-xs font-medium tracking-[0.1em] text-sage-text uppercase">{copy.quoteCard.kind[card.textKind]}</p>
+        {card.question ? (
+          <p className="mt-6 text-lg text-ink-soft" lang={locale}>
+            {card.question}
+          </p>
+        ) : null}
+        {continueHref ? (
+          <p className="mt-6">
+            <PassageLink bookId={book.bookId} className={textLink} href={continueHref} label={copy.quoteCard.continueReading} locale={locale} sharedQuoteId={card.id} />
+          </p>
+        ) : null}
+        {card.languages.length > 1 ? (
+          <p className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.9375rem] text-ink-soft">
+            <span>{copy.quoteCard.readIn}</span>
+            {card.languages.map((language) => {
+              const label = editionLanguageLabel(language.languageCode) ?? language.languageCode;
+              return language.sampleAllows ? (
+                <Link className={textLink} href={passageHref(language.editionId, language.ordinal)} hrefLang={language.languageCode} key={language.editionId}>
+                  {label}
+                </Link>
+              ) : (
+                <span key={language.editionId}>{label}</span>
+              );
+            })}
+          </p>
+        ) : null}
         <div className="mt-10 grid gap-8 border-t border-hairline pt-8 sm:grid-cols-[8rem_1fr] sm:items-start">
           <div className="w-32">
             <CoverImage card={book} size="md" sizes="8rem" />

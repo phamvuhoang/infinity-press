@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import type { Locale } from "@/lib/i18n/config";
 import { getRequestId } from "@/lib/observability/request-id";
+import { textKinds, type TextKind } from "@/lib/reader/quote";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,8 +39,28 @@ const sharedQuoteSchema = z.object({
   createdAt: z.string(),
 });
 const mySharedQuoteSchema = sharedQuoteSchema.extend({ bookTitle: z.string(), viewCount: z.coerce.number().int() });
+// S20 passage fields, which create_shared_quote and catalog_shared_quote return.
+const passageQuoteSchema = sharedQuoteSchema.extend({
+  chunkOrdinal: z.number().int().nonnegative().nullable(),
+  question: z.string().nullable(),
+  textKind: z.enum(textKinds),
+});
+// The public card adds what "continue reading" needs: the shared edition, whether its chunk still
+// exists and the sample lets a visitor in there, and each language that can open the passage.
+const publicSharedQuoteSchema = passageQuoteSchema.extend({
+  editionId: z.string().nullable(),
+  chunkExists: z.boolean(),
+  sampleAllowsChunk: z.boolean(),
+  languages: z.array(z.object({
+    editionId: z.string(),
+    languageCode: z.string(),
+    ordinal: z.number().int().nonnegative(),
+    sampleAllows: z.boolean(),
+  })),
+});
 
-export type SharedQuote = z.infer<typeof sharedQuoteSchema>;
+export type SharedQuote = z.infer<typeof passageQuoteSchema>;
+export type PublicSharedQuote = z.infer<typeof publicSharedQuoteSchema>;
 export type MySharedQuote = z.infer<typeof mySharedQuoteSchema>;
 
 async function currentRequestId(): Promise<string | null> {
@@ -66,26 +87,49 @@ async function parseOrFail<T>(schema: z.ZodType<T>, data: unknown, operation: st
   return parsed.data;
 }
 
-export async function createSharedQuote(publicationId: string, quote: string, locale: Locale): Promise<SharedQuote> {
-  const { data, error } = await (await createClient()).rpc("create_shared_quote", {
+// The passage a locator falls in, or null: an unknown href, a refusal, or a failed lookup alike, so
+// a share never fails for want of an anchor. `href` is the in-publication href.
+async function chunkOrdinalFor(client: Awaited<ReturnType<typeof createClient>>, publicationId: string, locator: { href: string; progression: number }): Promise<number | null> {
+  const { data, error } = await client.rpc("reader_chunk_for_locator", {
     p_publication_id: publicationId,
-    p_quote: quote,
-    p_locale: locale,
+    p_href: locator.href,
+    p_progression: locator.progression,
+  });
+  if (error) {
+    await failure("chunkOrdinalFor", error);
+    return null;
+  }
+  return typeof data === "number" ? data : null;
+}
+
+export async function createSharedQuote(
+  publicationId: string,
+  input: { quote: string; locale: Locale; question?: string; textKind: TextKind; locator?: { href: string; progression: number } },
+): Promise<SharedQuote> {
+  const client = await createClient();
+  const chunkOrdinal = input.locator ? await chunkOrdinalFor(client, publicationId, input.locator) : null;
+  const { data, error } = await client.rpc("create_shared_quote", {
+    p_publication_id: publicationId,
+    p_quote: input.quote,
+    p_locale: input.locale,
+    p_text_kind: input.textKind,
+    ...(input.question ? { p_question: input.question } : {}),
+    ...(chunkOrdinal !== null ? { p_chunk_ordinal: chunkOrdinal } : {}),
   });
   if (error?.code === CAP_REACHED) throw new SharedQuoteCapError();
   if (error?.code === REFUSED) throw new SharedQuoteRefusedError();
   if (error) throw await failure("createSharedQuote", error);
-  return parseOrFail(sharedQuoteSchema, data, "createSharedQuote");
+  return parseOrFail(passageQuoteSchema, data, "createSharedQuote");
 }
 
 // Public, cookie-less. Null for a malformed code and for unknown, removed, and unpublished cards alike.
-export const getSharedQuote = cache(async (code: string): Promise<SharedQuote | null> => {
+export const getSharedQuote = cache(async (code: string): Promise<PublicSharedQuote | null> => {
   if (!SHARED_QUOTE_CODE.test(code)) return null;
   const { data, error } = await createPublicClient().rpc("catalog_shared_quote", { p_code: code });
   if (error) throw await failure("getSharedQuote", error);
   if (data == null) return null;
   // A shape drift would otherwise 404 every card without a trace.
-  return parseOrFail(sharedQuoteSchema, data, "getSharedQuote");
+  return parseOrFail(publicSharedQuoteSchema, data, "getSharedQuote");
 });
 
 export async function listMySharedQuotes(): Promise<MySharedQuote[]> {

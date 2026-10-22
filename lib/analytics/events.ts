@@ -23,6 +23,7 @@ export const analyticsEventNames = [
   "share_quote",
   "view_quote",
   "compare_opened",
+  "passage_opened",
 ] as const;
 
 export type AnalyticsEventName = (typeof analyticsEventNames)[number];

@@ -114,6 +114,8 @@ vi.mock("@/lib/reader/readium-engine", () => ({
 // `Dictionary["reader"]` and the assertions below are written against these words.
 const copy: ReaderCopy = {
   annotationTooLong: "Select at most 1,000 characters to highlight or add a note.",
+  shareQuestionLabel: "Your question (optional)",
+  textKind: { verbatim: "Verbatim", translation: "Translation", paraphrase: "Paraphrase" },
   compare: "Compare",
   compareNone: "No other edition you own lines up with this passage.",
   compareOpenOther: "Open in that edition",
@@ -456,8 +458,12 @@ describe("reader depth controller", () => {
     const listener = reader.engine.setSelectionListener.mock.calls[0]?.[0] as (selection: ReaderSelection | null) => void;
     listener({ locator: { href: "c1.xhtml", progression: 0, totalProgression: 0, locations: {}, text: { highlight: "A passage" } }, text: "A passage", rect: { x: 10, y: 10, width: 40, height: 20 } });
     await user.click(await screen.findByRole("button", { name: "Share" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Share" }));
     await waitFor(() => expect(fetchSpy.mock.calls.some(([path]) => String(path).includes("/api/reader/quotes"))).toBe(true));
     expect(timeoutSpy).toHaveBeenCalledWith(3000);
+    // The body carries the kind and the selection's locator, reduced to what finds the passage.
+    const sent = fetchSpy.mock.calls.find(([path]) => String(path).includes("/api/reader/quotes"))?.[1];
+    expect(JSON.parse(String(sent?.body))).toEqual({ quote: "A passage", locale: "en", textKind: "verbatim", locator: { href: "c1.xhtml", progression: 0 } });
     expect(share).not.toHaveBeenCalled();
     timeout.abort();
     await waitFor(() => expect(share).toHaveBeenCalledOnce());

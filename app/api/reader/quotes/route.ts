@@ -6,7 +6,8 @@ import { createSharedQuote, SharedQuoteCapError, SharedQuoteRefusedError } from 
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
 import { getRequestId } from "@/lib/observability/request-id";
-import { truncateBookQuote } from "@/lib/reader/quote";
+import { toPublicationResourceHref } from "@/lib/reader/locator-paths";
+import { MAX_SHARE_QUESTION_CHARS, textKinds, truncateBookQuote } from "@/lib/reader/quote";
 import { requireReaderRequestContext } from "@/lib/reader/request-context";
 import { readerApiErrorResponse, readerJsonResponse } from "@/lib/reader/route-response";
 
@@ -17,7 +18,22 @@ import { readerApiErrorResponse, readerJsonResponse } from "@/lib/reader/route-r
 const bodySchema = z.strictObject({
   quote: z.string().trim().min(1).regex(/^(?![\s\S]*<\/?[a-z][^>]*>)/i),
   locale: z.string().refine(isLocale),
+  // S20: an optional question (code points, as the database counts them), the text kind, and the
+  // selection's locator as the reader has it. The locator only finds the passage to anchor the
+  // card to; one that names no passage of this publication shares the quote without an anchor.
+  question: z.string().trim().refine((value) => Array.from(value).length <= MAX_SHARE_QUESTION_CHARS).optional(),
+  textKind: z.enum(textKinds).default("verbatim"),
+  locator: z.object({ href: z.string(), progression: z.number().min(0).max(1) }).optional(),
 });
+
+function publicationLocator(publicationId: string, locator: { href: string; progression: number } | undefined) {
+  if (!locator) return undefined;
+  try {
+    return { href: toPublicationResourceHref(publicationId, locator.href), progression: locator.progression };
+  } catch {
+    return undefined;
+  }
+}
 
 export async function POST(request: NextRequest) {
   const requestId = getRequestId(request.headers);
@@ -33,7 +49,13 @@ export async function POST(request: NextRequest) {
     const { quote } = truncateBookQuote(body.quote);
     const locale = body.locale as Locale;
     try {
-      const card = await createSharedQuote(context.publicationId, quote, locale);
+      const card = await createSharedQuote(context.publicationId, {
+        quote,
+        locale,
+        ...(body.question ? { question: body.question } : {}),
+        textKind: body.textKind,
+        locator: publicationLocator(context.publicationId, body.locator),
+      });
       const url = new URL(getCatalogRoutes(locale).quoteCard(card.code), getServerEnv().siteUrl).toString();
       return readerJsonResponse(requestId, 201, { code: card.code, url });
     } catch (error) {

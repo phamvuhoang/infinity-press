@@ -119,6 +119,18 @@ describe("POST /api/analytics/events", () => {
     );
   });
 
+  it("accepts an anonymous passage_opened and refuses one carrying the question", async () => {
+    const event = { eventId: EVENT_ID, eventName: "passage_opened", sharedQuoteId: QUOTE_ID, bookId: BOOK_ID, locale: "vi" };
+    expect((await POST(request(event))).status).toBe(202);
+    expect(trackEventBestEffort).toHaveBeenCalledWith(
+      expect.objectContaining({ eventName: "passage_opened", sharedQuoteId: QUOTE_ID, bookId: BOOK_ID }),
+      expect.anything(),
+    );
+    vi.mocked(trackEventBestEffort).mockClear();
+    expect((await POST(request({ ...event, question: "Vì sao?" }))).status).toBe(400);
+    expect(trackEventBestEffort).not.toHaveBeenCalled();
+  });
+
   it("refuses a view_quote carrying the quote text", async () => {
     const response = await POST(
       request({

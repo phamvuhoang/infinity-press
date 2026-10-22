@@ -153,7 +153,14 @@
       "eyebrow": "引用元",
       "sharedFrom": "Infinity Books Press から共有",
       "readSample": "試し読み",
-      "openBook": "作品について"
+      "openBook": "作品について",
+      "continueReading": "ここから続きを読む",
+      "kind": {
+        "verbatim": "原文",
+        "translation": "翻訳",
+        "paraphrase": "言い換え"
+      },
+      "readIn": "次の言語で読む"
     },
     "retail": {
       "title": "紙の本",
@@ -666,6 +673,12 @@
     "chooseEdition": {
       "title": "読む版を選んでください",
       "description": "この作品の言語版を複数お持ちです。"
+    },
+    "shareQuestionLabel": "質問（任意）",
+    "textKind": {
+      "verbatim": "原文",
+      "translation": "翻訳",
+      "paraphrase": "言い換え"
     }
   },
   "forbidden": {
