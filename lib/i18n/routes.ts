@@ -22,6 +22,9 @@ export function getCatalogRoutes(locale: Locale) {
     bundle: (slug: string) => withLocale(locale, `/bundles/${slug}`),
     entity: (kind: CatalogEntityKind, slug: string) => withLocale(locale, `/${entitySegments[kind]}/${slug}`),
     sample: (slug: string) => withLocale(locale, `/read-sample/${slug}`),
+    // S20 reading journeys.
+    journey: (slug: string) => withLocale(locale, `/journeys/${slug}`),
+    journeySession: (slug: string, position: number) => withLocale(locale, `/journeys/${slug}/sessions/${position}`),
     // S16: a shared quote card. Public, noindex, not localized by the viewer's locale: the card
     // renders in the locale the quote was shared in.
     quoteCard: (code: string) => withLocale(locale, `/q/${encodeURIComponent(code)}`),
@@ -39,6 +42,11 @@ export function getCatalogRoutes(locale: Locale) {
     signInFor: (path: string) => `${withLocale(locale, "/sign-in")}?${new URLSearchParams({ next: path })}`,
   };
 }
+
+// Admin pages carry no locale prefix.
+export const adminRoutes = {
+  adminJourney: (id: string) => `/admin/journeys/${id}`,
+};
 
 // S12 knowledge hub. Ideas and articles have their own path segments, so a slug only has to be
 // unique within its entity type and locale.
