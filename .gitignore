@@ -54,3 +54,6 @@ fixtures/epub/manifest.local.json
 
 cmd.txt
 
+
+# Claude Code local state
+.claude/
