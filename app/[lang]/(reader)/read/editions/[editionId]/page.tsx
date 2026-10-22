@@ -4,13 +4,16 @@ import { ReaderMount } from "@/components/reader/reader-mount";
 import { requireUser } from "@/lib/auth/session";
 import { getReadableEdition } from "@/lib/data/library";
 import { isLocale, withLocale } from "@/lib/i18n/config";
+import { parseAnchor } from "@/lib/reader/anchor";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
 
 export default async function ReadEditionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string; editionId: string }>;
+  searchParams: Promise<{ anchor?: string | string[] }>;
 }) {
   const { lang: locale, editionId } = await params;
   if (!isLocale(locale)) notFound();
@@ -21,7 +24,8 @@ export default async function ReadEditionPage({
   // publication" alike. A reader who does not own this book must not be able to tell that it
   // exists - the same non-disclosure property the reader API handlers enforce with their single
   // 404, applied to the page that links to them.
-  const book = await getReadableEdition(locale, editionId);
+  // `?anchor=` opens at a passage; an invalid or unresolvable one opens at the saved position.
+  const book = await getReadableEdition(locale, editionId, { anchor: parseAnchor((await searchParams).anchor) });
   if (!book) notFound();
 
   const dictionary = await getDictionary(locale);

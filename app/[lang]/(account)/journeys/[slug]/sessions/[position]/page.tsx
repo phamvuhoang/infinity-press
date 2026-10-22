@@ -7,6 +7,7 @@ import { SessionCompleteForm } from "@/components/journeys/session-complete-form
 import { SiteHeader } from "@/components/site-header";
 import { requireUser } from "@/lib/auth/session";
 import { getMyJourneyProgress, getPublishedJourney } from "@/lib/data/journeys";
+import { getPassageAnchor } from "@/lib/data/library";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { fillTemplate } from "@/lib/i18n/format";
@@ -30,14 +31,19 @@ export default async function JourneySessionPage({ params }: Props) {
   const session = journey?.sessions.find((candidate) => candidate.position === position);
   if (!journey || !session) notFound();
 
-  const [dictionary, progress] = await Promise.all([getDictionary(locale), getMyJourneyProgress(journey.id)]);
+  const [dictionary, progress, anchor] = await Promise.all([
+    getDictionary(locale),
+    getMyJourneyProgress(journey.id),
+    getPassageAnchor(locale, journey.editionId, session.startLocator),
+  ]);
   const copy = dictionary.journeys;
   const isLast = session.position === Math.max(...journey.sessions.map((candidate) => candidate.position));
 
-  // Always the edition's saved position for now. start_locator.href may name a document the
-  // current publication no longer has (EPUB re-uploaded), so the passage deep link waits for the
-  // resolver that can tell (S20 Task 7); a plain link can never point at a missing resource.
-  const readerHref = routes.readEdition(journey.editionId);
+  // The session's passage when its start href is in the edition's current publication. After an
+  // EPUB re-upload it may not be (or the reader does not own the edition): the plain link then opens
+  // at the saved position, and can never point at a missing resource.
+  const readerHref =
+    routes.readEdition(journey.editionId) + (anchor === null ? "" : `?${new URLSearchParams({ anchor: String(anchor) })}`);
 
   return (
     <div className="min-h-screen bg-ivory">

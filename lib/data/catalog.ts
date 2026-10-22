@@ -29,7 +29,10 @@ import { editionOptionsSchema } from "@/lib/data/editions";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import type { Locale } from "@/lib/i18n/config";
 import { getRequestId } from "@/lib/observability/request-id";
+import { chunkLocator } from "@/lib/reader/anchor";
+import { toSampleResourceHref } from "@/lib/reader/locator-paths";
 import { resolveSamplePublication } from "@/lib/reader/session";
+import type { ReaderLocator } from "@/lib/reader/types";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
@@ -421,6 +424,8 @@ export async function getSampleReaderBook(
   // The edition the reader selected on the book page; null is the default edition. An id that is not
   // one of the work's readable editions is a 404, never the default's sample.
   requestedEditionId: string | null = null,
+  // A passage (?anchor=<chunk ordinal>) to open at; one the sample does not allow opens at the start.
+  options: { anchor?: number | null } = {},
 ): Promise<{
   bookId: string;
   title: string;
@@ -434,6 +439,7 @@ export async function getSampleReaderBook(
   offer: { offerId: string; priceMinor: number } | null;
   action: BookAction;
   signedIn: boolean;
+  initialLocator: ReaderLocator | null;
 } | null> {
   const book = await getBookPage(locale, slug);
   if (!book) return null;
@@ -448,6 +454,15 @@ export async function getSampleReaderBook(
   // caller here and must not be redirected. It only decides which control the sample ends with.
   const { action, signedIn } = await getBookActionState({ ...book, editionId: edition.editionId, offer: edition.offer });
 
+  let initialLocator: ReaderLocator | null = null;
+  if (options.anchor !== undefined && options.anchor !== null) {
+    const { data, error } = await createPublicClient().rpc("sample_chunk_locator", {
+      p_publication_id: sample.publicationId,
+      p_ordinal: options.anchor,
+    });
+    if (!error) initialLocator = chunkLocator(data, (href) => toSampleResourceHref(sample.publicationId, href));
+  }
+
   return {
     bookId: book.bookId,
     title: book.title,
@@ -458,6 +473,7 @@ export async function getSampleReaderBook(
     offer: edition.offer ? { offerId: edition.offer.offerId, priceMinor: edition.offer.priceMinor } : null,
     action,
     signedIn,
+    initialLocator,
   };
 }
 

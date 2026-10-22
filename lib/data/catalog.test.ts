@@ -576,6 +576,39 @@ describe("getSampleReaderBook", () => {
     expect(resolveSamplePublication).toHaveBeenCalledWith("edition-ja");
   });
 
+  // Review Focus 2: an allowed passage opens there, in the sample manifest's own href form; a
+  // refused or failed one opens at the start.
+  const SAMPLE_PUB = "60000000-0000-4000-8000-000000000001";
+  const chunk = { href: "OEBPS/c2.xhtml", progression: 0, totalProgression: 0.5, locations: { position: 4 }, text: { highlight: "here" } };
+
+  it("opens at an allowed passage", async () => {
+    const rpc = mockRpc({
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [english] }), error: null },
+      sample_chunk_locator: { data: chunk, error: null },
+    });
+    vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: SAMPLE_PUB, sampleFull: false });
+
+    await expect(getSampleReaderBook("en", "a-book", null, { anchor: 9 })).resolves.toMatchObject({
+      initialLocator: { ...chunk, href: `/api/samples/${SAMPLE_PUB}/resources/OEBPS/c2.xhtml` },
+    });
+    expect(rpc).toHaveBeenCalledWith("sample_chunk_locator", { p_publication_id: SAMPLE_PUB, p_ordinal: 9 });
+  });
+
+  it.each([
+    ["refused", { data: null, error: null }],
+    ["failed", { data: null, error: { code: "XX000" } }],
+  ])("opens at the start when the passage is %s", async (_label, result) => {
+    mockRpc({
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [english] }), error: null },
+      sample_chunk_locator: result,
+    });
+    vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: SAMPLE_PUB, sampleFull: false });
+
+    await expect(getSampleReaderBook("en", "a-book", null, { anchor: 9 })).resolves.toMatchObject({ initialLocator: null });
+  });
+
   // A forged or stale id never falls through to the default edition's sample.
   it("returns null for an edition the work does not list", async () => {
     mockRpc({

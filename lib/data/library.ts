@@ -7,8 +7,10 @@ import { getServerEnv } from "@/lib/config/server-env";
 import { coverPublicUrl } from "@/lib/catalog/covers";
 import { isLocale, type Locale, locales, withLocale } from "@/lib/i18n/config";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
+import { chunkLocator } from "@/lib/reader/anchor";
 import { FINISHED_TOTAL_PROGRESSION } from "@/lib/reader/completion";
 import { isReaderLocator, parseReaderLocator } from "@/lib/reader/engine";
+import { toReaderResourceHref } from "@/lib/reader/locator-paths";
 import type { ReaderLocator } from "@/lib/reader/types";
 import { absoluteUrl } from "@/lib/seo/metadata";
 import { createClient } from "@/lib/supabase/server";
@@ -153,9 +155,13 @@ function relatedBooks(source: CatalogBookCard, cards: CatalogBookCard[], locale:
 //
 // Nothing here depends on the interface locale beyond the RPC's own title fallback, so a reader
 // browsing in Japanese can open the English edition they own.
+//
+// `anchor` is a passage (?anchor=<chunk ordinal>). When reader_chunk_locator resolves it, the reader
+// opens there instead of at the saved position; any refusal or failure keeps the saved position.
 export async function getReadableEdition(
   locale: Locale,
   editionId: string,
+  options: { anchor?: number | null } = {},
 ): Promise<{
   bookId: string;
   editionId: string;
@@ -168,7 +174,7 @@ export async function getReadableEdition(
   publicationId: string;
   // Same meaning as LibraryItemDTO.inCatalog: the reader links to the review form only when true.
   inCatalog: boolean;
-  // Where this reader left off, or null to open at the beginning. Read here rather than fetched
+  // Where this reader left off (or the requested passage), or null to open at the beginning. Read here rather than fetched
   // by the client so the engine is handed its starting position at mount time - a locator applied
   // after mount would show the opening page first and then jump, which reads as a bug.
   initialLocator: ReaderLocator | null;
@@ -215,6 +221,15 @@ export async function getReadableEdition(
     throw new Error(`getReadableEdition: failed to load reading progress: ${progressError.message}`);
   }
 
+  let anchored: ReaderLocator | null = null;
+  if (options.anchor !== undefined && options.anchor !== null) {
+    const { data: chunk, error: chunkError } = await supabase.rpc("reader_chunk_locator", {
+      p_publication_id: publicationId,
+      p_ordinal: options.anchor,
+    });
+    if (!chunkError) anchored = chunkLocator(chunk, (href) => toReaderResourceHref(publicationId, href));
+  }
+
   return {
     bookId: edition.book_id,
     editionId: edition.edition_id,
@@ -235,10 +250,32 @@ export async function getReadableEdition(
     inCatalog: edition.in_catalog,
     // Validated, not cast. locator_json is jsonb with no shape constraint, so a malformed row
     // degrades to "open at the beginning" rather than taking the whole reader page down.
-    initialLocator: isReaderLocator(progress?.locator_json)
-      ? parseReaderLocator(progress.locator_json)
-      : null,
+    initialLocator:
+      anchored ?? (isReaderLocator(progress?.locator_json) ? parseReaderLocator(progress.locator_json) : null),
   };
+}
+
+// The chunk ordinal a journey session's start locator falls in, for the session's `?anchor=` link.
+// Null when the caller does not own the edition, it has nothing readable, or the href is not in its
+// current publication (an EPUB re-upload): the page then links to the plain reader URL.
+export async function getPassageAnchor(
+  locale: Locale,
+  editionId: string,
+  locator: { href: string; progression: number },
+): Promise<number | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc("my_library_editions", { p_locale: locale })
+    .eq("edition_id", editionId)
+    .maybeSingle();
+  const publicationId = error ? null : (data as unknown as OwnedEditionRow | null)?.publication_id;
+  if (!publicationId) return null;
+  const { data: ordinal, error: ordinalError } = await supabase.rpc("reader_chunk_for_locator", {
+    p_publication_id: publicationId,
+    p_href: locator.href,
+    p_progression: locator.progression,
+  });
+  return ordinalError || typeof ordinal !== "number" ? null : ordinal;
 }
 
 // The editions of ONE work the caller owns, for the legacy `/read/{bookId}` deep link. One edition

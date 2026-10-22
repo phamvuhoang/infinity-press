@@ -20,11 +20,19 @@ function normalizeHref(href: string): string {
   return parts.join("/");
 }
 
+function encodeHref(href: string): string {
+  return normalizeHref(href).split("/").map(encodeURIComponent).join("/");
+}
+
 export function toReaderResourceHref(publicationId: string, href: string): string {
   requirePublicationId(publicationId);
-  const normalized = normalizeHref(href);
-  const encoded = normalized.split("/").map(encodeURIComponent).join("/");
-  return `/api/reader/publications/${publicationId}/resources/${encoded}`;
+  return `/api/reader/publications/${publicationId}/resources/${encodeHref(href)}`;
+}
+
+// The href a sample manifest lists for a resource (lib/reader/session.ts sampleHref).
+export function toSampleResourceHref(publicationId: string, href: string): string {
+  requirePublicationId(publicationId);
+  return `/api/samples/${publicationId}/resources/${encodeHref(href)}`;
 }
 
 export function toPublicationResourceHref(publicationId: string, href: string): string {

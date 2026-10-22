@@ -4851,6 +4851,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      reader_chunk_for_locator: {
+        Args: { p_href: string; p_progression: number; p_publication_id: string }
+        Returns: number
+      }
+      reader_chunk_locator: {
+        Args: { p_ordinal: number; p_publication_id: string }
+        Returns: Json
+      }
       reader_edition_for_publication: {
         Args: { p_profile_id: string; p_publication_id: string }
         Returns: string
@@ -4942,6 +4950,10 @@ export type Database = {
       rollback_publication: {
         Args: { p_book_id: string; p_publication_id: string }
         Returns: undefined
+      }
+      sample_chunk_locator: {
+        Args: { p_ordinal: number; p_publication_id: string }
+        Returns: Json
       }
       save_reading_progress: {
         Args: {

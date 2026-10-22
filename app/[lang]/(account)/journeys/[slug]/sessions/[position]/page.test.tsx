@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import JourneySessionPage from "@/app/[lang]/(account)/journeys/[slug]/sessions/[position]/page";
 import { requireUser } from "@/lib/auth/session";
 import { getMyJourneyProgress, getPublishedJourney } from "@/lib/data/journeys";
+import { getPassageAnchor } from "@/lib/data/library";
 
 vi.mock("@/components/site-header", () => ({ SiteHeader: () => null }));
 vi.mock("next/navigation", () => ({
@@ -13,6 +14,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 vi.mock("@/lib/data/journeys", () => ({ getPublishedJourney: vi.fn(), getMyJourneyProgress: vi.fn() }));
+vi.mock("@/lib/data/library", () => ({ getPassageAnchor: vi.fn() }));
 vi.mock("./actions", () => ({ markSessionAction: vi.fn(), completeJourneyAction: vi.fn() }));
 
 const EDITION = "20000000-0000-4000-8000-000000000001";
@@ -47,6 +49,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(requireUser).mockResolvedValue({} as Awaited<ReturnType<typeof requireUser>>);
   vi.mocked(getMyJourneyProgress).mockResolvedValue({ completedPositions: [], completed: false, reflection: null });
+  vi.mocked(getPassageAnchor).mockResolvedValue(null);
 });
 
 afterEach(cleanup);
@@ -64,6 +67,14 @@ it("links to the plain edition URL when the start href is not in the current pub
   vi.mocked(getPublishedJourney).mockResolvedValue(journey([{ position: 1, href: "OEBPS/text/removed.xhtml" }]));
   render(await JourneySessionPage({ params: params("1") }));
   expect(screen.getByRole("link", { name: "Open the reader at this passage" })).toHaveAttribute("href", `/en/read/editions/${EDITION}`);
+});
+
+it("links to the session's passage when its start href resolves to a chunk", async () => {
+  vi.mocked(getPublishedJourney).mockResolvedValue(journey([{ position: 1, href: "OEBPS/text/c1.xhtml" }]));
+  vi.mocked(getPassageAnchor).mockResolvedValue(4);
+  render(await JourneySessionPage({ params: params("1") }));
+  expect(screen.getByRole("link", { name: "Open the reader at this passage" })).toHaveAttribute("href", `/en/read/editions/${EDITION}?anchor=4`);
+  expect(getPassageAnchor).toHaveBeenCalledWith("en", EDITION, expect.objectContaining({ href: "OEBPS/text/c1.xhtml" }));
 });
 
 it("shows the reflection form only on the last session", async () => {

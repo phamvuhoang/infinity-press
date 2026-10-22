@@ -8,11 +8,12 @@ import { getBookPage, getSampleReaderBook } from "@/lib/data/catalog";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
+import { parseAnchor } from "@/lib/reader/anchor";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 import { buyEbookAction, getFreeEbookAction } from "../../books/[slug]/actions";
 
-type Props = { params: Promise<{ lang: string; slug: string }>; searchParams: Promise<{ edition?: string | string[] }> };
+type Props = { params: Promise<{ lang: string; slug: string }>; searchParams: Promise<{ edition?: string | string[]; anchor?: string | string[] }> };
 
 // `?edition=` names the edition whose sample to open; absent, the default edition's.
 function requestedEdition(params: { edition?: string | string[] }): string | null {
@@ -48,8 +49,10 @@ export default async function ReadSamplePage({ params, searchParams }: Props) {
   // No requireUser: this is the one reading surface with no sign-in wall, and lib/auth/route-access
   // leaves /{locale}/read-sample public for the same reason. The sample allowlist in
   // lib/reader/session.ts is the entire trust boundary here.
-  const editionId = requestedEdition(await searchParams);
-  const book = await getSampleReaderBook(locale, slug, editionId);
+  const query = await searchParams;
+  const editionId = requestedEdition(query);
+  // `?anchor=` opens at a passage the sample allows; anything else opens at the start.
+  const book = await getSampleReaderBook(locale, slug, editionId, { anchor: parseAnchor(query.anchor) });
   if (!book) notFound();
 
   const dictionary = await getDictionary(locale);
@@ -85,7 +88,7 @@ export default async function ReadSamplePage({ params, searchParams }: Props) {
             signedIn={book.signedIn}
           />
         }
-        initialLocator={null}
+        initialLocator={book.initialLocator}
         libraryHref={bookPath}
         locale={locale}
         manifestUrl={`/api/samples/${book.publicationId}/manifest`}
