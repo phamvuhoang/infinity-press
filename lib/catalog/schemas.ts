@@ -149,6 +149,7 @@ export const provenanceSchema = z.object({
   territoryNote: provenanceNote,
   textKind: z.enum(["literal", "adapted", "commentary"], { error: "Choose a listed text kind." }).nullable(),
   reviewScope: z.enum(["full", "sample", "none"], { error: "Choose a listed review scope." }),
+  publicVersionNote: provenanceNote,
 });
 
 export const editionReviewSchema = z.object({

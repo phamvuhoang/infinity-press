@@ -398,7 +398,7 @@ describe("book details", () => {
 });
 
 describe("edition provenance", () => {
-  const notes = { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null };
+  const notes = { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, publicVersionNote: null };
   it("accepts a listed text kind or none, and rejects any other", () => {
     expect(provenanceSchema.safeParse({ ...notes, textKind: "literal", reviewScope: "full" }).success).toBe(true);
     expect(provenanceSchema.safeParse({ ...notes, textKind: null, reviewScope: "none" }).success).toBe(true);

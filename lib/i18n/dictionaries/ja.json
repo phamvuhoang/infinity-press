@@ -147,7 +147,7 @@
         "none": "未レビュー"
       },
       "reviewedAt": "承認日",
-      "reviewNote": "版の注記"
+      "versionNote": "版の注記"
     },
     "quoteCard": {
       "eyebrow": "引用元",

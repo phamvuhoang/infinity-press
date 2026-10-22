@@ -29,7 +29,7 @@ const optionRow = z.object({
       textKind: z.enum(["literal", "adapted", "commentary"]).nullable(),
       reviewScope: z.enum(["full", "sample", "none"]),
       reviewedAt: z.string().nullable(),
-      reviewNote: z.string().nullable(),
+      versionNote: z.string().nullable(),
     })
     .nullable()
     .catch(null),

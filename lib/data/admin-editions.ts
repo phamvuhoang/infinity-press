@@ -105,6 +105,7 @@ export type AdminEditionDTO = {
     territoryNote: string | null;
     textKind: ProvenanceInput["textKind"];
     reviewScope: ProvenanceInput["reviewScope"];
+    publicVersionNote: string | null;
     reviewedAt: string | null;
     reviewNote: string | null;
   };
@@ -185,6 +186,7 @@ type EditionRow = {
   territory_note: string | null;
   text_kind: ProvenanceInput["textKind"];
   review_scope: ProvenanceInput["reviewScope"];
+  public_version_note: string | null;
   editorial_state: "unreviewed" | "approved" | "blocked";
   reviewed_at: string | null;
   review_note: string | null;
@@ -205,7 +207,7 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
     .from("editions")
     .select(
       `id, book_id, language_code, edition_number, isbn, publication_date, introduction, contributors, status, active_publication_id,
-       text_source_note, translation_source, rights_note, territory_note, text_kind, review_scope, editorial_state, reviewed_at, review_note,
+       text_source_note, translation_source, rights_note, territory_note, text_kind, review_scope, public_version_note, editorial_state, reviewed_at, review_note,
        skus ( id, sku_code, active, offers ( ${offerColumns} ) ),
        default_offer:edition_default_offers ( offer_id )`,
     )
@@ -252,6 +254,7 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
       territoryNote: row.territory_note,
       textKind: row.text_kind,
       reviewScope: row.review_scope,
+      publicVersionNote: row.public_version_note,
       reviewedAt: row.reviewed_at,
       reviewNote: row.review_note,
     },
@@ -366,6 +369,7 @@ export async function saveEditionProvenance(editionId: string, input: Provenance
     p_territory_note: input.territoryNote ?? "",
     p_text_kind: input.textKind ?? "",
     p_review_scope: input.reviewScope,
+    p_public_version_note: input.publicVersionNote ?? "",
   });
   if (error) throw failure("saveEditionProvenance", error);
 }

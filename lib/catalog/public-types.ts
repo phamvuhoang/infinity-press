@@ -67,7 +67,7 @@ export type CatalogEditionRecord = {
   textKind: "literal" | "adapted" | "commentary" | null;
   reviewScope: "full" | "sample" | "none";
   reviewedAt: string | null;
-  reviewNote: string | null;
+  versionNote: string | null;
 };
 
 export type CatalogReviewSummary = { count: number; average: number };

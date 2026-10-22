@@ -1521,6 +1521,7 @@ export type Database = {
           introduction: string | null
           isbn: string | null
           language_code: string
+          public_version_note: string | null
           publication_date: string | null
           review_note: string | null
           review_scope: string
@@ -1543,6 +1544,7 @@ export type Database = {
           introduction?: string | null
           isbn?: string | null
           language_code: string
+          public_version_note?: string | null
           publication_date?: string | null
           review_note?: string | null
           review_scope?: string
@@ -1565,6 +1567,7 @@ export type Database = {
           introduction?: string | null
           isbn?: string | null
           language_code?: string
+          public_version_note?: string | null
           publication_date?: string | null
           review_note?: string | null
           review_scope?: string
@@ -3957,6 +3960,7 @@ export type Database = {
       admin_save_edition_provenance: {
         Args: {
           p_edition_id: string
+          p_public_version_note?: string
           p_rights_note: string
           p_review_scope?: string
           p_territory_note: string

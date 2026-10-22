@@ -147,7 +147,7 @@
         "none": "Not reviewed"
       },
       "reviewedAt": "Approved on",
-      "reviewNote": "Version notes"
+      "versionNote": "Version notes"
     },
     "quoteCard": {
       "eyebrow": "A quote from",

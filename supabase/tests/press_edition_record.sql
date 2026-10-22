@@ -27,6 +27,9 @@ select throws_ok(
   'a text_kind outside literal, adapted and commentary is rejected'
 );
 
+-- An internal review note must never reach the book page.
+update public.editions set review_note = 'internal: blocked for rights' where id = 'f7400000-0000-0000-0000-000000000001';
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f7100000-0000-0000-0000-000000000001', true);
 -- The old five-argument call still works and leaves the new fields at their defaults.
@@ -34,19 +37,19 @@ select lives_ok(
   $$select public.admin_save_edition_provenance('f7400000-0000-0000-0000-000000000001', 'Source', '', '', '')$$,
   'the provenance RPC still accepts its original arguments'
 );
-select public.admin_save_edition_provenance('f7400000-0000-0000-0000-000000000001', 'Source', 'Translator', '', '', 'literal', 'full');
+select public.admin_save_edition_provenance('f7400000-0000-0000-0000-000000000001', 'Source', 'Translator', '', '', 'literal', 'full', ' Fixed chapter 3. ');
 reset role;
 
 select is(
-  (select text_kind || '|' || review_scope from public.editions where id = 'f7400000-0000-0000-0000-000000000001'),
-  'literal|full',
-  'the provenance RPC persists text_kind and review_scope'
+  (select text_kind || '|' || review_scope || '|' || public_version_note from public.editions where id = 'f7400000-0000-0000-0000-000000000001'),
+  'literal|full|Fixed chapter 3.',
+  'the provenance RPC persists text_kind, review_scope and the public version note'
 );
 select is(
   public.catalog_book_page('en', 'record-book') -> 'editions' -> 0 -> 'record',
   jsonb_build_object('textSourceNote', 'Source', 'translationSource', 'Translator', 'rightsNote', null, 'territoryNote', null,
-    'textKind', 'literal', 'reviewScope', 'full', 'reviewedAt', null, 'reviewNote', null),
-  'the book page carries the edition record with its review scope'
+    'textKind', 'literal', 'reviewScope', 'full', 'reviewedAt', null, 'versionNote', 'Fixed chapter 3.'),
+  'the book page carries the edition record with its review scope and public version note, and no review note'
 );
 
 select * from finish();

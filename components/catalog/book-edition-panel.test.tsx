@@ -61,7 +61,7 @@ afterEach(cleanup);
 
 describe("BookEditionPanel", () => {
   it("shows the edition record, listing only the fields that have a value", () => {
-    const record = { textSourceNote: "1912 edition", translationSource: null, rightsNote: null, territoryNote: null, textKind: "literal" as const, reviewScope: "full" as const, reviewedAt: null, reviewNote: "Fixed chapter 3." };
+    const record = { textSourceNote: "1912 edition", translationSource: null, rightsNote: null, territoryNote: null, textKind: "literal" as const, reviewScope: "full" as const, reviewedAt: null, versionNote: "Fixed chapter 3." };
     render(<BookEditionPanel {...props} copy={viDictionary.catalog} editions={[{ ...english, record }]} locale="vi" />);
     expect(screen.getByText("Về bản này")).toBeInTheDocument();
     expect(screen.getByText("Phạm vi review:").parentElement).toHaveTextContent("Phạm vi review: Toàn bộ");

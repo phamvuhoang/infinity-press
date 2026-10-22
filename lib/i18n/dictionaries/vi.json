@@ -147,7 +147,7 @@
         "none": "Chưa review"
       },
       "reviewedAt": "Ngày duyệt",
-      "reviewNote": "Ghi chú phiên bản"
+      "versionNote": "Ghi chú phiên bản"
     },
     "quoteCard": {
       "eyebrow": "Trích dẫn từ",

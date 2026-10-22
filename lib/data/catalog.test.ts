@@ -352,7 +352,7 @@ describe("getBookPage", () => {
   });
 
   it("lists the readable editions and drops a malformed one", async () => {
-    const record = { textSourceNote: "1912", translationSource: null, rightsNote: null, territoryNote: null, textKind: "adapted", reviewScope: "sample", reviewedAt: null, reviewNote: null };
+    const record = { textSourceNote: "1912", translationSource: null, rightsNote: null, territoryNote: null, textKind: "adapted", reviewScope: "sample", reviewedAt: null, versionNote: "Fixed typos." };
     const edition = {
       editionId: "edition-ja",
       languageCode: "ja",
@@ -364,7 +364,8 @@ describe("getBookPage", () => {
       listPriceMinor: null,
       saleEndsAt: null,
       hasSample: false,
-      record,
+      // An internal review note in the payload is never carried to the page.
+      record: { ...record, reviewNote: "internal: blocked for rights" },
     };
     mockRpc({
       catalog_book_cards: { data: [cardRow()], error: null },

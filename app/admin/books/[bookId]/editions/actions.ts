@@ -172,6 +172,7 @@ export async function saveProvenanceAction(
     territoryNote: readOptionalText(formData, "territoryNote"),
     textKind: readOptionalText(formData, "textKind"),
     reviewScope: readOptionalText(formData, "reviewScope") ?? "none",
+    publicVersionNote: readOptionalText(formData, "publicVersionNote"),
   });
   if (!parsed.success) return invalid(parsed.error);
 

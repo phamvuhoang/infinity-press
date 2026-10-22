@@ -28,6 +28,7 @@ export function ProvenanceForm({ action, editorial }: { action: FormAction; edit
     { name: "translationSource", label: "Source of the translation", hint: "Translator, year, publisher or archive. Required to approve.", value: editorial.translationSource },
     { name: "rightsNote", label: "Rights note", hint: "Why this text may be republished, with a reference. Required to approve.", value: editorial.rightsNote },
     { name: "territoryNote", label: "Territories", hint: "Where it is intended to be sold. Required to approve.", value: editorial.territoryNote },
+    { name: "publicVersionNote", label: "Public version note", hint: "Shown on the book page under Version notes.", value: editorial.publicVersionNote },
   ];
   return (
     <form action={formAction} className="space-y-5" onReset={(event) => event.preventDefault()}>

@@ -45,7 +45,7 @@ function EditionRecord({ record, copy, locale }: { record: CatalogEditionRecord;
     [copy.territoryNote, record.territoryNote],
     [copy.reviewScope, copy.reviewScopes[record.reviewScope]],
     [copy.reviewedAt, record.reviewedAt && formatDate(record.reviewedAt, locale)],
-    [copy.reviewNote, record.reviewNote],
+    [copy.versionNote, record.versionNote],
   ];
   return (
     <details className="border-t border-hairline pt-4 text-sm">

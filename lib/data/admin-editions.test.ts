@@ -50,7 +50,7 @@ describe("admin gate ordering", () => {
     ["setDefaultEdition", () => setDefaultEdition(bookId, "ja", editionId)],
     ["setDefaultOffer", () => setDefaultOffer(editionId, offerId)],
     ["listPricingDefaults", () => listPricingDefaults("ja")],
-    ["saveEditionProvenance", () => saveEditionProvenance(editionId, { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, textKind: null, reviewScope: "none" })],
+    ["saveEditionProvenance", () => saveEditionProvenance(editionId, { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, textKind: null, reviewScope: "none", publicVersionNote: null })],
     ["setEditionReview", () => setEditionReview(editionId, { state: "approved", note: null })],
   ])("%s never builds a client when the admin gate denies", async (_name, call) => {
     vi.mocked(requireAdmin).mockRejectedValue(new Error("NEXT_FORBIDDEN"));
@@ -190,6 +190,7 @@ describe("getAdminEdition", () => {
     territory_note: null,
     text_kind: "adapted",
     review_scope: "sample",
+    public_version_note: "Fixed typos.",
     editorial_state: "unreviewed",
     reviewed_at: null,
     review_note: null,
@@ -221,6 +222,7 @@ describe("getAdminEdition", () => {
       territoryNote: null,
       textKind: "adapted",
       reviewScope: "sample",
+      publicVersionNote: "Fixed typos.",
       reviewedAt: null,
       reviewNote: null,
     });
@@ -255,6 +257,7 @@ describe("editorial review", () => {
       territoryNote: "Worldwide",
       textKind: "literal",
       reviewScope: "full",
+      publicVersionNote: "Fixed chapter 3.",
     });
 
     expect(fake.rpc).toHaveBeenCalledWith("admin_save_edition_provenance", {
@@ -265,6 +268,7 @@ describe("editorial review", () => {
       p_territory_note: "Worldwide",
       p_text_kind: "literal",
       p_review_scope: "full",
+      p_public_version_note: "Fixed chapter 3.",
     });
   });
 
