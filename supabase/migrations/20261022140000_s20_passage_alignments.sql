@@ -102,8 +102,10 @@ $$;
 revoke all on function public.reader_aligned_passage(uuid, integer) from public, anon;
 grant execute on function public.reader_aligned_passage(uuid, integer) to authenticated, service_role;
 
--- The share of this publication's chunks paired with any other edition, 0 when it has none. Public:
--- a ratio discloses no text. The reader shows its compare button only when this is above 0.
+-- The share of this publication's chunks paired with another edition's LIVE publication (its
+-- edition's active_publication_id), 0 when it has none. Rows left behind by a superseded target do
+-- not count, so the compare button never offers a pairing the panel cannot show. Public: a ratio
+-- discloses no text. The reader shows its compare button only when this is above 0.
 create function public.alignment_coverage(p_publication_id uuid)
 returns numeric
 language sql
@@ -112,9 +114,27 @@ security definer
 set search_path = ''
 as $$
   select coalesce(
-    (select count(distinct pa.source_chunk_id) from public.passage_alignments pa where pa.source_publication_id = p_publication_id)::numeric
+    (select count(distinct pa.source_chunk_id) from public.passage_alignments pa
+     where pa.source_publication_id = p_publication_id
+       and exists (select 1 from public.editions e where e.active_publication_id = pa.target_publication_id))::numeric
       / nullif((select count(*) from public.ebook_search_chunks c where c.publication_id = p_publication_id), 0),
     0);
 $$;
 revoke all on function public.alignment_coverage(uuid) from public;
 grant execute on function public.alignment_coverage(uuid) to anon, authenticated, service_role;
+
+-- Service role only: what lib/data/alignments.ts needs of each chunk, without transferring its text.
+create function public.chunk_lengths(p_publication_id uuid)
+returns table (id uuid, href text, ordinal integer, length integer)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select c.id, c.href, c.ordinal, char_length(c.plain_text)
+  from public.ebook_search_chunks c
+  where c.publication_id = p_publication_id
+  order by c.ordinal;
+$$;
+revoke all on function public.chunk_lengths(uuid) from public, anon, authenticated;
+grant execute on function public.chunk_lengths(uuid) to service_role;

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { after } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { revalidateStorefront } from "@/lib/catalog/revalidate";
@@ -41,14 +42,18 @@ function toActionResult(error: unknown): PublicationActionResult {
   return { ok: false, error: "Something went wrong. Try again." };
 }
 
-// Pairs the newly live publication with the work's other editions. Best-effort: the transition has
-// committed, and a work without alignment simply has no compare.
+// Pairs the newly live publication with the work's other editions, after the response is sent: the
+// transition has committed, the admin never waits on a chunk-paging run, and a work without
+// alignment simply has no compare. The request ID is read now, while the request is in scope.
 async function alignBestEffort(bookId: string): Promise<void> {
-  try {
-    await computeAlignmentsForBook(bookId);
-  } catch (error) {
-    console.error("Alignment after a publication change failed.", { bookId, requestId: getRequestId(await headers()), error: String(error) });
-  }
+  const requestId = getRequestId(await headers());
+  after(async () => {
+    try {
+      await computeAlignmentsForBook(bookId);
+    } catch (error) {
+      console.error("Alignment after a publication change failed.", { bookId, requestId, error: String(error) });
+    }
+  });
 }
 
 // `assetId` is this page's own route param (app/admin/publications/[publicationId]/page.tsx -

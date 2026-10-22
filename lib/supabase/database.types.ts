@@ -4522,6 +4522,15 @@ export type Database = {
         }[]
       }
       catalog_shared_quote: { Args: { p_code: string }; Returns: Json }
+      chunk_lengths: {
+        Args: { p_publication_id: string }
+        Returns: {
+          href: string
+          id: string
+          length: number
+          ordinal: number
+        }[]
+      }
       claim_gift: {
         Args: { p_token: string }
         Returns: {

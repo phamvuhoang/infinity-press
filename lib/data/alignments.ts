@@ -17,14 +17,12 @@ const PAGE_SIZE = 1000;
 async function loadChunks(client: Client, publicationId: string): Promise<AlignChunk[]> {
   const chunks: AlignChunk[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
+    // chunk_lengths returns char_length(plain_text), so the text itself never leaves the database.
     const { data, error } = await client
-      .from("ebook_search_chunks")
-      .select("id, href, ordinal, plain_text")
-      .eq("publication_id", publicationId)
-      .order("ordinal")
+      .rpc("chunk_lengths", { p_publication_id: publicationId })
       .range(from, from + PAGE_SIZE - 1);
     if (error) throw new Error(`computeAlignmentsForBook: failed to load chunks (${error.code ?? "unknown"})`);
-    for (const row of data) chunks.push({ id: row.id, href: row.href, ordinal: row.ordinal, length: row.plain_text.length });
+    chunks.push(...data);
     if (data.length < PAGE_SIZE) return chunks;
   }
 }
@@ -40,6 +38,16 @@ export async function computeAlignmentsForBook(bookId: string, client: Client = 
     .order("id");
   if (error) throw new Error(`computeAlignmentsForBook: failed to load editions (${error.code ?? "unknown"})`);
   const publicationIds = editions.flatMap((edition) => (edition.active_publication_id ? [edition.active_publication_id] : []));
+
+  // Pairs left from a publication that is no longer live are dropped first, even when fewer than two
+  // editions remain to pair.
+  const stale = client.from("passage_alignments").delete().eq("book_id", bookId);
+  const live = `(${publicationIds.join(",")})`;
+  const { error: pruneError } =
+    publicationIds.length > 0
+      ? await stale.or(`source_publication_id.not.in.${live},target_publication_id.not.in.${live}`)
+      : await stale;
+  if (pruneError) throw new Error(`computeAlignmentsForBook: failed to prune alignments (${pruneError.code ?? "unknown"})`);
   if (publicationIds.length < 2) return [];
 
   const chunks = new Map<string, AlignChunk[]>();

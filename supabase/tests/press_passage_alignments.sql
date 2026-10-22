@@ -1,5 +1,5 @@
 begin;
-select plan(6);
+select plan(7);
 
 -- Automatic passage alignment: replace_passage_alignments writes both directions, and
 -- reader_aligned_passage answers only a reader entitled to both editions.
@@ -88,6 +88,15 @@ reset role;
 set local role anon;
 select is(public.alignment_coverage('fb600000-0000-0000-0000-000000000001'), 0.5::numeric, 'coverage is the paired share of chunks');
 reset role;
+
+-- A new Vietnamese version goes live; the old pairs stay but no longer count.
+insert into public.ebook_assets (id, edition_id, source_storage_key, version, status) values
+  ('fb500000-0000-0000-0000-000000000003', 'fb400000-0000-0000-0000-000000000002', 'pa/vi-2.epub', 2, 'published');
+insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status) values
+  ('fb600000-0000-0000-0000-000000000003', 'fb500000-0000-0000-0000-000000000003', 2, 'pa/vi-2.json', 'published');
+update public.editions set active_publication_id = 'fb600000-0000-0000-0000-000000000003'
+where id = 'fb400000-0000-0000-0000-000000000002';
+select is(public.alignment_coverage('fb600000-0000-0000-0000-000000000001'), 0::numeric, 'pairs with a target that is no longer live do not count');
 
 delete from public.ebook_search_chunks where id = 'fb700000-0000-0000-0000-000000000001';
 select is(
