@@ -74,3 +74,8 @@ The payment simulator is for local, test, and staging only. Production rejects t
 - Do not run EPUB `process` or `retry` commands against cloud data by accident.
 - Do not commit `.env.local`, EPUB files, keys, tokens, or customer data.
 - Preserve request IDs in server errors and operational logs.
+
+## Workflow rules
+
+- Work in the current checkout. Do not create a git worktree unless the user asks for one.
+- Do not add `Co-Authored-By` or other attribution trailers to commit messages.
