@@ -138,7 +138,11 @@
       "title": "紙の本",
       "intro": "紙の本はこちらで購入できます：",
       "listPrice": "定価 {price}",
-      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+      "labels": {
+        "shopee": "Shopee",
+        "fahasa": "Fahasa",
+        "tiki": "Tiki"
+      }
     },
     "browseAll": "すべての作品を見る",
     "featuredEyebrow": "注目",
@@ -686,6 +690,33 @@
       "authorReply": "編集部からの返信：",
       "open": "レビューを開く",
       "signOff": "素敵な読書の時間を。\nInfinity Books Press"
+    }
+  },
+  "journeys": {
+    "eyebrow": "読書の旅",
+    "libraryTitle": "読書の旅",
+    "start": "旅を始める",
+    "continue": "続ける",
+    "sessionsDone": "{done}/{total} セッション完了",
+    "sessionOf": "セッション {position} / {total}",
+    "sessionCount": {
+      "one": "{count} セッション",
+      "other": "{count} セッション"
+    },
+    "empty": "この旅にはまだセッションがありません。",
+    "openReader": "この箇所をリーダーで開く",
+    "markDone": "このセッションを完了にする",
+    "done": "完了",
+    "pending": "保存中…",
+    "reflectionLabel": "この旅から何を持ち帰りますか？",
+    "reflectionSubmit": "旅を終える",
+    "completedTitle": "旅を完了しました",
+    "signInToTrack": "サインインすると各セッションの進み具合を保存できます。",
+    "questionsTitle": "考えてみたい問い",
+    "errors": {
+      "notAvailable": "この旅は現在ご利用いただけません。",
+      "reflectionTooLong": "振り返りが長すぎます。2,000文字以内にしてください。",
+      "generic": "問題が発生しました。もう一度お試しください。"
     }
   }
 }

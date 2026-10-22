@@ -1,9 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
+import { revalidateJourneyAdmin } from "@/lib/catalog/revalidate";
 import { readInteger, readOptionalText, readText, type AdminFormState, type FieldErrors } from "@/lib/catalog/form";
 import {
   createJourney,
@@ -46,10 +46,8 @@ function invalid(error: { issues: { path: PropertyKey[]; message: string }[] }):
   return { fieldErrors, formError: null, savedAt: null };
 }
 
-function refresh(journeyId: string) {
-  revalidatePath(listPath);
-  revalidatePath(adminRoutes.adminJourney(journeyId));
-}
+// The admin pages, plus the public journey and book pages a published journey shows on.
+const refresh = revalidateJourneyAdmin;
 
 export async function createJourneyAction(_previous: AdminFormState, formData: FormData): Promise<AdminFormState> {
   await requireAdmin({ next: `${listPath}/new` });

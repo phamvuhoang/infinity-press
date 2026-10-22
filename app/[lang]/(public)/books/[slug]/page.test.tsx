@@ -5,6 +5,7 @@ import BookPage from "@/app/[lang]/(public)/books/[slug]/page";
 import type { CatalogBookPage } from "@/lib/catalog/public-types";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getBookPage } from "@/lib/data/catalog";
+import { getPublishedJourneysForBook } from "@/lib/data/journeys";
 import { getKnowledgeForBook } from "@/lib/data/knowledge";
 import { getBookAcceptsQuestions } from "@/lib/data/catalog";
 import { getBookReviews } from "@/lib/data/reviews";
@@ -38,6 +39,7 @@ vi.mock("@/lib/data/catalog", () => ({
   getBookPage: vi.fn(),
 }));
 vi.mock("@/lib/data/knowledge", () => ({ getKnowledgeForBook: vi.fn() }));
+vi.mock("@/lib/data/journeys", () => ({ getPublishedJourneysForBook: vi.fn() }));
 vi.mock("@/lib/data/reviews", () => ({ getBookReviews: vi.fn() }));
 
 const BOOK_ID = "30000000-0000-4000-8000-000000000001";
@@ -93,6 +95,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   viewer.props = null;
   vi.mocked(getBookReviews).mockResolvedValue([]);
+  vi.mocked(getPublishedJourneysForBook).mockResolvedValue([]);
   vi.mocked(getServerEnv).mockReturnValue({ siteUrl: "https://infinitybooks.test" } as ReturnType<typeof getServerEnv>);
 });
 
@@ -272,5 +275,41 @@ describe("BookPage reviews", () => {
     render(await BookPage(paramsFor("en")));
     expect(screen.queryByRole("link", { name: "Ask the editors" })).toBeNull();
     expect(screen.getByRole("link", { name: "Write a review" })).toBeInTheDocument();
+  });
+});
+
+describe("BookPage reading journeys", () => {
+  it("links each published journey of the book with its session count", async () => {
+    vi.mocked(getBookPage).mockResolvedValue(makeBook());
+    vi.mocked(getKnowledgeForBook).mockResolvedValue([]);
+    vi.mocked(getPublishedJourneysForBook).mockResolvedValue([
+      {
+        id: "40000000-0000-4000-8000-000000000001",
+        slug: "still-water",
+        title: "Still Water",
+        summary: "Twenty-one quiet mornings.",
+        sessionCount: 21,
+        bookId: BOOK_ID,
+        bookSlug: "harbour-lights",
+        bookTitle: "Harbour Lights",
+        editionId: "edition-1",
+        languageCode: "en",
+        coverUrl: null,
+      },
+    ]);
+
+    render(await BookPage(paramsFor("en")));
+
+    expect(getPublishedJourneysForBook).toHaveBeenCalledWith("en", BOOK_ID);
+    const list = screen.getByRole("list", { name: "Reading journeys" });
+    expect(within(list).getByRole("link", { name: "Still Water" })).toHaveAttribute("href", "/en/journeys/still-water");
+    expect(within(list).getByText("21 sessions")).toBeInTheDocument();
+  });
+
+  it("renders no journey list when the book has none", async () => {
+    vi.mocked(getBookPage).mockResolvedValue(makeBook());
+    vi.mocked(getKnowledgeForBook).mockResolvedValue([]);
+    render(await BookPage(paramsFor("en")));
+    expect(screen.queryByRole("list", { name: "Reading journeys" })).toBeNull();
   });
 });

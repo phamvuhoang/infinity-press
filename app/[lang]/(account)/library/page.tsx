@@ -11,11 +11,13 @@ import { ProgressLine } from "@/components/brand/progress-line";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
+import { getMyJourneys } from "@/lib/data/journeys";
 import { getLibrary } from "@/lib/data/library";
 import { getShelfRecommendations } from "@/lib/data/recommendations";
 import { listMySharedQuotes } from "@/lib/data/shared-quotes";
 import { isLocale, withLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
+import { fillTemplate } from "@/lib/i18n/format";
 import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { getRequestId } from "@/lib/observability/request-id";
 
@@ -24,11 +26,13 @@ export default async function LibraryPage({ params }: { params: Promise<{ lang: 
   if (!isLocale(locale)) notFound();
 
   await requireUser(locale, withLocale(locale, "/library"));
-  const [dictionary, items, sharedQuotes] = await Promise.all([
+  const [dictionary, items, sharedQuotes, journeys] = await Promise.all([
     getDictionary(locale),
     getLibrary(locale),
     // The link is a convenience: a failed read (already logged) hides it rather than the shelf.
     listMySharedQuotes().catch(() => []),
+    // Same for the journeys section: a failed read (already logged) hides it.
+    getMyJourneys(locale).catch(() => []),
   ]);
   const copy = dictionary.library;
 
@@ -70,6 +74,33 @@ export default async function LibraryPage({ params }: { params: Promise<{ lang: 
                 {copy.quotes.link}
               </Link>
             </p>
+          ) : null}
+
+          {/* S20: journeys are free, so a reader can be on one without owning a book; the section
+              therefore sits outside the shelf's own empty state. */}
+          {journeys.length > 0 ? (
+            <section aria-labelledby="journeys-title" className="mb-12 border-b border-sand pb-10">
+              <h2 className="mb-5 font-serif text-[1.625rem] font-normal" id="journeys-title">
+                {dictionary.journeys.libraryTitle}
+              </h2>
+              <ul className="grid gap-6 sm:grid-cols-2">
+                {journeys.map((journey) => (
+                  <li key={journey.id}>
+                    <Link className="font-serif text-xl leading-snug hover:text-forest" href={getCatalogRoutes(locale).journey(journey.slug)}>
+                      {journey.title}
+                    </Link>
+                    <p className="mt-1 text-[0.8125rem] text-sage-text">
+                      {fillTemplate(dictionary.journeys.sessionsDone, { done: journey.completedPositions.length, total: journey.sessionCount })}
+                      {journey.completed ? ` · ${dictionary.journeys.completedTitle}` : null}
+                    </p>
+                    <ProgressLine
+                      className="mt-2"
+                      percent={journey.sessionCount > 0 ? Math.min(100, Math.round((journey.completedPositions.length / journey.sessionCount) * 100)) : 0}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
           ) : null}
 
           {featured ? (

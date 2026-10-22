@@ -35,3 +35,11 @@ export function revalidateKnowledgeHub(kind: "idea" | "article", id: string) {
   revalidatePath("/admin/articles");
   revalidatePath(`/admin/${kind === "idea" ? "ideas" : "articles"}/${id}`);
 }
+
+// S20: a published journey shows as a card on its book's prerendered page, under the locale layout.
+// The journey page, the session pages, and the library are dynamic and need nothing here.
+export function revalidateJourneyAdmin(journeyId: string) {
+  revalidatePath("/admin/journeys");
+  revalidatePath(`/admin/journeys/${journeyId}`);
+  revalidateStorefront();
+}

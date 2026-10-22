@@ -21,11 +21,12 @@ import { catalogStaticParams } from "@/lib/catalog/static-params";
 import { arePaymentsEnabled } from "@/lib/commerce/payment-provider";
 import { getServerEnv } from "@/lib/config/server-env";
 import { getBookAcceptsQuestions, getBookPage } from "@/lib/data/catalog";
+import { getPublishedJourneysForBook } from "@/lib/data/journeys";
 import { getKnowledgeForBook } from "@/lib/data/knowledge";
 import { getBookReviews } from "@/lib/data/reviews";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
-import { fillTemplate } from "@/lib/i18n/format";
+import { fillCountTemplate, fillTemplate } from "@/lib/i18n/format";
 import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
 import { bookSchema, breadcrumbSchema } from "@/lib/seo/json-ld";
 import { buildPageMetadata, localePaths, SITE_NAME } from "@/lib/seo/metadata";
@@ -82,11 +83,14 @@ export default async function BookPage({ params }: Props) {
 
   // Backlinks and reviews load only after getBookPage passed its public/missing-locale gate, keyed
   // by the id it resolved, so a draft or unlocalized book never reaches the knowledge or review DALs.
-  const [dictionary, knowledgeLinks, reviews, acceptsQuestions] = await Promise.all([
+  const [dictionary, knowledgeLinks, reviews, acceptsQuestions, journeys] = await Promise.all([
     getDictionary(locale),
     getKnowledgeForBook(locale, book.bookId),
     getBookReviews(book.bookId, 5),
     getBookAcceptsQuestions(book.bookId),
+    // The cards are an extra: a failed read (already logged with the request ID) hides them rather
+    // than failing the book page or its prerender.
+    getPublishedJourneysForBook(locale, book.bookId).catch(() => []),
   ]);
   const copy = dictionary.catalog;
   const routes = getCatalogRoutes(locale);
@@ -165,6 +169,21 @@ export default async function BookPage({ params }: Props) {
             <Suspense fallback={null}>
               <ActionErrorBanner messages={copy.actionErrors} />
             </Suspense>
+
+            {journeys.length > 0 ? (
+              <ul aria-label={dictionary.journeys.libraryTitle} className="mt-6 space-y-3">
+                {journeys.map((journey) => (
+                  <li className="border border-hairline px-5 py-4" key={journey.id}>
+                    <p className="text-xs font-medium tracking-[0.1em] text-sage-text uppercase">{dictionary.journeys.eyebrow}</p>
+                    <Link className="mt-1 block font-serif text-xl hover:text-forest" href={routes.journey(journey.slug)}>
+                      {journey.title}
+                    </Link>
+                    {journey.summary ? <p className="mt-1 text-[0.9375rem] text-ink-soft">{journey.summary}</p> : null}
+                    <p className="mt-1 text-[0.8125rem] text-sage-text">{fillCountTemplate(locale, journey.sessionCount, dictionary.journeys.sessionCount)}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
 
             {book.retailLinks.length > 0 ? (
               <section aria-labelledby="book-retail" className="mt-6">

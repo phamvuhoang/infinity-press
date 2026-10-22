@@ -138,7 +138,11 @@
       "title": "Paperback",
       "intro": "Buy the printed book at:",
       "listPrice": "List price {price}",
-      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+      "labels": {
+        "shopee": "Shopee",
+        "fahasa": "Fahasa",
+        "tiki": "Tiki"
+      }
     },
     "browseAll": "Browse all books",
     "featuredEyebrow": "Featured",
@@ -686,6 +690,33 @@
       "authorReply": "The editors' reply:",
       "open": "Open your review",
       "signOff": "Happy reading,\nInfinity Books Press"
+    }
+  },
+  "journeys": {
+    "eyebrow": "Reading journey",
+    "libraryTitle": "Reading journeys",
+    "start": "Start the journey",
+    "continue": "Continue",
+    "sessionsDone": "{done}/{total} sessions done",
+    "sessionOf": "Session {position} of {total}",
+    "sessionCount": {
+      "one": "{count} session",
+      "other": "{count} sessions"
+    },
+    "empty": "This journey has no sessions yet.",
+    "openReader": "Open the reader at this passage",
+    "markDone": "Mark this session done",
+    "done": "Done",
+    "pending": "Saving…",
+    "reflectionLabel": "What will you take with you from this journey?",
+    "reflectionSubmit": "Finish the journey",
+    "completedTitle": "Journey completed",
+    "signInToTrack": "Sign in to save your progress through each session.",
+    "questionsTitle": "Questions to sit with",
+    "errors": {
+      "notAvailable": "This journey is not available right now.",
+      "reflectionTooLong": "Your reflection is too long. Keep it under 2,000 characters.",
+      "generic": "Something went wrong. Try again."
     }
   }
 }

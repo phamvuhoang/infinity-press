@@ -138,7 +138,11 @@
       "title": "Sách giấy",
       "intro": "Mua bản in tại:",
       "listPrice": "Giá niêm yết {price}",
-      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+      "labels": {
+        "shopee": "Shopee",
+        "fahasa": "Fahasa",
+        "tiki": "Tiki"
+      }
     },
     "browseAll": "Xem tất cả sách",
     "featuredEyebrow": "Nổi bật",
@@ -686,6 +690,33 @@
       "authorReply": "Phản hồi từ ban biên tập:",
       "open": "Mở đánh giá của bạn",
       "signOff": "Chúc bạn đọc vui,\nInfinity Books Press"
+    }
+  },
+  "journeys": {
+    "eyebrow": "Hành trình đọc",
+    "libraryTitle": "Hành trình đọc",
+    "start": "Bắt đầu",
+    "continue": "Tiếp tục",
+    "sessionsDone": "Đã xong {done}/{total} buổi",
+    "sessionOf": "Buổi {position} / {total}",
+    "sessionCount": {
+      "one": "{count} buổi",
+      "other": "{count} buổi"
+    },
+    "empty": "Hành trình này chưa có buổi nào.",
+    "openReader": "Mở reader tại đoạn này",
+    "markDone": "Đánh dấu đã xong",
+    "done": "Đã xong",
+    "pending": "Đang lưu…",
+    "reflectionLabel": "Bạn mang theo điều gì sau hành trình này?",
+    "reflectionSubmit": "Hoàn thành hành trình",
+    "completedTitle": "Đã hoàn thành hành trình",
+    "signInToTrack": "Đăng nhập để lưu tiến độ từng buổi.",
+    "questionsTitle": "Câu hỏi để suy ngẫm",
+    "errors": {
+      "notAvailable": "Hành trình này hiện không khả dụng.",
+      "reflectionTooLong": "Phần suy ngẫm quá dài. Vui lòng viết dưới 2.000 ký tự.",
+      "generic": "Đã có lỗi xảy ra. Vui lòng thử lại."
     }
   }
 }
