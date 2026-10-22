@@ -8,6 +8,7 @@ import {
   getMyJourneys,
   getPublishedJourney,
   JourneyNotAvailableError,
+  JourneyReflectionTooLongError,
   markJourneySession,
 } from "@/lib/data/journeys";
 import { fakeSupabaseClient } from "@/lib/data/supabase-test-client";
@@ -189,6 +190,29 @@ describe("journey RPCs", () => {
     useSession({ rpc: { data: null, error: { code, message: "refused" } } });
     await expect(markJourneySession(JOURNEY_ID, 1)).rejects.toBeInstanceOf(JourneyNotAvailableError);
     await expect(completeJourney(JOURNEY_ID, "x")).rejects.toBeInstanceOf(JourneyNotAvailableError);
+  });
+
+  it("rejects a reflection over 2000 characters before the RPC, counting as the RPC does", async () => {
+    const fake = useSession({ rpc: { data: null, error: null } });
+    await expect(completeJourney(JOURNEY_ID, "a".repeat(2001))).rejects.toBeInstanceOf(JourneyReflectionTooLongError);
+    expect(fake.rpc).not.toHaveBeenCalled();
+    // Surrounding spaces are trimmed and an astral character is one character, as in the database.
+    await completeJourney(JOURNEY_ID, `  ${"😀".repeat(2000)}  `);
+    expect(fake.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a malformed journey id or position before any query", async () => {
+    const fake = useSession({ rpc: { data: null, error: null } });
+    await expect(markJourneySession("not-a-uuid", 1)).rejects.toBeInstanceOf(JourneyNotAvailableError);
+    await expect(markJourneySession(JOURNEY_ID, 0)).rejects.toBeInstanceOf(JourneyNotAvailableError);
+    await expect(markJourneySession(JOURNEY_ID, 1.5)).rejects.toBeInstanceOf(JourneyNotAvailableError);
+    await expect(getMyJourneyProgress("not-a-uuid")).resolves.toEqual({
+      completedPositions: [],
+      completed: false,
+      reflection: null,
+    });
+    expect(fake.rpc).not.toHaveBeenCalled();
+    expect(fake.from).not.toHaveBeenCalled();
   });
 
   it("does not disguise other database errors as unavailability", async () => {

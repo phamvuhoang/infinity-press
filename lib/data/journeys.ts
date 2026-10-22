@@ -30,6 +30,20 @@ export class JourneyNotAvailableError extends Error {
   }
 }
 
+// The RPC's own limit (journey_completions.reflection), checked first so a long text is not
+// reported as an unavailable journey.
+export const REFLECTION_MAX_LENGTH = 2000;
+
+export class JourneyReflectionTooLongError extends Error {
+  constructor() {
+    super(`A reflection can be at most ${REFLECTION_MAX_LENGTH} characters.`);
+    this.name = "JourneyReflectionTooLongError";
+  }
+}
+
+const journeyIdSchema = z.string().uuid();
+const positionSchema = z.number().int().min(1).max(60);
+
 export type JourneySummaryDTO = {
   id: string;
   slug: string;
@@ -176,6 +190,7 @@ export async function getPublishedJourneysForBook(locale: Locale, bookId: string
 }
 
 export async function getMyJourneyProgress(journeyId: string): Promise<JourneyProgressDTO> {
+  if (!journeyIdSchema.safeParse(journeyId).success) return { completedPositions: [], completed: false, reflection: null };
   const supabase = await createClient();
   const [progress, completion] = await Promise.all([
     supabase.from("journey_progress").select("position").eq("journey_id", journeyId),
@@ -226,6 +241,9 @@ export async function getMyJourneys(locale: Locale): Promise<(JourneySummaryDTO 
 }
 
 export async function markJourneySession(journeyId: string, position: number): Promise<void> {
+  if (!journeyIdSchema.safeParse(journeyId).success || !positionSchema.safeParse(position).success) {
+    throw new JourneyNotAvailableError();
+  }
   const { error } = await (await createClient()).rpc("mark_journey_session", {
     p_journey_id: journeyId,
     p_position: position,
@@ -235,6 +253,11 @@ export async function markJourneySession(journeyId: string, position: number): P
 }
 
 export async function completeJourney(journeyId: string, reflection: string | null): Promise<void> {
+  if (!journeyIdSchema.safeParse(journeyId).success) throw new JourneyNotAvailableError();
+  // Same measure as the RPC: btrim strips spaces only, char_length counts code points.
+  if ([...(reflection ?? "").replace(/^ +| +$/g, "")].length > REFLECTION_MAX_LENGTH) {
+    throw new JourneyReflectionTooLongError();
+  }
   const { error } = await (await createClient()).rpc("complete_journey", {
     p_journey_id: journeyId,
     p_reflection: reflection ?? "",

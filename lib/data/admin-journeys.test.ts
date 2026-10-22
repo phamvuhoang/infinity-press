@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
   createJourney,
+  deleteSession,
   DuplicateJourneySlugError,
   getAdminJourney,
   JourneyEditionMismatchError,
@@ -17,6 +18,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn() }));
+const { REQUEST_ID } = vi.hoisted(() => ({ REQUEST_ID: "70000000-0000-4000-8000-000000000001" }));
+vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers({ "x-request-id": REQUEST_ID })) }));
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
@@ -64,6 +67,30 @@ describe("setJourneyStatus", () => {
       ],
     });
     await expect(setJourneyStatus(JOURNEY_ID, "published")).rejects.toBeInstanceOf(JourneyNotReadyError);
+  });
+
+  it("requires English for an edition whose language is not a UI locale", async () => {
+    const ready = (locales: string[]) => ({
+      data: { session_count: 2, edition: { language_code: "fr" }, localizations: locales.map((locale) => ({ locale })) },
+      error: null,
+    });
+    useAdmin({ reading_journeys: [ready(["vi"])] });
+    await expect(setJourneyStatus(JOURNEY_ID, "published")).rejects.toBeInstanceOf(JourneyNotReadyError);
+
+    const { calls } = useAdmin({ reading_journeys: [ready(["en"]), { data: null, error: null }] });
+    await setJourneyStatus(JOURNEY_ID, "published");
+    expect(argsOf(calls.reading_journeys, "update")).toEqual([{ status: "published" }]);
+  });
+
+  it("logs a database failure with its code and request ID, not its message", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    useAdmin({ journey_sessions: [{ data: null, error: { code: "08006", message: "secret detail" } }] });
+    await expect(deleteSession(JOURNEY_ID)).rejects.toEqual(new Error("deleteSession failed."));
+    expect(log).toHaveBeenCalledWith("Journey admin operation failed.", {
+      operation: "deleteSession",
+      code: "08006",
+      requestId: REQUEST_ID,
+    });
   });
 
   it("publishes a ready journey and authorizes before building the client", async () => {

@@ -1,11 +1,13 @@
 import "server-only";
 
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { JOURNEY_SLUG } from "@/lib/data/journeys";
-import { locales, type Locale } from "@/lib/i18n/config";
+import { isLocale, locales, type Locale } from "@/lib/i18n/config";
+import { getRequestId } from "@/lib/observability/request-id";
 import { flattenToc, type FlatTocEntry } from "@/lib/reader/toc";
 import type { ReaderLocator, ReaderTocEntry } from "@/lib/reader/types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -25,7 +27,7 @@ export class JourneyEditionMismatchError extends Error {
 
 export class JourneyNotReadyError extends Error {
   constructor() {
-    super("Add at least one session and a title in the edition's language before publishing.");
+    super("Add at least one session and a title in the edition's language (or English) before publishing.");
     this.name = "JourneyNotReadyError";
   }
 }
@@ -96,8 +98,18 @@ export type AdminJourneyDTO = {
 
 type DatabaseError = { code?: string; message: string };
 
-function failure(operation: string, error: DatabaseError): Error {
+async function currentRequestId(): Promise<string | null> {
+  try {
+    return getRequestId(await headers());
+  } catch {
+    return null;
+  }
+}
+
+// Raw database text never leaves this module; the code goes to the log with the request ID.
+async function failure(operation: string, error: DatabaseError): Promise<Error> {
   if (error.code === "23505" && error.message.includes("slug")) return new DuplicateJourneySlugError();
+  console.error("Journey admin operation failed.", { operation, code: error.code ?? null, requestId: await currentRequestId() });
   return new Error(`${operation} failed.`, { cause: error });
 }
 
@@ -132,7 +144,7 @@ export async function listAdminJourneys(): Promise<AdminJourneyListItemDTO[]> {
       "id, slug, status, session_count, book_id, edition_id, updated_at, edition:editions(language_code), localizations:journey_localizations(locale, title), book:books(book_localizations(locale, title))",
     )
     .order("updated_at", { ascending: false });
-  if (error) throw failure("listAdminJourneys", error);
+  if (error) throw await failure("listAdminJourneys", error);
   return ((data ?? []) as unknown as ListRow[]).map((row) => {
     const language = row.edition?.language_code ?? "en";
     return {
@@ -180,7 +192,7 @@ export async function getAdminJourney(id: string): Promise<AdminJourneyDTO> {
     )
     .eq("id", id)
     .maybeSingle();
-  if (error) throw failure("getAdminJourney", error);
+  if (error) throw await failure("getAdminJourney", error);
   if (!data) notFound();
   const row = data as unknown as DetailRow;
 
@@ -192,7 +204,7 @@ export async function getAdminJourney(id: string): Promise<AdminJourneyDTO> {
       .select("toc_json")
       .eq("id", publicationId)
       .maybeSingle();
-    if (tocError) throw failure("getAdminJourney", tocError);
+    if (tocError) throw await failure("getAdminJourney", tocError);
     const stored: unknown = publication?.toc_json;
     toc = Array.isArray(stored) ? flattenToc(stored as ReaderTocEntry[]) : [];
   }
@@ -235,7 +247,7 @@ export async function createJourney(input: { bookId: string; editionId: string; 
     .eq("id", editionId)
     .eq("book_id", bookId)
     .maybeSingle();
-  if (editionError) throw failure("createJourney", editionError);
+  if (editionError) throw await failure("createJourney", editionError);
   if (!edition) throw new JourneyEditionMismatchError();
 
   const { data, error } = await supabase
@@ -243,7 +255,7 @@ export async function createJourney(input: { bookId: string; editionId: string; 
     .insert({ book_id: bookId, edition_id: editionId, slug })
     .select("id")
     .single();
-  if (error) throw failure("createJourney", error);
+  if (error) throw await failure("createJourney", error);
   return { journeyId: (data as { id: string }).id };
 }
 
@@ -261,7 +273,7 @@ export async function updateJourneyLocalization(
       { journey_id: uuid.parse(journeyId), locale: parsedLocale, title, summary: summary || null },
       { onConflict: "journey_id,locale" },
     );
-  if (error) throw failure("updateJourneyLocalization", error);
+  if (error) throw await failure("updateJourneyLocalization", error);
 }
 
 export async function upsertSession(
@@ -283,7 +295,7 @@ export async function upsertSession(
     )
     .select("id")
     .single();
-  if (error) throw failure("upsertSession", error);
+  if (error) throw await failure("upsertSession", error);
   return { sessionId: (data as { id: string }).id };
 }
 
@@ -301,13 +313,13 @@ export async function updateSessionLocalization(
       { session_id: uuid.parse(sessionId), locale: parsedLocale, title, guide_md: guideMd || null, questions },
       { onConflict: "session_id,locale" },
     );
-  if (error) throw failure("updateSessionLocalization", error);
+  if (error) throw await failure("updateSessionLocalization", error);
 }
 
 export async function deleteSession(sessionId: string): Promise<void> {
   await requireAdmin();
   const { error } = await createAdminClient().from("journey_sessions").delete().eq("id", uuid.parse(sessionId));
-  if (error) throw failure("deleteSession", error);
+  if (error) throw await failure("deleteSession", error);
 }
 
 export async function setJourneyStatus(journeyId: string, status: JourneyStatus): Promise<void> {
@@ -322,15 +334,18 @@ export async function setJourneyStatus(journeyId: string, status: JourneyStatus)
       .select("session_count, edition:editions(language_code), localizations:journey_localizations(locale)")
       .eq("id", id)
       .maybeSingle();
-    if (error) throw failure("setJourneyStatus", error);
+    if (error) throw await failure("setJourneyStatus", error);
     const row = data as { session_count: number; edition: { language_code: string } | null; localizations: { locale: string }[] } | null;
     if (!row) throw new Error("setJourneyStatus failed.");
-    const language = row.edition?.language_code;
-    if (row.session_count < 1 || !row.localizations.some((localization) => localization.locale === language)) {
+    // Localizations exist only in UI locales; an edition in any other language (fr, la, ...) needs
+    // English, the next step of the read fallback.
+    const editionLanguage = row.edition?.language_code ?? "en";
+    const required = isLocale(editionLanguage) ? editionLanguage : "en";
+    if (row.session_count < 1 || !row.localizations.some((localization) => localization.locale === required)) {
       throw new JourneyNotReadyError();
     }
   }
 
   const { error } = await supabase.from("reading_journeys").update({ status: nextStatus }).eq("id", id);
-  if (error) throw failure("setJourneyStatus", error);
+  if (error) throw await failure("setJourneyStatus", error);
 }
