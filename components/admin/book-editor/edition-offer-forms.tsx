@@ -312,7 +312,7 @@ export function SampleFullForm({ action, sampleFull }: { action: FormAction; sam
         <input className="size-4 shrink-0 accent-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest" aria-describedby="sample-full-help" defaultChecked={sampleFull} id="sample-full" name="full" type="checkbox" />
         Open the whole book as a sample
       </label>
-      <p className="text-sm text-ink-soft" id="sample-full-help">Only free editions can be opened in full (the database refuses otherwise).</p>
+      <p className="text-sm text-ink-soft" id="sample-full-help">Only free editions can be opened in full; the database refuses otherwise.</p>
       <SubmitButton pendingLabel="Saving…">Save sample</SubmitButton>
     </form>
   );
