@@ -1942,6 +1942,185 @@ export type Database = {
         }
         Relationships: []
       }
+      journey_completions: {
+        Row: {
+          completed_at: string
+          journey_id: string
+          profile_id: string
+          reflection: string | null
+        }
+        Insert: {
+          completed_at?: string
+          journey_id: string
+          profile_id: string
+          reflection?: string | null
+        }
+        Update: {
+          completed_at?: string
+          journey_id?: string
+          profile_id?: string
+          reflection?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_completions_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "reading_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_completions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_localizations: {
+        Row: {
+          journey_id: string
+          locale: string
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          journey_id: string
+          locale: string
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          journey_id?: string
+          locale?: string
+          summary?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_localizations_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "reading_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      journey_progress: {
+        Row: {
+          completed_at: string
+          journey_id: string
+          position: number
+          profile_id: string
+        }
+        Insert: {
+          completed_at?: string
+          journey_id: string
+          position: number
+          profile_id: string
+        }
+        Update: {
+          completed_at?: string
+          journey_id?: string
+          position?: number
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_progress_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "reading_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_progress_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_session_localizations: {
+        Row: {
+          guide_md: string | null
+          locale: string
+          questions: Json
+          session_id: string
+          title: string
+        }
+        Insert: {
+          guide_md?: string | null
+          locale: string
+          questions?: Json
+          session_id: string
+          title: string
+        }
+        Update: {
+          guide_md?: string | null
+          locale?: string
+          questions?: Json
+          session_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_session_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "journey_session_localizations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "journey_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_sessions: {
+        Row: {
+          end_locator: Json | null
+          id: string
+          journey_id: string
+          position: number
+          start_locator: NonNullable<Json>
+        }
+        Insert: {
+          end_locator?: Json | null
+          id?: string
+          journey_id: string
+          position: number
+          start_locator: NonNullable<Json>
+        }
+        Update: {
+          end_locator?: Json | null
+          id?: string
+          journey_id?: string
+          position?: number
+          start_locator?: NonNullable<Json>
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_sessions_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "reading_journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       library_items: {
         Row: {
           added_at: string
@@ -2949,6 +3128,54 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ebook_publications"
             referencedColumns: ["id", "version"]
+          },
+        ]
+      }
+      reading_journeys: {
+        Row: {
+          book_id: string
+          created_at: string
+          edition_id: string
+          id: string
+          session_count: number
+          slug: string
+          status: Database["public"]["Enums"]["content_status"]
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          edition_id: string
+          id?: string
+          session_count?: number
+          slug: string
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          edition_id?: string
+          id?: string
+          session_count?: number
+          slug?: string
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_journeys_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_journeys_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4260,6 +4487,10 @@ export type Database = {
           version: number
         }[]
       }
+      complete_journey: {
+        Args: { p_journey_id: string; p_reflection: string }
+        Returns: undefined
+      }
       complete_notification_outbox: {
         Args: {
           p_id: string
@@ -4515,6 +4746,10 @@ export type Database = {
         Returns: Json
       }
       knowledge_uuid_ok: { Args: { p_value: Json }; Returns: boolean }
+      mark_journey_session: {
+        Args: { p_journey_id: string; p_position: number }
+        Returns: undefined
+      }
       mask_email: { Args: { p_email: string }; Returns: string }
       my_library_editions: {
         Args: { p_locale: string }
