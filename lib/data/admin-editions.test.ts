@@ -7,7 +7,6 @@ import {
   createOffer,
   DuplicateEditionError,
   EditionIdentityLockedError,
-  editionIsFree,
   getAdminEdition,
   listPricingDefaults,
   SampleNotFreeError,
@@ -298,19 +297,6 @@ describe("editorial review", () => {
   it("rejects a malformed edition id before calling the database", async () => {
     await expect(setEditionReview("nope", { state: "approved", note: null })).rejects.toThrow();
     expect(createClient).not.toHaveBeenCalled();
-  });
-});
-
-describe("editionIsFree", () => {
-  const offer = (priceMinor: number, active: boolean, isDefault: boolean) =>
-    ({ priceMinor, active, isDefault }) as Parameters<typeof editionIsFree>[0][number];
-
-  it("mirrors admin_set_sample_full: a free active default offer, or no active offer at all", () => {
-    expect(editionIsFree([offer(0, true, true)])).toBe(true);
-    expect(editionIsFree([])).toBe(true);
-    expect(editionIsFree([offer(50000, false, true)])).toBe(true);
-    expect(editionIsFree([offer(50000, true, true)])).toBe(false);
-    expect(editionIsFree([offer(0, false, true), offer(50000, true, false)])).toBe(false);
   });
 });
 

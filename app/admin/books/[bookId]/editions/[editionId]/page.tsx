@@ -21,7 +21,7 @@ import {
 import { ProvenanceForm, ReviewForm } from "@/components/admin/book-editor/edition-editorial-forms";
 import { EpubUploadForm } from "@/components/admin/epub-upload-form";
 import { requireAdmin } from "@/lib/auth/admin";
-import { editionIsFree, getAdminEdition, listPricingDefaults } from "@/lib/data/admin-editions";
+import { getAdminEdition, listPricingDefaults } from "@/lib/data/admin-editions";
 import { getAdminBook } from "@/lib/data/books";
 import { getPublicationVersionHistory } from "@/lib/data/publications";
 import { listContentLanguages } from "@/lib/i18n/settings";
@@ -144,7 +144,6 @@ export default async function AdminEditionPage({ params }: { params: Promise<{ b
             <div className="mt-6">
               <SampleFullForm
                 action={setSampleFullAction.bind(null, bookId, editionId)}
-                canOpen={editionIsFree(edition.offers)}
                 sampleFull={edition.sampleFull}
               />
             </div>

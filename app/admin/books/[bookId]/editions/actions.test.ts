@@ -232,7 +232,7 @@ describe("setSampleFullAction", () => {
   it("reports the database's free-edition refusal as a form error", async () => {
     vi.mocked(setSampleFull).mockRejectedValue(new SampleNotFreeError());
     const state = await setSampleFullAction(bookId, editionId, initialAdminFormState, form({ full: "on" }));
-    expect(state.formError).toBe("Only a free edition can open the whole book as a sample");
+    expect(state.formError).toBe("Only a free edition can be opened in full as a sample.");
   });
 
   it("closes without a checkbox value", async () => {

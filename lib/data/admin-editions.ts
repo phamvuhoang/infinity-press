@@ -49,7 +49,7 @@ export class EditionIdentityLockedError extends Error {
 
 export class SampleNotFreeError extends Error {
   constructor() {
-    super("Only a free edition can open the whole book as a sample");
+    super("Only a free edition can be opened in full as a sample.");
     this.name = "SampleNotFreeError";
   }
 }
@@ -64,6 +64,9 @@ function failure(operation: string, error: DatabaseError): Error {
   if (error.code === "23503" && error.message.includes("language")) return new UnknownLanguageError();
   if (error.code === "EB044") return new ProvenanceIncompleteError();
   if (error.code === "23514" && error.message.includes("cannot change")) return new EditionIdentityLockedError();
+  // admin_set_sample_full's only 22023 is its free-edition refusal. Other RPCs use 22023 for bad
+  // input, so this is scoped to that one operation.
+  if (operation === "setSampleFull" && error.code === "22023") return new SampleNotFreeError();
   return new Error(`${operation} failed.`);
 }
 
@@ -411,15 +414,5 @@ export async function setSampleFull(publicationId: string, full: boolean): Promi
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("admin_set_sample_full", { p_publication_id: publicationId, p_full: full });
-  // 22023 is the RPC's free-edition refusal, the only 22023 it raises.
-  if (error?.code === "22023") throw new SampleNotFreeError();
   if (error) throw failure("setSampleFull", error);
-}
-
-// A hint for the editor's checkbox only, never the gate: admin_set_sample_full decides, and the
-// action reports its refusal. Same rule as the RPC (the default offer is active and free, or there is
-// no active offer), minus the offer time windows the DTO does not carry.
-export function editionIsFree(offers: AdminOfferDTO[]): boolean {
-  const shown = offers.find((offer) => offer.isDefault);
-  return (shown?.active === true && shown.priceMinor === 0) || !offers.some((offer) => offer.active);
 }

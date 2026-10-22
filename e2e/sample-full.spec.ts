@@ -51,7 +51,7 @@ test("an admin opens a free edition in full and a signed-out visitor reads to th
   const editionPath = `/admin/books/${book.bookId}/editions/${edition.id}`;
   await signInAs(admin, email, editionPath);
 
-  const toggle = admin.getByLabel("Mở toàn bộ bản này cho đọc thử");
+  const toggle = admin.getByLabel("Open the whole book as a sample");
   const form = admin.locator("form").filter({ has: toggle });
   await expect(toggle).toBeEnabled();
   await toggle.check();
