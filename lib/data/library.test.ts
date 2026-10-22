@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { headers } from "next/headers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { requireUser } from "@/lib/auth/session";
@@ -21,6 +22,7 @@ vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn(), getBookAcceptsQues
 vi.mock("@/lib/data/profiles", () => ({ getCurrentProfile: vi.fn() }));
 vi.mock("@/lib/config/server-env", () => ({ getServerEnv: () => ({ siteUrl: "http://127.0.0.1:3000" }) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("next/headers", () => ({ headers: vi.fn() }));
 
 const BOOK_ID = "30000000-0000-0000-0000-000000000001";
 const EDITION_ID = "40000000-0000-0000-0000-000000000001";
@@ -168,6 +170,8 @@ beforeEach(() => {
     locale: "en",
   });
   vi.mocked(getBookCards).mockResolvedValue([]);
+  vi.mocked(headers).mockResolvedValue(new Headers({ "x-request-id": "req_library123" }) as never);
+  vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 // `owned` is what my_library_editions returns for the caller; an empty list is a reader who owns
@@ -345,6 +349,18 @@ describe("getReadableEdition anchor", () => {
     await expect(getReadableEdition("en", EDITION_ID, { anchor: 5 })).resolves.toMatchObject({ initialLocator: saved });
   });
 
+  it("logs a failed lookup with the request ID", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      readableBookClient({ progress, rpcs: { reader_chunk_locator: { data: null, error: { code: "XX000", message: "boom" } } } }),
+    );
+    await getReadableEdition("en", EDITION_ID, { anchor: 5 });
+    expect(console.error).toHaveBeenCalledWith("Passage anchor lookup failed.", {
+      operation: "reader_chunk_locator",
+      code: "XX000",
+      requestId: "req_library123",
+    });
+  });
+
   it("does not ask for a chunk without an anchor", async () => {
     const client = readableBookClient({ progress });
     vi.mocked(createClient).mockResolvedValue(client);
@@ -381,6 +397,13 @@ describe("getPassageAnchor", () => {
   ])("is null when %s", async (_label, result) => {
     vi.mocked(createClient).mockResolvedValue(readableBookClient({ rpcs: { reader_chunk_for_locator: result } }));
     await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toBeNull();
+    if (result.error) {
+      expect(console.error).toHaveBeenCalledWith("Passage anchor lookup failed.", {
+        operation: "reader_chunk_for_locator",
+        code: "XX000",
+        requestId: "req_library123",
+      });
+    }
   });
 });
 

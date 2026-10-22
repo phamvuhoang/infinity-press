@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(8);
 
 -- Passage anchors: reader_chunk_locator and reader_chunk_for_locator answer only an entitled reader;
 -- sample_chunk_locator answers anyone, but only for an href the sample allowlist lets through.
@@ -22,6 +22,9 @@ insert into public.entitlements (profile_id, book_id, source_type, actor_profile
 select id, 'fa300000-0000-0000-0000-000000000001', 'admin_grant', id, 'fixture', 'active'
 from public.profiles where auth_user_id = 'fa100000-0000-0000-0000-000000000001';
 insert into public.book_samples (publication_id, allowed_hrefs) values ('fa600000-0000-0000-0000-000000000001', '["c1"]');
+insert into public.ebook_resources (publication_id, href, media_type, storage_key, byte_size, sha256, access_class) values
+  ('fa600000-0000-0000-0000-000000000001', 'c1', 'application/xhtml+xml', 'cl/c1.xhtml', 10, 'sha-cl-1', 'sample'),
+  ('fa600000-0000-0000-0000-000000000001', 'c2', 'application/xhtml+xml', 'cl/c2.xhtml', 10, 'sha-cl-2', 'paid');
 insert into public.ebook_search_chunks (publication_id, href, ordinal, plain_text, locator_json) values
   ('fa600000-0000-0000-0000-000000000001', 'c1', 0, 'one', '{"href":"c1","progression":0,"totalProgression":0,"locations":{"position":1},"text":{"highlight":"one"}}'),
   ('fa600000-0000-0000-0000-000000000001', 'c1', 1, 'two', '{"href":"c1","progression":0.5,"totalProgression":0.3,"locations":{"position":2},"text":{"highlight":"two"}}'),
@@ -43,13 +46,18 @@ select is(
   'a stranger gets null from both entitled functions');
 reset role;
 
--- Refused while c2 is not on the allowlist, served once it is (as an anonymous visitor both times).
+-- Refused while c2 is not on the allowlist, served once it is listed and sample-class (as an
+-- anonymous visitor every time).
 create temporary table t_sample (refused text);
 grant all on t_sample to public;
 set local role anon;
 insert into t_sample select public.sample_chunk_locator('fa600000-0000-0000-0000-000000000001', 2) ->> 'href';
 reset role;
 update public.book_samples set allowed_hrefs = '["c1","c2"]' where publication_id = 'fa600000-0000-0000-0000-000000000001';
+set local role anon;
+select is(public.sample_chunk_locator('fa600000-0000-0000-0000-000000000001', 2), null, 'a listed href whose resource is paid is refused');
+reset role;
+update public.ebook_resources set access_class = 'sample' where publication_id = 'fa600000-0000-0000-0000-000000000001' and href = 'c2';
 set local role anon;
 select is(
   array[(select refused from t_sample), public.sample_chunk_locator('fa600000-0000-0000-0000-000000000001', 2) ->> 'href'],

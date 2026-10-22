@@ -9,7 +9,7 @@ import type { PublicationMetadata, ReadingOrderItem, TocEntry } from "@/lib/epub
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { parseBoundedReaderLocator } from "@/lib/reader/annotations";
-import { toReaderResourceHref } from "@/lib/reader/locator-paths";
+import { toReaderResourceHref, toSampleResourceHref } from "@/lib/reader/locator-paths";
 import type { ReaderLocator } from "@/lib/reader/types";
 
 // Reader delivery: minting a short-lived session, re-authorizing it on every request, and
@@ -396,11 +396,6 @@ function projectPositions(
   }
 }
 
-function sampleHref(publicationId: string, href: string): string {
-  const encoded = href.split("/").map(encodeURIComponent).join("/");
-  return `/api/samples/${publicationId}/resources/${encoded}`;
-}
-
 // TOC hrefs routinely carry a fragment (`chapter1.xhtml#sec1`) pointing at a location *within* a
 // document rather than at a different resource: lib/epub/parse.ts resolves the path portion and
 // deliberately re-attaches the fragment for display. Membership therefore has to be tested
@@ -452,7 +447,7 @@ function filterTocToServable(
     const children = filterTocToServable(node.children, servable, publicationId);
     const { path, fragment } = splitTocFragment(node.href);
     if (!servable.has(path)) return children;
-    return [{ title: node.title, href: sampleHref(publicationId, path) + fragment, children }];
+    return [{ title: node.title, href: toSampleResourceHref(publicationId, path) + fragment, children }];
   });
 }
 
@@ -556,7 +551,7 @@ export async function resolveSampleManifest(publicationId: string): Promise<Read
   for (const item of stored.readingOrder) {
     if (!mediaTypeByHref.has(item.href)) continue;
     readingOrderHrefs.add(item.href);
-    readingOrder.push({ href: sampleHref(publicationId, item.href), type: item.mediaType });
+    readingOrder.push({ href: toSampleResourceHref(publicationId, item.href), type: item.mediaType });
   }
 
   // The assets a sample document actually needs to render (its CSS, images, and fonts - Ruling
@@ -569,7 +564,7 @@ export async function resolveSampleManifest(publicationId: string): Promise<Read
   // only a test one. Reserve localeCompare for text shown to humans.
   for (const [href, mediaType] of [...mediaTypeByHref].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
     if (readingOrderHrefs.has(href)) continue;
-    resources.push({ href: sampleHref(publicationId, href), type: mediaType });
+    resources.push({ href: toSampleResourceHref(publicationId, href), type: mediaType });
   }
 
   return {

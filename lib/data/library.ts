@@ -1,5 +1,7 @@
 import "server-only";
 
+import { headers } from "next/headers";
+
 import { requireUser } from "@/lib/auth/session";
 import { getBookAcceptsQuestions, getBookCards } from "@/lib/data/catalog";
 import { getCurrentProfile } from "@/lib/data/profiles";
@@ -7,6 +9,7 @@ import { getServerEnv } from "@/lib/config/server-env";
 import { coverPublicUrl } from "@/lib/catalog/covers";
 import { isLocale, type Locale, locales, withLocale } from "@/lib/i18n/config";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
+import { getRequestId } from "@/lib/observability/request-id";
 import { chunkLocator } from "@/lib/reader/anchor";
 import { FINISHED_TOTAL_PROGRESSION } from "@/lib/reader/completion";
 import { isReaderLocator, parseReaderLocator } from "@/lib/reader/engine";
@@ -63,6 +66,18 @@ export type LibraryItemDTO = {
 
 // The session client is untyped, so the RPC's row shape is pinned from the generated types here.
 type OwnedEditionRow = Database["public"]["Functions"]["my_library_editions"]["Returns"][number];
+
+// A passage lookup that fails still opens the reader (at the saved position); the failure goes to
+// the log with the request ID.
+async function logAnchorFailure(operation: string, cause: { code?: string }): Promise<void> {
+  let requestId: string | null = null;
+  try {
+    requestId = getRequestId(await headers());
+  } catch {
+    // Outside a request scope there is no request ID.
+  }
+  console.error("Passage anchor lookup failed.", { operation, code: cause.code ?? null, requestId });
+}
 
 type LibraryRow = {
   book_id: string;
@@ -227,7 +242,8 @@ export async function getReadableEdition(
       p_publication_id: publicationId,
       p_ordinal: options.anchor,
     });
-    if (!chunkError) anchored = chunkLocator(chunk, (href) => toReaderResourceHref(publicationId, href));
+    if (chunkError) await logAnchorFailure("reader_chunk_locator", chunkError);
+    else anchored = chunkLocator(chunk, (href) => toReaderResourceHref(publicationId, href));
   }
 
   return {
@@ -268,14 +284,22 @@ export async function getPassageAnchor(
     .rpc("my_library_editions", { p_locale: locale })
     .eq("edition_id", editionId)
     .maybeSingle();
-  const publicationId = error ? null : (data as unknown as OwnedEditionRow | null)?.publication_id;
+  if (error) {
+    await logAnchorFailure("my_library_editions", error);
+    return null;
+  }
+  const publicationId = (data as unknown as OwnedEditionRow | null)?.publication_id;
   if (!publicationId) return null;
   const { data: ordinal, error: ordinalError } = await supabase.rpc("reader_chunk_for_locator", {
     p_publication_id: publicationId,
     p_href: locator.href,
     p_progression: locator.progression,
   });
-  return ordinalError || typeof ordinal !== "number" ? null : ordinal;
+  if (ordinalError) {
+    await logAnchorFailure("reader_chunk_for_locator", ordinalError);
+    return null;
+  }
+  return typeof ordinal === "number" ? ordinal : null;
 }
 
 // The editions of ONE work the caller owns, for the legacy `/read/{bookId}` deep link. One edition

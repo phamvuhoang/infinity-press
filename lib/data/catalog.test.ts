@@ -607,6 +607,14 @@ describe("getSampleReaderBook", () => {
     vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: SAMPLE_PUB, sampleFull: false });
 
     await expect(getSampleReaderBook("en", "a-book", null, { anchor: 9 })).resolves.toMatchObject({ initialLocator: null });
+    if (result.error) {
+      expect(console.error).toHaveBeenCalledWith(
+        "Catalog read failed.",
+        expect.objectContaining({ operation: "sample_chunk_locator", code: "XX000", requestId: "req_catalog123" }),
+      );
+    } else {
+      expect(console.error).not.toHaveBeenCalled();
+    }
   });
 
   // A forged or stale id never falls through to the default edition's sample.

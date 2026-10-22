@@ -460,7 +460,9 @@ export async function getSampleReaderBook(
       p_publication_id: sample.publicationId,
       p_ordinal: options.anchor,
     });
-    if (!error) initialLocator = chunkLocator(data, (href) => toSampleResourceHref(sample.publicationId, href));
+    // Logged, not thrown: the sample still opens, at the start.
+    if (error) await failure("sample_chunk_locator", error);
+    else initialLocator = chunkLocator(data, (href) => toSampleResourceHref(sample.publicationId, href));
   }
 
   return {

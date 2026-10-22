@@ -25,8 +25,9 @@ revoke all on function public.reader_chunk_locator(uuid, integer) from public, a
 grant execute on function public.reader_chunk_locator(uuid, integer) to authenticated, service_role;
 
 -- Anonymous visitors too: the publication must be the live publication of a sellable edition (the
--- catalog's predicate), and the chunk's href must pass the sample allowlist exactly as
--- lib/reader/session.ts sampleAllows does - listed, or the whole-book "*".
+-- catalog's predicate), and the chunk's href must pass the same check as lib/reader/session.ts
+-- resolveSampleResource: the whole-book "*" alone, or a listed href whose ebook_resources row is
+-- access_class = 'sample', so a drifted allowlist cannot leak a paid chapter's text.
 create function public.sample_chunk_locator(p_publication_id uuid, p_ordinal integer)
 returns jsonb
 language sql
@@ -44,7 +45,9 @@ as $$
     and c.ordinal = p_ordinal
     and public.edition_is_sellable(ed.id)
     and jsonb_typeof(s.allowed_hrefs) = 'array'
-    and (s.allowed_hrefs ? '*' or s.allowed_hrefs ? c.href);
+    and (s.allowed_hrefs ? '*' or (s.allowed_hrefs ? c.href and exists (
+      select 1 from public.ebook_resources r
+      where r.publication_id = pub.id and r.href = c.href and r.access_class = 'sample')));
 $$;
 revoke all on function public.sample_chunk_locator(uuid, integer) from public;
 grant execute on function public.sample_chunk_locator(uuid, integer) to anon, authenticated, service_role;

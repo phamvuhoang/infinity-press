@@ -29,7 +29,7 @@ export function toReaderResourceHref(publicationId: string, href: string): strin
   return `/api/reader/publications/${publicationId}/resources/${encodeHref(href)}`;
 }
 
-// The href a sample manifest lists for a resource (lib/reader/session.ts sampleHref).
+// The href a sample manifest (lib/reader/session.ts) lists for a resource.
 export function toSampleResourceHref(publicationId: string, href: string): string {
   requirePublicationId(publicationId);
   return `/api/samples/${publicationId}/resources/${encodeHref(href)}`;
