@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
   fieldErrorsFrom,
+  readBoolean,
   parseContributors,
   readInteger,
   readOptionalInteger,
@@ -21,11 +22,13 @@ import {
   DuplicateEditionError,
   EditionIdentityLockedError,
   EditionNotFoundError,
+  getAdminEdition,
   ProvenanceIncompleteError,
   saveEditionProvenance,
   setDefaultEdition,
   setDefaultOffer,
   setEditionReview,
+  setSampleFull,
   UnknownLanguageError,
   updateEdition,
 } from "@/lib/data/admin-editions";
@@ -201,6 +204,34 @@ export async function setReviewAction(
 
   try {
     await setEditionReview(editionId, parsed.data);
+  } catch (error) {
+    return knownFailure(error);
+  }
+  revalidateEdition(bookId, editionId);
+  return saved();
+}
+
+// The whole edition as a free sample. Opening it needs a live EPUB and a free default offer, checked
+// here on the server rather than trusted from the disabled checkbox; closing it is always allowed.
+export async function setSampleFullAction(
+  bookId: string,
+  editionId: string,
+  _previous: AdminFormState,
+  formData: FormData,
+): Promise<AdminFormState> {
+  await requireAdmin({ next: `/admin/books/${bookId}/editions/${editionId}` });
+  const full = readBoolean(formData, "full");
+  // The publication comes from the edition on the server, never from the form.
+  const edition = await getAdminEdition(bookId, editionId);
+  if (!edition.activePublicationId) {
+    return { fieldErrors: {}, formError: "No EPUB version is live for this edition yet.", savedAt: null };
+  }
+  if (full && edition.offers.find((offer) => offer.isDefault)?.priceMinor !== 0) {
+    return { fieldErrors: {}, formError: "Only an edition whose default offer is free can be opened in full.", savedAt: null };
+  }
+
+  try {
+    await setSampleFull(edition.activePublicationId, full);
   } catch (error) {
     return knownFailure(error);
   }

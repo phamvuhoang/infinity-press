@@ -43,6 +43,7 @@ const edition: AdminEditionDTO = {
   status: "draft",
   isDefault: false,
   activePublicationId: null,
+  sampleFull: false,
   identityLocked: false,
   sku: { id: "sku-id", skuCode: "golden-ja-ebook", active: true },
   editorial: { state: "unreviewed", textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, textKind: null, reviewScope: "none", publicVersionNote: null, reviewedAt: null, reviewNote: null },

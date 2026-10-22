@@ -59,6 +59,9 @@ type ReaderClientBaseProps = {
   copy: ReaderCopy;
   // Where "Report an error" goes; the reader adds the place being read. Null in the sample reader.
   reportHref: string | null;
+  // Sample mode only: set when the admin opened the whole edition as a free sample and the visitor is
+  // signed out. The text of a banner that links to signInHref.
+  sampleFullNotice?: string;
 };
 
 export type ReaderClientProps = ReaderClientBaseProps &
@@ -147,6 +150,7 @@ export function ReaderClient({
   reportHref,
   askHref,
   relatedBooks = [],
+  sampleFullNotice,
 }: ReaderClientProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -997,6 +1001,12 @@ export function ReaderClient({
       {depthEnabled && editor ? <ReaderAnnotationEditor chapterTitle={chapterTitle ?? ""} copy={copy} dark={preferences.theme === "dark"} finalFocus={() => menuTriggerRef.current ?? containerRef.current} initialValue={editorInitialValue} mode={editor.mode} onOpenChange={(open) => { if (!open) { setEditor(null); setSelection(null); } }} onSave={saveEditor} open trigger={<button className="sr-only" type="button">{copy.addBookmark}</button>} /> : null}
 
       {finished && !completionDismissed && mode === "entitled" ? <ReaderCompletionPanel askHref={askHref ?? null} copy={copy} dark={preferences.theme === "dark"} libraryHref={libraryHref} reviewHref={reviewHref ?? null} onOpenSaved={(tab) => { setSelection(null); setSidebarTab(tab); setCompletionDismissed(true); if (viewportWidth < 1280) setDrawerOpen(true); }} relatedBooks={relatedBooks} /> : null}
+
+      {mode === "sample" && sampleFullNotice ? (
+        <p className="mx-auto w-full max-w-[34rem] px-4 pb-3 text-center text-sm text-sage-text" data-testid="sample-full-notice">
+          <a className="underline underline-offset-4" href={signInHref}>{sampleFullNotice}</a>
+        </p>
+      ) : null}
 
       {/* `phase === "ready"` is load-bearing, not belt-and-braces: `navigation` initialises to
           `canGoForward: false`, so without it "That is the end of the sample" is on screen from the

@@ -7,6 +7,7 @@ import {
   saveProvenanceAction,
   setDefaultOfferAction,
   setReviewAction,
+  setSampleFullAction,
   updateEditionAction,
 } from "@/app/admin/books/[bookId]/editions/actions";
 import { AdminPageHeader, AdminSection } from "@/components/admin/admin-page-header";
@@ -15,6 +16,7 @@ import {
   DefaultButtonForm,
   EditionForm,
   OfferForm,
+  SampleFullForm,
 } from "@/components/admin/book-editor/edition-offer-forms";
 import { ProvenanceForm, ReviewForm } from "@/components/admin/book-editor/edition-editorial-forms";
 import { EpubUploadForm } from "@/components/admin/epub-upload-form";
@@ -138,6 +140,15 @@ export default async function AdminEditionPage({ params }: { params: Promise<{ b
             Publishing or rolling back here never changes another language&apos;s edition.
           </p>
           <EpubUploadForm bookId={bookId} editionId={editionId} />
+          {edition.activePublicationId ? (
+            <div className="mt-6">
+              <SampleFullForm
+                action={setSampleFullAction.bind(null, bookId, editionId)}
+                canOpen={edition.offers.find((offer) => offer.isDefault)?.priceMinor === 0}
+                sampleFull={edition.sampleFull}
+              />
+            </div>
+          ) : null}
           {versions.length > 0 ? (
             <ul className="mt-6 space-y-1 text-sm">
               {versions.map((version) => (

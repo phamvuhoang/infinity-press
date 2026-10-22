@@ -18,6 +18,7 @@ const edition: AdminEditionDTO = {
   status: "draft",
   isDefault: false,
   activePublicationId: null,
+  sampleFull: false,
   identityLocked: false,
   sku: null,
   offers: [],

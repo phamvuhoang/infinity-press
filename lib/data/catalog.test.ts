@@ -17,7 +17,7 @@ import {
   searchCatalog,
 } from "@/lib/data/catalog";
 import { getCurrentProfile } from "@/lib/data/profiles";
-import { resolveSamplePublicationId } from "@/lib/reader/session";
+import { resolveSamplePublication } from "@/lib/reader/session";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,7 +32,7 @@ vi.mock("next/headers", () => ({ headers: vi.fn() }));
 // is a same-module reference that vi.mock cannot intercept. The getSampleReaderBook tests below
 // exercise getBookPage for real, through mockRpc, matching this file's existing convention instead.
 vi.mock("@/lib/reader/session", () => ({
-  resolveSamplePublicationId: vi.fn(),
+  resolveSamplePublication: vi.fn(),
 }));
 
 const BOOK_ID = "30000000-0000-4000-8000-000000000001";
@@ -513,7 +513,7 @@ describe("getSampleReaderBook", () => {
     });
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toBeNull();
-    expect(resolveSamplePublicationId).not.toHaveBeenCalled();
+    expect(resolveSamplePublication).not.toHaveBeenCalled();
   });
 
   // The sample belongs to an edition: the default one, or the one `?edition=` names.
@@ -530,7 +530,7 @@ describe("getSampleReaderBook", () => {
     });
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toBeNull();
-    expect(resolveSamplePublicationId).not.toHaveBeenCalled();
+    expect(resolveSamplePublication).not.toHaveBeenCalled();
   });
 
   it("returns null when no publication can be resolved", async () => {
@@ -538,7 +538,7 @@ describe("getSampleReaderBook", () => {
       catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
       catalog_book_page: { data: bookPageData({ editions: [english] }), error: null },
     });
-    vi.mocked(resolveSamplePublicationId).mockResolvedValue(null);
+    vi.mocked(resolveSamplePublication).mockResolvedValue(null);
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toBeNull();
   });
@@ -548,15 +548,16 @@ describe("getSampleReaderBook", () => {
       catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
       catalog_book_page: { data: bookPageData({ editions: [english, japanese] }), error: null },
     });
-    vi.mocked(resolveSamplePublicationId).mockResolvedValue("pub-1");
+    vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: "pub-1", sampleFull: false });
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toMatchObject({
       publicationId: "pub-1",
+      sampleFull: false,
       slug: "a-book",
       editionId: "edition-1",
       offer: { offerId: "offer-en", priceMinor: 100 },
     });
-    expect(resolveSamplePublicationId).toHaveBeenCalledWith("edition-1");
+    expect(resolveSamplePublication).toHaveBeenCalledWith("edition-1");
   });
 
   it("opens the sample of the edition the reader selected, with that edition's offer", async () => {
@@ -564,14 +565,15 @@ describe("getSampleReaderBook", () => {
       catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
       catalog_book_page: { data: bookPageData({ editions: [english, japanese] }), error: null },
     });
-    vi.mocked(resolveSamplePublicationId).mockResolvedValue("pub-ja");
+    vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: "pub-ja", sampleFull: true });
 
     await expect(getSampleReaderBook("en", "a-book", "edition-ja")).resolves.toMatchObject({
       publicationId: "pub-ja",
+      sampleFull: true,
       editionId: "edition-ja",
       offer: { offerId: "offer-ja", priceMinor: 500 },
     });
-    expect(resolveSamplePublicationId).toHaveBeenCalledWith("edition-ja");
+    expect(resolveSamplePublication).toHaveBeenCalledWith("edition-ja");
   });
 
   // A forged or stale id never falls through to the default edition's sample.
@@ -582,7 +584,7 @@ describe("getSampleReaderBook", () => {
     });
 
     await expect(getSampleReaderBook("en", "a-book", "edition-forged")).resolves.toBeNull();
-    expect(resolveSamplePublicationId).not.toHaveBeenCalled();
+    expect(resolveSamplePublication).not.toHaveBeenCalled();
   });
 });
 

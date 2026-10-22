@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import type { CreateEditionInput, CreateOfferInput, EditionInput, EditionReviewInput, ProvenanceInput } from "@/lib/catalog/schemas";
+import { isWholeBookSample } from "@/lib/reader/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -92,6 +93,8 @@ export type AdminEditionDTO = {
   // The work's default edition for this language (book_language_editions).
   isDefault: boolean;
   activePublicationId: string | null;
+  // The live publication's sample is the whole book (book_samples.allowed_hrefs = ["*"]).
+  sampleFull: boolean;
   // True once an order or entitlement exists: the language and work then never change.
   identityLocked: boolean;
   sku: { id: string; skuCode: string; active: boolean } | null;
@@ -218,14 +221,18 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
   if (!data) notFound();
   const row = data as unknown as EditionRow;
 
-  const [defaultEdition, entitlements, orderItems] = await Promise.all([
+  const [defaultEdition, entitlements, orderItems, sample] = await Promise.all([
     supabase.from("book_language_editions").select("edition_id").eq("book_id", bookId).eq("language_code", row.language_code).maybeSingle(),
     supabase.from("entitlements").select("id", { count: "exact", head: true }).eq("edition_id", editionId),
     supabase.from("order_items").select("id", { count: "exact", head: true }).eq("edition_id", editionId),
+    row.active_publication_id
+      ? supabase.from("book_samples").select("allowed_hrefs").eq("publication_id", row.active_publication_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
   if (defaultEdition.error) throw failure("getAdminEdition: default edition", defaultEdition.error);
   if (entitlements.error) throw failure("getAdminEdition: entitlements", entitlements.error);
   if (orderItems.error) throw failure("getAdminEdition: order items", orderItems.error);
+  if (sample.error) throw failure("getAdminEdition: sample", sample.error);
 
   const sku = row.skus[0] ?? null;
   const defaultOfferId = oneOrNull(row.default_offer)?.offer_id ?? null;
@@ -243,6 +250,7 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
     status: row.status,
     isDefault: (defaultEdition.data as { edition_id: string } | null)?.edition_id === row.id,
     activePublicationId: row.active_publication_id,
+    sampleFull: isWholeBookSample(sample.data?.allowed_hrefs),
     identityLocked: (entitlements.count ?? 0) > 0 || (orderItems.count ?? 0) > 0,
     sku: sku ? { id: sku.id, skuCode: sku.sku_code, active: sku.active } : null,
     offers: (sku?.offers ?? []).map((offer) => toOfferDto(offer, offer.id === defaultOfferId, now)),
@@ -387,4 +395,14 @@ export async function setEditionReview(editionId: string, input: EditionReviewIn
     p_note: input.note ?? "",
   });
   if (error) throw failure("setEditionReview", error);
+}
+
+// Opens the whole publication as a free sample (["*"]) or puts back the worker's default sample list.
+export async function setSampleFull(publicationId: string, full: boolean): Promise<void> {
+  await requireAdmin();
+  assertUuid(publicationId);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_sample_full", { p_publication_id: publicationId, p_full: full });
+  if (error) throw failure("setSampleFull", error);
 }

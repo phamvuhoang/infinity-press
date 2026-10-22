@@ -1140,6 +1140,23 @@ describe("completion", () => {
     expect(screen.queryByText("99% read")).toBeNull();
   });
 
+  it("shows the whole-book sign-in banner in sample mode only, and only when given", async () => {
+    const notice = "Sign in to save your progress through each session.";
+    const sample = renderReader({ mode: "sample", sampleFullNotice: notice, signInHref: "/vi/sign-in?next=%2Fvi%2Fread-sample%2Fb" });
+    await screen.findByRole("region", { name: "Reader" });
+    expect(screen.getByRole("link", { name: notice })).toHaveAttribute("href", "/vi/sign-in?next=%2Fvi%2Fread-sample%2Fb");
+    sample.unmount();
+
+    const listed = renderReader({ mode: "sample" });
+    await screen.findByRole("region", { name: "Reader" });
+    expect(screen.queryByTestId("sample-full-notice")).toBeNull();
+    listed.unmount();
+
+    renderReader({ mode: "entitled", sampleFullNotice: notice });
+    await screen.findByRole("region", { name: "Reader" });
+    expect(screen.queryByTestId("sample-full-notice")).toBeNull();
+  });
+
   it("shows no completion card in sample mode", async () => {
     renderReader({ mode: "sample", initialLocator: nearlyDone });
 

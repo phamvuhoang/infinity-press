@@ -12,8 +12,9 @@ import {
   resolveEntitledManifest,
   resolveEntitledResource,
   resolveSampleManifest,
-  resolveSamplePublicationId,
+  resolveSamplePublication,
   resolveSampleResource,
+  sampleAllows,
 } from "@/lib/reader/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -493,7 +494,7 @@ describe("resolveSampleResource", () => {
   });
 });
 
-describe("resolveSamplePublicationId", () => {
+describe("resolveSamplePublication", () => {
   it("returns the EDITION's active publication when it is published and has a sample", async () => {
     mockAdminTables({
       editions: { active_publication_id: "pub-1", status: "published", books: { status: "published" } },
@@ -501,7 +502,7 @@ describe("resolveSamplePublicationId", () => {
       book_samples: { allowed_hrefs: ["OEBPS/c1.xhtml"] },
     });
 
-    await expect(resolveSamplePublicationId("edition-1")).resolves.toBe("pub-1");
+    await expect(resolveSamplePublication("edition-1")).resolves.toEqual({ publicationId: "pub-1", sampleFull: false });
   });
 
   // Each of these is a separate reason, and all of them answer null. The page turns null into one
@@ -509,12 +510,12 @@ describe("resolveSamplePublicationId", () => {
   // non-disclosure rule the rest of this module enforces.
   it("returns null when the work is not published", async () => {
     mockAdminTables({ editions: { active_publication_id: "pub-1", status: "published", books: { status: "draft" } } });
-    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
+    await expect(resolveSamplePublication("edition-1")).resolves.toBeNull();
   });
 
   it("returns null when the edition has no active publication", async () => {
     mockAdminTables({ editions: { active_publication_id: null, status: "published", books: { status: "published" } } });
-    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
+    await expect(resolveSamplePublication("edition-1")).resolves.toBeNull();
   });
 
   it("returns null when the active publication is not published", async () => {
@@ -522,7 +523,7 @@ describe("resolveSamplePublicationId", () => {
       editions: { active_publication_id: "pub-1", status: "published", books: { status: "published" } },
       ebook_publications: { id: "pub-1", status: "superseded" },
     });
-    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
+    await expect(resolveSamplePublication("edition-1")).resolves.toBeNull();
   });
 
   it("returns null when the sample allowlist is empty", async () => {
@@ -531,7 +532,7 @@ describe("resolveSamplePublicationId", () => {
       ebook_publications: { id: "pub-1", status: "published" },
       book_samples: { allowed_hrefs: [] },
     });
-    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
+    await expect(resolveSamplePublication("edition-1")).resolves.toBeNull();
   });
 
   it("returns null when there is no sample row at all", async () => {
@@ -540,7 +541,7 @@ describe("resolveSamplePublicationId", () => {
       ebook_publications: { id: "pub-1", status: "published" },
       book_samples: null,
     });
-    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
+    await expect(resolveSamplePublication("edition-1")).resolves.toBeNull();
   });
 
   it("returns null when the edition itself is not published, even with a live publication", async () => {
@@ -549,7 +550,7 @@ describe("resolveSamplePublicationId", () => {
       ebook_publications: { id: "pub-1", status: "published" },
       book_samples: { allowed_hrefs: ["OEBPS/c1.xhtml"] },
     });
-    await expect(resolveSamplePublicationId("edition-1")).resolves.toBeNull();
+    await expect(resolveSamplePublication("edition-1")).resolves.toBeNull();
   });
 });
 
@@ -1057,5 +1058,123 @@ describe("infrastructure failures are not authorization refusals (Ruling CF)", (
     );
 
     await expect(resolveSampleManifest(publicationId)).rejects.toBeInstanceOf(ReaderUnavailableError);
+  });
+});
+
+describe("whole-book sample (allowed_hrefs contains \"*\")", () => {
+  const xhtml = "application/xhtml+xml";
+  const chapterRows = Array.from({ length: 9 }, (_, i) => ({
+    href: `OEBPS/text/chapter${i + 1}.xhtml`,
+    media_type: xhtml,
+    access_class: i === 0 ? "sample" : "paid",
+  }));
+
+  function wholeBookManifestClient(allowedHrefs: unknown[], readingOrderHrefs: string[]) {
+    const manifest = {
+      metadata: { title: "A Book", language: "en", identifier: "urn:x", authors: ["Author"] },
+      readingOrder: readingOrderHrefs.map((href) => ({ href, mediaType: xhtml })),
+      toc: readingOrderHrefs.map((href) => ({ title: href, href, children: [] })),
+    };
+    return adminClient(
+      { book_samples: { allowed_hrefs: allowedHrefs }, ebook_resources: chapterRows },
+      vi.fn().mockResolvedValue({ data: new Blob([JSON.stringify(manifest)]), error: null }),
+    );
+  }
+
+  it("sampleAllows treats \"*\" as every href and otherwise needs an exact match", () => {
+    expect(sampleAllows(["*"], "OEBPS/c9.xhtml")).toBe(true);
+    expect(sampleAllows(["OEBPS/c1.xhtml", "*"], "OEBPS/c9.xhtml")).toBe(true);
+    expect(sampleAllows(["OEBPS/c1.xhtml"], "OEBPS/c1.xhtml")).toBe(true);
+    expect(sampleAllows(["OEBPS/c1.xhtml"], "OEBPS/c9.xhtml")).toBe(false);
+    expect(sampleAllows([], "OEBPS/c1.xhtml")).toBe(false);
+    expect(sampleAllows("*", "OEBPS/c1.xhtml")).toBe(false);
+    expect(sampleAllows(null, "OEBPS/c1.xhtml")).toBe(false);
+  });
+
+  it("serves a paid chapter of this publication when the allowlist is [\"*\"]", async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      adminClient({
+        book_samples: { allowed_hrefs: ["*"] },
+        ebook_resources: { storage_key: "edition/asset/OEBPS/text/chapter9.xhtml", media_type: xhtml, access_class: "paid" },
+      }),
+    );
+
+    await expect(resolveSampleResource(publicationId, "OEBPS/text/chapter9.xhtml")).resolves.toEqual({
+      storageKey: "edition/asset/OEBPS/text/chapter9.xhtml",
+      mediaType: xhtml,
+    });
+    // Still scoped to the requested publication: the wildcard opens this book, not any book.
+    expect(recordedFilters).toContainEqual({ table: "ebook_resources", field: "publication_id", value: publicationId });
+  });
+
+  it("still refuses a paid chapter when the allowlist is the ordinary listed form", async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      adminClient({
+        book_samples: { allowed_hrefs: ["OEBPS/text/chapter1.xhtml"] },
+        ebook_resources: { storage_key: "edition/asset/OEBPS/text/chapter9.xhtml", media_type: xhtml, access_class: "paid" },
+      }),
+    );
+
+    await expect(resolveSampleResource(publicationId, "OEBPS/text/chapter9.xhtml")).rejects.toBeInstanceOf(
+      ReaderAccessDeniedError,
+    );
+  });
+
+  it("lists every resource of the publication in the manifest when the allowlist is [\"*\"]", async () => {
+    const hrefs = chapterRows.map((row) => row.href);
+    vi.mocked(createAdminClient).mockReturnValue(wholeBookManifestClient(["*"], hrefs));
+
+    const result = await resolveSampleManifest(publicationId);
+
+    expect(result.readingOrder.map((link) => link.href)).toEqual(
+      hrefs.map((href) => "/api/samples/" + publicationId + "/resources/" + href),
+    );
+    expect(result.toc).toHaveLength(9);
+    // The wildcard query drops only the access_class filter, never the publication scope.
+    expect(recordedFilters).toContainEqual({ table: "ebook_resources", field: "publication_id", value: publicationId });
+    expect(recordedFilters).not.toContainEqual({ table: "ebook_resources", field: "access_class", value: "sample" });
+  });
+
+  // Review Focus 5. Every ebook_resources row is 'paid' or 'sample' (the table's CHECK), so the
+  // wildcard deliberately opens 'paid'. What it must never open is anything that is not a resource
+  // row of this publication: the stored manifest may name an href with no row (another
+  // publication's file, the source EPUB), and the publication itself must still be servable.
+  it("never widens beyond this publication's own resource rows or a servable publication", async () => {
+    const ghost = "OEBPS/text/not-a-resource.xhtml";
+    vi.mocked(createAdminClient).mockReturnValue(
+      wholeBookManifestClient(["*"], ["OEBPS/text/chapter1.xhtml", ghost]),
+    );
+    const manifest = await resolveSampleManifest(publicationId);
+    expect(JSON.stringify(manifest)).not.toContain("not-a-resource");
+
+    // No row for this publication: the resource resolver refuses, wildcard or not.
+    vi.mocked(createAdminClient).mockReturnValue(
+      adminClient({ book_samples: { allowed_hrefs: ["*"] }, ebook_resources: null }),
+    );
+    await expect(resolveSampleResource(publicationId, ghost)).rejects.toBeInstanceOf(ReaderAccessDeniedError);
+
+    // A publication that is not live: both resolvers refuse before the allowlist is consulted.
+    for (const status of ["awaiting_review", "rejected"]) {
+      vi.mocked(createAdminClient).mockReturnValue(
+        adminClient({
+          ebook_publications: { id: publicationId, manifest_key: "edition/asset/manifest.json", status },
+          book_samples: { allowed_hrefs: ["*"] },
+          ebook_resources: { storage_key: "k", media_type: xhtml, access_class: "paid" },
+        }),
+      );
+      await expect(resolveSampleResource(publicationId, "OEBPS/text/chapter9.xhtml")).rejects.toBeInstanceOf(
+        ReaderAccessDeniedError,
+      );
+      await expect(resolveSampleManifest(publicationId)).rejects.toBeInstanceOf(ReaderAccessDeniedError);
+    }
+  });
+
+  it("renders the sample page for a whole-book allowlist", async () => {
+    mockAdminTables({
+      editions: { active_publication_id: publicationId, status: "published", books: { status: "published" } },
+      book_samples: { allowed_hrefs: ["*"] },
+    });
+
+    await expect(resolveSamplePublication("edition-1")).resolves.toEqual({ publicationId, sampleFull: true });
   });
 });

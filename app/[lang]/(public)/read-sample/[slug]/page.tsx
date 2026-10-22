@@ -48,12 +48,15 @@ export default async function ReadSamplePage({ params, searchParams }: Props) {
   // No requireUser: this is the one reading surface with no sign-in wall, and lib/auth/route-access
   // leaves /{locale}/read-sample public for the same reason. The sample allowlist in
   // lib/reader/session.ts is the entire trust boundary here.
-  const book = await getSampleReaderBook(locale, slug, requestedEdition(await searchParams));
+  const editionId = requestedEdition(await searchParams);
+  const book = await getSampleReaderBook(locale, slug, editionId);
   if (!book) notFound();
 
   const dictionary = await getDictionary(locale);
   const routes = getCatalogRoutes(locale);
   const bookPath = routes.book(book.slug);
+  // Signing in from the sample (its whole-book banner) comes back to this same sample.
+  const samplePath = routes.sample(book.slug) + (editionId ? `?${new URLSearchParams({ edition: editionId })}` : "");
 
   return (
     <main className="min-h-dvh bg-white" id="main-content">
@@ -90,7 +93,8 @@ export default async function ReadSamplePage({ params, searchParams }: Props) {
         publicationId={book.publicationId}
         // A sample visitor holds no edition, so there is nothing to report against.
         reportHref={null}
-        signInHref={routes.signInFor(bookPath)}
+        sampleFullNotice={book.sampleFull && !book.signedIn ? dictionary.journeys.signInToTrack : undefined}
+        signInHref={routes.signInFor(samplePath)}
       />
     </main>
   );

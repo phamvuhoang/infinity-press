@@ -167,7 +167,9 @@ route, so there is nothing to fetch.
 3. **Samples are an explicit allowlist.** Request a sample href at `/api/samples/{id}/resources/…`.
    A resource that is not in `book_samples.allowed_hrefs` **and** not marked `access_class = sample`
    must be refused with `404`, never `403` — a distinct status for "exists but forbidden" would be
-   an existence oracle.
+   an existence oracle. The one exception is a whole-book sample: when an admin opens a free edition
+   in full on its edition page, `allowed_hrefs` is `["*"]` and every resource of that publication is
+   served. Run this check on an edition whose sample is not open in full.
 4. **Revocation is immediate.** Revoke the entitlement while the reader has the book open. Their
    very next resource request must fail; the check is re-run per request, not at session creation.
 

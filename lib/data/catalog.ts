@@ -29,7 +29,7 @@ import { editionOptionsSchema } from "@/lib/data/editions";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import type { Locale } from "@/lib/i18n/config";
 import { getRequestId } from "@/lib/observability/request-id";
-import { resolveSamplePublicationId } from "@/lib/reader/session";
+import { resolveSamplePublication } from "@/lib/reader/session";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
@@ -426,6 +426,8 @@ export async function getSampleReaderBook(
   title: string;
   slug: string;
   publicationId: string;
+  // The admin opened the whole edition as a free sample (book_samples.allowed_hrefs = ["*"]).
+  sampleFull: boolean;
   // The edition the sample belongs to, and the offer it is sold under: the end-of-sample control
   // buys or opens THIS edition.
   editionId: string;
@@ -439,8 +441,8 @@ export async function getSampleReaderBook(
   if (selection.status !== "selected" || !selection.edition.hasSample) return null;
   const edition = selection.edition;
 
-  const publicationId = await resolveSamplePublicationId(edition.editionId);
-  if (!publicationId) return null;
+  const sample = await resolveSamplePublication(edition.editionId);
+  if (!sample) return null;
 
   // Reads the optional session, like the book page does: a signed-out visitor is the expected
   // caller here and must not be redirected. It only decides which control the sample ends with.
@@ -450,7 +452,8 @@ export async function getSampleReaderBook(
     bookId: book.bookId,
     title: book.title,
     slug: book.slug,
-    publicationId,
+    publicationId: sample.publicationId,
+    sampleFull: sample.sampleFull,
     editionId: edition.editionId,
     offer: edition.offer ? { offerId: edition.offer.offerId, priceMinor: edition.offer.priceMinor } : null,
     action,

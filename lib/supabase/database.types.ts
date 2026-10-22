@@ -4137,6 +4137,10 @@ export type Database = {
         Args: { p_book_id: string; p_related_book_ids: string[] }
         Returns: undefined
       }
+      admin_set_sample_full: {
+        Args: { p_full: boolean; p_publication_id: string }
+        Returns: undefined
+      }
       admin_update_article: {
         Args: { p_article_id: string; p_author_id: string }
         Returns: undefined
