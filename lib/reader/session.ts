@@ -285,6 +285,7 @@ export async function resolveSampleResource(publicationId: string, href: string)
   // Same call, same error, as resolveSampleManifest - the two sample paths now share one notion
   // of "is this publication servable at all".
   await loadServablePublication(admin, publicationId);
+  await requireSellableEdition(admin, publicationId);
 
   const { data: sample, error: sampleError } = await admin
     .from("book_samples")
@@ -360,6 +361,30 @@ async function loadServablePublication(
     throw new ReaderAccessDeniedError();
   }
   return { manifestKey: data.manifest_key, positionsJson: data.positions_json };
+}
+
+// Sample paths only: the publication must be the active one of an edition that
+// edition_is_sellable accepts (book and edition published, not editorially blocked), the same
+// predicate sample_chunk_locator applies in the database. Without it a ["*"] allowlist kept a
+// blocked edition's whole book anonymously readable to anyone holding the publication id.
+// Query faults are 502 (Ruling CF); "no such edition" and "not sellable" stay one 404.
+async function requireSellableEdition(
+  admin: ReturnType<typeof createAdminClient>,
+  publicationId: string,
+): Promise<void> {
+  const { data: edition, error } = await admin
+    .from("editions")
+    .select("id")
+    .eq("active_publication_id", publicationId)
+    .maybeSingle();
+  if (error) throw new ReaderUnavailableError();
+  if (!edition) throw new ReaderAccessDeniedError();
+
+  const { data: sellable, error: sellableError } = await admin.rpc("edition_is_sellable", {
+    p_edition_id: edition.id,
+  });
+  if (sellableError) throw new ReaderUnavailableError();
+  if (sellable !== true) throw new ReaderAccessDeniedError();
 }
 
 function entitledHref(publicationId: string, href: string): string {
@@ -512,6 +537,7 @@ export async function resolveEntitledManifest(publicationId: string): Promise<Re
 export async function resolveSampleManifest(publicationId: string): Promise<ReaderManifest> {
   const admin = createAdminClient();
   const { manifestKey } = await loadServablePublication(admin, publicationId);
+  await requireSellableEdition(admin, publicationId);
 
   const { data: sample, error: sampleError } = await admin
     .from("book_samples")
@@ -623,6 +649,12 @@ export async function resolveSamplePublication(
     .maybeSingle();
 
   if (publicationError || !publication || publication.status !== "published") return null;
+
+  // editorial_state = 'blocked' is the one condition of edition_is_sellable not checked above.
+  const { data: sellable, error: sellableError } = await admin.rpc("edition_is_sellable", {
+    p_edition_id: editionId,
+  });
+  if (sellableError || sellable !== true) return null;
 
   // The same allowlist condition catalog_book_cards.has_sample reports, so the book page's sample
   // link and this page agree about which books have one.

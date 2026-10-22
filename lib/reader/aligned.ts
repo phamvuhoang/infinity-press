@@ -8,7 +8,8 @@ export const alignedPassageSchema = z
     targetEditionId: z.guid(),
     targetLanguageCode: z.string().regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/),
     targetOrdinal: z.number().int().nonnegative(),
-    text: z.string().min(1).max(1024),
+    // 1024 code points, as lib/epub/search-index.ts chunks; .max() would count UTF-16 units.
+    text: z.string().min(1).refine((value) => [...value].length <= 1024),
     confidence: z.number().gt(0).lte(1),
   })
   .strict();

@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(10);
 
 -- Passage anchors: reader_chunk_locator and reader_chunk_for_locator answer only an entitled reader;
 -- sample_chunk_locator answers anyone, but only for an href the sample allowlist lets through.
@@ -63,6 +63,17 @@ select is(
   array[(select refused from t_sample), public.sample_chunk_locator('fa600000-0000-0000-0000-000000000001', 2) ->> 'href'],
   array[null, 'c2'],
   'sample_chunk_locator returns c2 only when the allowlist lets it through');
+reset role;
+
+-- A whole-book sample (["*"]) serves a paid chunk, but never for an edition that is not sellable.
+update public.ebook_resources set access_class = 'paid' where publication_id = 'fa600000-0000-0000-0000-000000000001' and href = 'c2';
+update public.book_samples set allowed_hrefs = '["*"]' where publication_id = 'fa600000-0000-0000-0000-000000000001';
+set local role anon;
+select is(public.sample_chunk_locator('fa600000-0000-0000-0000-000000000001', 2) ->> 'href', 'c2', 'a ["*"] sample serves a chunk whose resource is paid');
+reset role;
+update public.editions set editorial_state = 'blocked', reviewed_at = now(), reviewed_by = (select id from public.profiles limit 1) where id = 'fa400000-0000-0000-0000-000000000001';
+set local role anon;
+select is(public.sample_chunk_locator('fa600000-0000-0000-0000-000000000001', 2), null, 'a ["*"] sample of a blocked edition is refused');
 reset role;
 
 select * from finish();

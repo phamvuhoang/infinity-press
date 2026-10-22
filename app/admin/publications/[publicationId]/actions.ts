@@ -50,6 +50,9 @@ async function alignBestEffort(bookId: string): Promise<void> {
   after(async () => {
     try {
       await computeAlignmentsForBook(bookId);
+      // The action's own revalidate ran before this finished, so the prerendered home page would
+      // keep its old catalog_home_passage until an unrelated catalog save.
+      revalidateStorefront();
     } catch (error) {
       console.error("Alignment after a publication change failed.", { bookId, requestId, error: String(error) });
     }

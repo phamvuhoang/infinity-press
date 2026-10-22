@@ -59,6 +59,10 @@ function adminClient(
   // since the spread lets an explicit value win over this default.
   const rows: Record<string, unknown> = {
     ebook_publications: { id: publicationId, manifest_key: "edition/asset/manifest.json", status: "published" },
+    // The sample paths also ask which edition this publication is active for, then whether
+    // edition_is_sellable accepts it. `edition_is_sellable` here is the RPC's result, not a table.
+    editions: { id: "edition-1", active_publication_id: publicationId, status: "published", books: { status: "published" } },
+    edition_is_sellable: true,
     ...rowsByTable,
   };
 
@@ -83,8 +87,13 @@ function adminClient(
     return builder;
   });
 
+  const rpc = vi.fn((name: string) =>
+    Promise.resolve({ data: name in rows ? rows[name] : null, error: null }),
+  );
+
   return {
     from,
+    rpc,
     storage: { from: vi.fn(() => ({ download: download ?? vi.fn() })) },
   } as unknown as ReturnType<typeof createAdminClient>;
 }
@@ -1167,6 +1176,42 @@ describe("whole-book sample (allowed_hrefs contains \"*\")", () => {
       );
       await expect(resolveSampleManifest(publicationId)).rejects.toBeInstanceOf(ReaderAccessDeniedError);
     }
+  });
+
+  // Final review, finding 1: sample_chunk_locator requires edition_is_sellable, so the app-side
+  // resolvers must too. A blocked edition (editorial_state = 'blocked') is not sellable.
+  it("refuses a whole-book sample of an edition that is not sellable", async () => {
+    const rows = {
+      book_samples: { allowed_hrefs: ["*"] },
+      ebook_resources: { storage_key: "edition/asset/OEBPS/text/chapter9.xhtml", media_type: xhtml, access_class: "paid" },
+      edition_is_sellable: false,
+    };
+    vi.mocked(createAdminClient).mockReturnValue(adminClient(rows));
+    await expect(resolveSampleResource(publicationId, "OEBPS/text/chapter9.xhtml")).rejects.toBeInstanceOf(
+      ReaderAccessDeniedError,
+    );
+    vi.mocked(createAdminClient).mockReturnValue(adminClient(rows));
+    await expect(resolveSampleManifest(publicationId)).rejects.toBeInstanceOf(ReaderAccessDeniedError);
+    mockAdminTables({
+      editions: { active_publication_id: publicationId, status: "published", books: { status: "published" } },
+      book_samples: { allowed_hrefs: ["*"] },
+      edition_is_sellable: false,
+    });
+    await expect(resolveSamplePublication("edition-1")).resolves.toBeNull();
+  });
+
+  it("refuses a sample whose publication is no edition's active one", async () => {
+    vi.mocked(createAdminClient).mockReturnValue(
+      adminClient({
+        editions: null,
+        book_samples: { allowed_hrefs: ["*"] },
+        ebook_resources: { storage_key: "k", media_type: xhtml, access_class: "paid" },
+      }),
+    );
+    await expect(resolveSampleResource(publicationId, "OEBPS/text/chapter9.xhtml")).rejects.toBeInstanceOf(
+      ReaderAccessDeniedError,
+    );
+    expect(recordedFilters).toContainEqual({ table: "editions", field: "active_publication_id", value: publicationId });
   });
 
   it("renders the sample page for a whole-book allowlist", async () => {

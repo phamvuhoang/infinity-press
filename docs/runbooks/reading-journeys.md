@@ -83,7 +83,8 @@ sample** with **Save sample**. The checkbox is always enabled.
   list from the publication's `access_class = 'sample'` resources.
 - Under `["*"]` the sample resolvers skip only the `access_class` check. A resource must still
   belong to the same live publication, and a publication that is not published is still refused.
-  A listed (non-wildcard) sample is unchanged.
+  Every sample, listed or wildcard, is also refused unless the publication is its edition's active
+  one and `edition_is_sellable` accepts that edition, so a blocked edition serves no sample.
 - A signed-out visitor at `/{locale}/read-sample/{slug}` sees a banner linking to sign-in. The
   end-of-sample card with the Get control still appears on the last page.
 - If the default offer later becomes paid, an open whole-book sample stays open until an admin

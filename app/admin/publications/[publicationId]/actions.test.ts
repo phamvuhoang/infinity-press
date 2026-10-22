@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { publishPublicationAction, rollbackPublicationAction } from "@/app/admin/publications/[publicationId]/actions";
 import { requireAdmin } from "@/lib/auth/admin";
+import { revalidateStorefront } from "@/lib/catalog/revalidate";
 import { computeAlignmentsForBook } from "@/lib/data/alignments";
 import { publishPublication, PublicationTransitionRejectedError, rollbackPublication } from "@/lib/data/publications";
 
@@ -34,15 +35,21 @@ describe("publication actions schedule alignment after the response", () => {
     expect(computeAlignmentsForBook).not.toHaveBeenCalled();
 
     expect(scheduled()).toHaveLength(1);
+    // The action's own revalidate ran; the scheduled one has not yet.
+    expect(revalidateStorefront).toHaveBeenCalledTimes(1);
     await scheduled()[0]();
     expect(computeAlignmentsForBook).toHaveBeenCalledExactlyOnceWith("book-1");
+    // Recomputed passages reach the prerendered home page.
+    expect(revalidateStorefront).toHaveBeenCalledTimes(2);
   });
 
   it("keeps the publish result when the scheduled alignment fails, logging the request ID", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.mocked(computeAlignmentsForBook).mockRejectedValue(new Error("boom"));
     const result = await publishPublicationAction("asset-1", "book-1", "pub-1");
+    expect(revalidateStorefront).toHaveBeenCalledTimes(1);
     await expect(scheduled()[0]()).resolves.toBeUndefined();
+    expect(revalidateStorefront).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ ok: true });
     expect(log).toHaveBeenCalledWith(
       "Alignment after a publication change failed.",
