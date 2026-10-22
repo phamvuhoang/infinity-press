@@ -103,6 +103,8 @@ export type AdminEditionDTO = {
     translationSource: string | null;
     rightsNote: string | null;
     territoryNote: string | null;
+    textKind: ProvenanceInput["textKind"];
+    reviewScope: ProvenanceInput["reviewScope"];
     reviewedAt: string | null;
     reviewNote: string | null;
   };
@@ -181,6 +183,8 @@ type EditionRow = {
   translation_source: string | null;
   rights_note: string | null;
   territory_note: string | null;
+  text_kind: ProvenanceInput["textKind"];
+  review_scope: ProvenanceInput["reviewScope"];
   editorial_state: "unreviewed" | "approved" | "blocked";
   reviewed_at: string | null;
   review_note: string | null;
@@ -201,7 +205,7 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
     .from("editions")
     .select(
       `id, book_id, language_code, edition_number, isbn, publication_date, introduction, contributors, status, active_publication_id,
-       text_source_note, translation_source, rights_note, territory_note, editorial_state, reviewed_at, review_note,
+       text_source_note, translation_source, rights_note, territory_note, text_kind, review_scope, editorial_state, reviewed_at, review_note,
        skus ( id, sku_code, active, offers ( ${offerColumns} ) ),
        default_offer:edition_default_offers ( offer_id )`,
     )
@@ -246,6 +250,8 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
       translationSource: row.translation_source,
       rightsNote: row.rights_note,
       territoryNote: row.territory_note,
+      textKind: row.text_kind,
+      reviewScope: row.review_scope,
       reviewedAt: row.reviewed_at,
       reviewNote: row.review_note,
     },
@@ -358,6 +364,8 @@ export async function saveEditionProvenance(editionId: string, input: Provenance
     p_translation_source: input.translationSource ?? "",
     p_rights_note: input.rightsNote ?? "",
     p_territory_note: input.territoryNote ?? "",
+    p_text_kind: input.textKind ?? "",
+    p_review_scope: input.reviewScope,
   });
   if (error) throw failure("saveEditionProvenance", error);
 }

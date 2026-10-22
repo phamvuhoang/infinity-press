@@ -19,6 +19,20 @@ const optionRow = z.object({
   listPriceMinor: z.number().nullable().catch(null),
   saleEndsAt: z.string().nullable().catch(null),
   hasSample: z.boolean(),
+  // A malformed record hides the block, not the edition.
+  record: z
+    .object({
+      textSourceNote: z.string().nullable(),
+      translationSource: z.string().nullable(),
+      rightsNote: z.string().nullable(),
+      territoryNote: z.string().nullable(),
+      textKind: z.enum(["literal", "adapted", "commentary"]).nullable(),
+      reviewScope: z.enum(["full", "sample", "none"]),
+      reviewedAt: z.string().nullable(),
+      reviewNote: z.string().nullable(),
+    })
+    .nullable()
+    .catch(null),
 });
 
 export function toEditionOption(row: z.infer<typeof optionRow>): CatalogEditionOption {
@@ -38,6 +52,7 @@ export function toEditionOption(row: z.infer<typeof optionRow>): CatalogEditionO
             saleEndsAt: row.saleEndsAt,
           },
     hasSample: row.hasSample,
+    record: row.record,
   };
 }
 

@@ -88,6 +88,8 @@ export default async function ReadSamplePage({ params, searchParams }: Props) {
         manifestUrl={`/api/samples/${book.publicationId}/manifest`}
         mode="sample"
         publicationId={book.publicationId}
+        // A sample visitor holds no edition, so there is nothing to report against.
+        reportHref={null}
         signInHref={routes.signInFor(bookPath)}
       />
     </main>

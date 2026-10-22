@@ -128,6 +128,27 @@
       "fallbackNote": "There is no {requested} edition yet. This is the {language} edition.",
       "metadataNote": "Title and description are shown in {language}."
     },
+    "editionRecord": {
+      "title": "About this edition",
+      "textSourceNote": "Source text",
+      "translationSource": "Translation source",
+      "rightsNote": "Rights",
+      "territoryNote": "Territories",
+      "textKind": "Text kind",
+      "textKinds": {
+        "literal": "Literal translation",
+        "adapted": "Adapted",
+        "commentary": "Commentary"
+      },
+      "reviewScope": "Review scope",
+      "reviewScopes": {
+        "full": "Full text",
+        "sample": "Sample",
+        "none": "Not reviewed"
+      },
+      "reviewedAt": "Approved on",
+      "reviewNote": "Version notes"
+    },
     "quoteCard": {
       "eyebrow": "A quote from",
       "sharedFrom": "Shared from Infinity Books Press",
@@ -638,6 +659,7 @@
     "rateBook": "Rate this book",
     "askAuthor": "Ask the editors",
     "reportError": "Report a translation error",
+    "reportHere": "Report an error at this passage",
     "chooseEdition": {
       "title": "Choose an edition to read",
       "description": "You own more than one language edition of this work."

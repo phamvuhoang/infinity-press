@@ -352,6 +352,7 @@ describe("getBookPage", () => {
   });
 
   it("lists the readable editions and drops a malformed one", async () => {
+    const record = { textSourceNote: "1912", translationSource: null, rightsNote: null, territoryNote: null, textKind: "adapted", reviewScope: "sample", reviewedAt: null, reviewNote: null };
     const edition = {
       editionId: "edition-ja",
       languageCode: "ja",
@@ -363,11 +364,12 @@ describe("getBookPage", () => {
       listPriceMinor: null,
       saleEndsAt: null,
       hasSample: false,
+      record,
     };
     mockRpc({
       catalog_book_cards: { data: [cardRow()], error: null },
       catalog_book_page: {
-        data: bookPageData({ editions: [edition, { editionId: 7 }, { ...edition, editionId: "edition-none", offerId: null, priceMinor: null, currency: null }] }),
+        data: bookPageData({ editions: [edition, { editionId: 7 }, { ...edition, editionId: "edition-none", offerId: null, priceMinor: null, currency: null, record: { ...record, reviewScope: "partial" } }] }),
         error: null,
       },
     });
@@ -380,8 +382,10 @@ describe("getBookPage", () => {
         isDefault: false,
         offer: { offerId: "offer-ja", priceMinor: 500, currency: "JPY", listPriceMinor: null, saleEndsAt: null },
         hasSample: false,
+        record,
       },
-      { editionId: "edition-none", languageCode: "ja", epubLanguage: "ja", isDefault: false, offer: null, hasSample: false },
+      // A malformed record hides the record, not the edition.
+      { editionId: "edition-none", languageCode: "ja", epubLanguage: "ja", isDefault: false, offer: null, hasSample: false, record: null },
     ]);
   });
 

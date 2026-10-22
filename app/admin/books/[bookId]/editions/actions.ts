@@ -170,6 +170,8 @@ export async function saveProvenanceAction(
     translationSource: readOptionalText(formData, "translationSource"),
     rightsNote: readOptionalText(formData, "rightsNote"),
     territoryNote: readOptionalText(formData, "territoryNote"),
+    textKind: readOptionalText(formData, "textKind"),
+    reviewScope: readOptionalText(formData, "reviewScope") ?? "none",
   });
   if (!parsed.success) return invalid(parsed.error);
 

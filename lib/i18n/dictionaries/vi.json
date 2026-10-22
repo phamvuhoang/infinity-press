@@ -128,6 +128,27 @@
       "fallbackNote": "Chưa có ấn bản {requested}. Đây là ấn bản {language}.",
       "metadataNote": "Tiêu đề và mô tả hiển thị bằng {language}."
     },
+    "editionRecord": {
+      "title": "Về bản này",
+      "textSourceNote": "Nguồn văn bản gốc",
+      "translationSource": "Nguồn bản dịch",
+      "rightsNote": "Quyền",
+      "territoryNote": "Phạm vi phát hành",
+      "textKind": "Loại văn bản",
+      "textKinds": {
+        "literal": "Dịch sát",
+        "adapted": "Phỏng dịch",
+        "commentary": "Bình giải"
+      },
+      "reviewScope": "Phạm vi review",
+      "reviewScopes": {
+        "full": "Toàn bộ",
+        "sample": "Một phần",
+        "none": "Chưa review"
+      },
+      "reviewedAt": "Ngày duyệt",
+      "reviewNote": "Ghi chú phiên bản"
+    },
     "quoteCard": {
       "eyebrow": "Trích dẫn từ",
       "sharedFrom": "Chia sẻ từ Infinity Books Press",
@@ -638,6 +659,7 @@
     "rateBook": "Đánh giá sách",
     "askAuthor": "Hỏi ban biên tập",
     "reportError": "Báo lỗi bản dịch",
+    "reportHere": "Báo lỗi tại đoạn này",
     "chooseEdition": {
       "title": "Chọn bản để đọc",
       "description": "Bạn sở hữu nhiều bản ngôn ngữ của tác phẩm này."

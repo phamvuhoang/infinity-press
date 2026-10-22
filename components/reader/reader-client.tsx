@@ -9,7 +9,7 @@ import { ReaderAnnotationEditor } from "@/components/reader/reader-annotation-ed
 import { ReaderCompletionPanel } from "@/components/reader/reader-completion-panel";
 import { ReaderSearchPanel } from "@/components/reader/reader-search-panel";
 import { ReaderSelectionToolbar } from "@/components/reader/reader-selection-toolbar";
-import { ReaderSidebar } from "@/components/reader/reader-sidebar";
+import { ReaderSidebar, reportPlaceHref } from "@/components/reader/reader-sidebar";
 import { ReaderSettingsPanel } from "@/components/reader/reader-settings-panel";
 import { ReaderTocDrawer } from "@/components/reader/reader-toc-drawer";
 import { useReaderAnnotations } from "@/components/reader/use-reader-annotations";
@@ -57,6 +57,8 @@ type ReaderClientBaseProps = {
   // into a client module.
   endSlot?: React.ReactNode;
   copy: ReaderCopy;
+  // Where "Report an error" goes; the reader adds the place being read. Null in the sample reader.
+  reportHref: string | null;
 };
 
 export type ReaderClientProps = ReaderClientBaseProps &
@@ -67,8 +69,6 @@ export type ReaderClientProps = ReaderClientBaseProps &
         canonicalBookUrl: string;
         // Null once the book leaves the catalog: the review page 404s for it, so no link is offered.
         reviewHref: string | null;
-        // Where "Report a translation error" goes; the reader adds the place they are reading.
-        reportHref?: string;
         askHref: string | null;
         relatedBooks: Array<{ title: string; authorName: string; href: string; coverUrl: string | null }>;
       }
@@ -77,7 +77,6 @@ export type ReaderClientProps = ReaderClientBaseProps &
         authorName?: string;
         canonicalBookUrl?: string;
         reviewHref?: string;
-        reportHref?: string;
         askHref?: string;
         relatedBooks?: Array<{ title: string; authorName: string; href: string; coverUrl: string | null }>;
       }
@@ -811,6 +810,7 @@ export function ReaderClient({
       activeTab={sidebarTab}
       copy={copy}
       currentHref={currentHref}
+      currentProgression={totalProgression}
       dark={preferences.theme === "dark"}
       entries={toc}
       items={annotations.items}
@@ -824,6 +824,7 @@ export function ReaderClient({
       onRetry={(key) => void annotations.retry(key)}
       onRetryLoad={() => void annotations.reload()}
       onTabChange={setSidebarTab}
+      reportHref={reportHref}
     />
   );
   const saveEditor = (value: string | null) => {
@@ -939,12 +940,7 @@ export function ReaderClient({
                 setMenuOpen(false);
                 // The place being read travels with the report; leaving the page flushes the saved position.
                 const place = locatorRef.current;
-                const query = new URLSearchParams();
-                if (place) {
-                  query.set("href", place.href.slice(0, 500));
-                  query.set("progression", String(place.totalProgression ?? place.progression));
-                }
-                window.location.assign(`${reportHref}?${query}`);
+                window.location.assign(reportPlaceHref(reportHref, { href: place?.href ?? null, progression: place ? place.totalProgression ?? place.progression : null }));
               }} role="menuitem" type="button">{copy.reportError}</button> : null}
               <button aria-describedby="reader-ask-soon" className="min-h-11 rounded-md px-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60" disabled role="menuitem" type="button">{copy.askInfinity}</button>
             </div></DialogPanel>

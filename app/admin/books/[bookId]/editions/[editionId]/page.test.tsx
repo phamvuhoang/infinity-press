@@ -45,7 +45,7 @@ const edition: AdminEditionDTO = {
   activePublicationId: null,
   identityLocked: false,
   sku: { id: "sku-id", skuCode: "golden-ja-ebook", active: true },
-  editorial: { state: "unreviewed", textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, reviewedAt: null, reviewNote: null },
+  editorial: { state: "unreviewed", textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, textKind: null, reviewScope: "none", reviewedAt: null, reviewNote: null },
   offers: [
     { id: "offer-id", marketCode: "JP", currency: "JPY", priceMinor: 500, active: true, isDefault: true, sale: null, effectivePriceMinor: 500, saleState: "none" },
   ],

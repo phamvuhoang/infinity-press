@@ -128,6 +128,27 @@
       "fallbackNote": "{requested}版はまだありません。こちらは{language}版です。",
       "metadataNote": "タイトルと説明は{language}で表示しています。"
     },
+    "editionRecord": {
+      "title": "この版について",
+      "textSourceNote": "原文の出典",
+      "translationSource": "翻訳の出典",
+      "rightsNote": "権利",
+      "territoryNote": "販売地域",
+      "textKind": "テキストの種類",
+      "textKinds": {
+        "literal": "逐語訳",
+        "adapted": "翻案",
+        "commentary": "注釈・解説"
+      },
+      "reviewScope": "レビュー範囲",
+      "reviewScopes": {
+        "full": "全文",
+        "sample": "一部",
+        "none": "未レビュー"
+      },
+      "reviewedAt": "承認日",
+      "reviewNote": "版の注記"
+    },
     "quoteCard": {
       "eyebrow": "引用元",
       "sharedFrom": "Infinity Books Press から共有",
@@ -638,6 +659,7 @@
     "rateBook": "この作品を評価",
     "askAuthor": "編集部に質問する",
     "reportError": "翻訳の誤りを報告",
+    "reportHere": "この箇所の誤りを報告",
     "chooseEdition": {
       "title": "読む版を選んでください",
       "description": "この作品の言語版を複数お持ちです。"

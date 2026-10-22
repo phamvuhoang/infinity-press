@@ -1523,11 +1523,13 @@ export type Database = {
           language_code: string
           publication_date: string | null
           review_note: string | null
+          review_scope: string
           reviewed_at: string | null
           reviewed_by: string | null
           rights_note: string | null
           status: Database["public"]["Enums"]["content_status"]
           territory_note: string | null
+          text_kind: string | null
           text_source_note: string | null
           translation_source: string | null
         }
@@ -1543,11 +1545,13 @@ export type Database = {
           language_code: string
           publication_date?: string | null
           review_note?: string | null
+          review_scope?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           rights_note?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           territory_note?: string | null
+          text_kind?: string | null
           text_source_note?: string | null
           translation_source?: string | null
         }
@@ -1563,11 +1567,13 @@ export type Database = {
           language_code?: string
           publication_date?: string | null
           review_note?: string | null
+          review_scope?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           rights_note?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           territory_note?: string | null
+          text_kind?: string | null
           text_source_note?: string | null
           translation_source?: string | null
         }
@@ -3952,7 +3958,9 @@ export type Database = {
         Args: {
           p_edition_id: string
           p_rights_note: string
+          p_review_scope?: string
           p_territory_note: string
+          p_text_kind?: string
           p_text_source_note: string
           p_translation_source: string
         }

@@ -168,13 +168,15 @@ describe("defaults", () => {
 });
 
 describe("editorial actions", () => {
-  it("saves provenance, treating blank notes as none", async () => {
-    const state = await saveProvenanceAction(bookId, editionId, initialAdminFormState, form({ translationSource: " Translated 1925 ", rightsNote: "", textSourceNote: "", territoryNote: "Worldwide" }));
+  it("saves provenance, treating blank notes as none and a missing review scope as none", async () => {
+    const state = await saveProvenanceAction(bookId, editionId, initialAdminFormState, form({ translationSource: " Translated 1925 ", rightsNote: "", textSourceNote: "", territoryNote: "Worldwide", textKind: "commentary" }));
     expect(saveEditionProvenance).toHaveBeenCalledWith(editionId, {
       textSourceNote: null,
       translationSource: "Translated 1925",
       rightsNote: null,
       territoryNote: "Worldwide",
+      textKind: "commentary",
+      reviewScope: "none",
     });
     expect(state.savedAt).not.toBeNull();
     expect(revalidatePath).toHaveBeenCalledWith(`/admin/books/${bookId}/editions/${editionId}`);

@@ -6,6 +6,7 @@ import { FieldError, FormStatus } from "@/components/admin/form-feedback";
 import { SubmitButton } from "@/components/auth/submit-button";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { initialAdminFormState, type AdminFormState } from "@/lib/catalog/form";
 import type { AdminEditionDTO } from "@/lib/data/admin-editions";
@@ -38,6 +39,28 @@ export function ProvenanceForm({ action, editorial }: { action: FormAction; edit
           <FieldError id={`provenance-${field.name}-error`} message={state.fieldErrors[field.name]} />
         </div>
       ))}
+      {/* Shown on the public book page under "About this edition". Changing these keeps an approval. */}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor="provenance-textKind">Text kind</Label>
+          <NativeSelect defaultValue={editorial.textKind ?? ""} id="provenance-textKind" name="textKind">
+            <option value="">Not stated</option>
+            <option value="literal">Literal translation</option>
+            <option value="adapted">Adapted</option>
+            <option value="commentary">Commentary</option>
+          </NativeSelect>
+          <FieldError id="provenance-textKind-error" message={state.fieldErrors.textKind} />
+        </div>
+        <div className="min-w-0 space-y-2">
+          <Label htmlFor="provenance-reviewScope">Review scope</Label>
+          <NativeSelect defaultValue={editorial.reviewScope} id="provenance-reviewScope" name="reviewScope">
+            <option value="none">Not reviewed</option>
+            <option value="sample">Sample reviewed</option>
+            <option value="full">Fully reviewed</option>
+          </NativeSelect>
+          <FieldError id="provenance-reviewScope-error" message={state.fieldErrors.reviewScope} />
+        </div>
+      </div>
       <FormStatus state={state} />
       <SubmitButton pendingLabel="Saving…">Save provenance</SubmitButton>
     </form>

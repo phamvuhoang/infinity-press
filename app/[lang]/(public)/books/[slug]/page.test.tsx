@@ -69,7 +69,7 @@ function makeBook(overrides: Partial<CatalogBookPage> = {}): CatalogBookPage {
     seoDescription: null,
     alternateSlugs: {},
     isbn: null,
-    editions: [{ editionId: "edition-1", languageCode: "en", epubLanguage: "en", isDefault: true, offer: null, hasSample: false }],
+    editions: [{ editionId: "edition-1", languageCode: "en", epubLanguage: "en", isDefault: true, offer: null, hasSample: false, record: null }],
     retailLinks: [],
     reviewSummary: null,
     ...overrides,

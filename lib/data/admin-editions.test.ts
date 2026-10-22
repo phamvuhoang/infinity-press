@@ -50,7 +50,7 @@ describe("admin gate ordering", () => {
     ["setDefaultEdition", () => setDefaultEdition(bookId, "ja", editionId)],
     ["setDefaultOffer", () => setDefaultOffer(editionId, offerId)],
     ["listPricingDefaults", () => listPricingDefaults("ja")],
-    ["saveEditionProvenance", () => saveEditionProvenance(editionId, { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null })],
+    ["saveEditionProvenance", () => saveEditionProvenance(editionId, { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, textKind: null, reviewScope: "none" })],
     ["setEditionReview", () => setEditionReview(editionId, { state: "approved", note: null })],
   ])("%s never builds a client when the admin gate denies", async (_name, call) => {
     vi.mocked(requireAdmin).mockRejectedValue(new Error("NEXT_FORBIDDEN"));
@@ -188,6 +188,8 @@ describe("getAdminEdition", () => {
     translation_source: "Translated 1925",
     rights_note: null,
     territory_note: null,
+    text_kind: "adapted",
+    review_scope: "sample",
     editorial_state: "unreviewed",
     reviewed_at: null,
     review_note: null,
@@ -217,6 +219,8 @@ describe("getAdminEdition", () => {
       translationSource: "Translated 1925",
       rightsNote: null,
       territoryNote: null,
+      textKind: "adapted",
+      reviewScope: "sample",
       reviewedAt: null,
       reviewNote: null,
     });
@@ -249,6 +253,8 @@ describe("editorial review", () => {
       translationSource: "Translated 1925",
       rightsNote: "Public domain",
       territoryNote: "Worldwide",
+      textKind: "literal",
+      reviewScope: "full",
     });
 
     expect(fake.rpc).toHaveBeenCalledWith("admin_save_edition_provenance", {
@@ -257,6 +263,8 @@ describe("editorial review", () => {
       p_translation_source: "Translated 1925",
       p_rights_note: "Public domain",
       p_territory_note: "Worldwide",
+      p_text_kind: "literal",
+      p_review_scope: "full",
     });
   });
 
