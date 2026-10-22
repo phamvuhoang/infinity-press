@@ -57,6 +57,7 @@ Nếu bản dịch AI của dự án không giữ cấu trúc đoạn và tỉ l
 Câu hỏi: bớt rào cản đăng nhập có tăng người bắt đầu đọc không?
 
 - `book_samples.allowed_hrefs` nhận giá trị `["*"]` cho edition miễn phí; `/read-sample/[slug]` phục vụ toàn bộ sách.
+- Với `["*"]`, các resolver sample bỏ qua kiểm tra `access_class` nhưng vẫn giữ kiểm tra resource thuộc cùng publication đang live.
 - Banner trong reader mẫu: "Đăng nhập để lưu tiến độ và ghi chú."
 - Không có anonymous session, không lưu progress ẩn danh.
 
@@ -76,7 +77,7 @@ Câu hỏi: người đọc có tin bản dịch hơn khi thấy nguồn và ph�
 - Thêm `editions.text_kind` (`literal|adapted|commentary`) và `editions.review_scope` (`full|sample|none`).
 - Trang sách và màn "Về bản này" trong reader hiện: nguồn, dịch giả, loại văn bản, phạm vi review, ghi chú quyền, ngày review. Các trường này đã có sẵn trong bảng `editions`.
 - Reader: nút "Báo lỗi tại đoạn này" gọi form `edition_feedback` sẵn có với locator + anchor.
-- Changelog: dùng `review_note` hiện có hiển thị công khai dưới dạng "Ghi chú phiên bản"; **không** thêm bảng changelog.
+- Changelog: thêm cột `editions.public_version_note` (tối đa 2000 ký tự, admin nhập riêng) hiển thị công khai dưới dạng "Ghi chú phiên bản". `review_note` vẫn là ghi chú nội bộ và không bao giờ ra storefront. **Không** thêm bảng changelog.
 
 ### 2.6 Homepage và trang tác phẩm pilot (cập nhật)
 

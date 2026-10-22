@@ -154,6 +154,14 @@ Each edition (the edition page, **Provenance & editorial review**) carries evide
   earlier version of an approved edition is unaffected.
 - **Changing the evidence after approval withdraws the approval** (and its reviewer and date).
   Editions that existed when this was introduced were marked approved with a note saying so.
+- **Public edition record (S20)**: the same form sets **Text kind** (literal, adapted, commentary),
+  **Review scope** (full, sample, none) and a **Public version note** (2000 characters). The book
+  page shows them, with the provenance notes and the review date, in a collapsed "About this
+  edition" block. The internal review note is never shown publicly. Changing these three fields does
+  not withdraw an approval. See [reading journeys](reading-journeys.md#edition-record).
+- **Whole-book sample and alignment (S20)**: with a live EPUB, the edition page also has **Open the
+  whole book as a sample** (the database refuses a paid edition) and the passage alignment
+  percentage with **Recompute alignment**. See [reading journeys](reading-journeys.md).
 
 ## Translation reports
 

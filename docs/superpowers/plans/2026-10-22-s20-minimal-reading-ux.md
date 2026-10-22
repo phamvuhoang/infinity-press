@@ -174,7 +174,7 @@
 **Files:**
 - Create: `supabase/migrations/20261022120000_s20_sample_full.sql`
 - Modify: `lib/reader/session.ts` (`resolveSampleResource`, `resolveSampleManifest`, `resolveSamplePublicationId`), `lib/reader/session.test.ts`
-- Modify: `lib/data/admin-editions.ts` (`setSampleFull(publicationId, full: boolean)`), admin edition page (toggle "Mở toàn bộ bản này cho đọc thử", enabled only when the edition's default offer is free), `components/reader/reader-client.tsx` (sample-mode banner using `copy.signInToTrack` when `sampleFull` prop is true), `app/[lang]/(public)/read-sample/[slug]/page.tsx` (pass `sampleFull`), `lib/data/catalog.ts` (`getSampleReaderBook` returns `sampleFull`)
+- Modify: `lib/data/admin-editions.ts` (`setSampleFull(publicationId, full: boolean)`), admin edition page (checkbox "Open the whole book as a sample", always enabled; `admin_set_sample_full` refuses a paid edition with 22023 and the form shows that refusal), `components/reader/reader-client.tsx` (sample-mode banner using `copy.signInToTrack` when `sampleFull` prop is true), `app/[lang]/(public)/read-sample/[slug]/page.tsx` (pass `sampleFull`), `lib/data/catalog.ts` (`getSampleReaderBook` returns `sampleFull`)
 - Modify: `lib/supabase/database.types.ts`
 
 **Interfaces:**
