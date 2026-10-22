@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 vi.mock("@/lib/data/journeys", () => ({ getPublishedJourney: vi.fn(), getMyJourneyProgress: vi.fn() }));
 vi.mock("@/lib/data/library", () => ({ getPassageAnchor: vi.fn() }));
-vi.mock("./actions", () => ({ markSessionAction: vi.fn(), completeJourneyAction: vi.fn() }));
+vi.mock("./actions", () => ({ markSessionAction: vi.fn(), completeJourneyAction: vi.fn(), claimAndOpenReaderAction: vi.fn() }));
 
 const EDITION = "20000000-0000-4000-8000-000000000001";
 
@@ -49,7 +49,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(requireUser).mockResolvedValue({} as Awaited<ReturnType<typeof requireUser>>);
   vi.mocked(getMyJourneyProgress).mockResolvedValue({ completedPositions: [], completed: false, reflection: null });
-  vi.mocked(getPassageAnchor).mockResolvedValue(null);
+  vi.mocked(getPassageAnchor).mockResolvedValue({ owned: true, anchor: null });
 });
 
 afterEach(cleanup);
@@ -71,10 +71,20 @@ it("links to the plain edition URL when the start href is not in the current pub
 
 it("links to the session's passage when its start href resolves to a chunk", async () => {
   vi.mocked(getPublishedJourney).mockResolvedValue(journey([{ position: 1, href: "OEBPS/text/c1.xhtml" }]));
-  vi.mocked(getPassageAnchor).mockResolvedValue(4);
+  vi.mocked(getPassageAnchor).mockResolvedValue({ owned: true, anchor: 4 });
   render(await JourneySessionPage({ params: params("1") }));
   expect(screen.getByRole("link", { name: "Open the reader at this passage" })).toHaveAttribute("href", `/en/read/editions/${EDITION}?anchor=4`);
   expect(getPassageAnchor).toHaveBeenCalledWith("en", EDITION, expect.objectContaining({ href: "OEBPS/text/c1.xhtml" }));
+});
+
+// A reader who does not hold the edition would get a 404 from the reader page: the session offers
+// the free-edition claim instead of a link.
+it("offers the free-edition claim instead of a reader link when the reader does not own the edition", async () => {
+  vi.mocked(getPublishedJourney).mockResolvedValue(journey([{ position: 1, href: "OEBPS/text/c1.xhtml" }]));
+  vi.mocked(getPassageAnchor).mockResolvedValue({ owned: false, anchor: null });
+  render(await JourneySessionPage({ params: params("1") }));
+  expect(screen.queryByRole("link", { name: "Open the reader at this passage" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Get the free edition and open the reader here" })).toBeInTheDocument();
 });
 
 it("shows the reflection form only on the last session", async () => {

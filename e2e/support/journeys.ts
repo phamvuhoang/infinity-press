@@ -27,7 +27,9 @@ export async function seedPublishedJourney(options: {
     ]),
   );
 
-  const hrefs = [CHAPTER_ONE_HREF, CHAPTER_TWO_HREF, CHAPTER_THREE_HREF];
+  // The second start carries a fragment, as an admin's pick from a real EPUB nav usually does: the
+  // session page must still resolve it to the chapter's passage.
+  const hrefs = [CHAPTER_ONE_HREF, `${CHAPTER_TWO_HREF}#section`, CHAPTER_THREE_HREF];
   const { data: sessions, error: sessionError } = await service
     .from("journey_sessions")
     .insert(

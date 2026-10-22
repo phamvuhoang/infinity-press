@@ -14,6 +14,7 @@ import { chunkLocator } from "@/lib/reader/anchor";
 import { FINISHED_TOTAL_PROGRESSION } from "@/lib/reader/completion";
 import { isReaderLocator, parseReaderLocator } from "@/lib/reader/engine";
 import { toReaderResourceHref } from "@/lib/reader/locator-paths";
+import { pathOf } from "@/lib/reader/toc";
 import type { ReaderLocator } from "@/lib/reader/types";
 import { absoluteUrl } from "@/lib/seo/metadata";
 import { createClient } from "@/lib/supabase/server";
@@ -286,14 +287,19 @@ export async function getReadableEdition(
   };
 }
 
-// The chunk ordinal a journey session's start locator falls in, for the session's `?anchor=` link.
-// Null when the caller does not own the edition, it has nothing readable, or the href is not in its
-// current publication (an EPUB re-upload): the page then links to the plain reader URL.
+// Whether the caller owns a journey's edition, and the chunk ordinal its session start falls in,
+// for the session page's reader link. `owned` is false when the caller holds no entitlement (the
+// page then offers the free-edition claim); `anchor` is null when the edition has nothing readable
+// or the href is not in its current publication (an EPUB re-upload): the page then links to the
+// plain reader URL. A toc href routinely carries a fragment (`chapter-2.xhtml#section`); chunks are
+// keyed by path, so the lookup is by path alone, like every other toc match in lib/reader/toc.ts.
+export type PassageAnchor = { owned: boolean; anchor: number | null };
+
 export async function getPassageAnchor(
   locale: Locale,
   editionId: string,
   locator: { href: string; progression: number },
-): Promise<number | null> {
+): Promise<PassageAnchor> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .rpc("my_library_editions", { p_locale: locale })
@@ -301,20 +307,21 @@ export async function getPassageAnchor(
     .maybeSingle();
   if (error) {
     await logAnchorFailure("my_library_editions", error);
-    return null;
+    return { owned: false, anchor: null };
   }
-  const publicationId = (data as unknown as OwnedEditionRow | null)?.publication_id;
-  if (!publicationId) return null;
+  const edition = data as unknown as OwnedEditionRow | null;
+  if (!edition) return { owned: false, anchor: null };
+  if (!edition.publication_id) return { owned: true, anchor: null };
   const { data: ordinal, error: ordinalError } = await supabase.rpc("reader_chunk_for_locator", {
-    p_publication_id: publicationId,
-    p_href: locator.href,
+    p_publication_id: edition.publication_id,
+    p_href: pathOf(locator.href),
     p_progression: locator.progression,
   });
   if (ordinalError) {
     await logAnchorFailure("reader_chunk_for_locator", ordinalError);
-    return null;
+    return { owned: true, anchor: null };
   }
-  return typeof ordinal === "number" ? ordinal : null;
+  return { owned: true, anchor: typeof ordinal === "number" ? ordinal : null };
 }
 
 // The editions of ONE work the caller owns, for the legacy `/read/{bookId}` deep link. One edition

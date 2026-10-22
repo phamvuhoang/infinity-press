@@ -401,7 +401,7 @@ describe("getPassageAnchor", () => {
     const client = readableBookClient({ rpcs: { reader_chunk_for_locator: { data: 3, error: null } } });
     vi.mocked(createClient).mockResolvedValue(client);
 
-    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toBe(3);
+    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toEqual({ owned: true, anchor: 3 });
     expect(client.rpc).toHaveBeenCalledWith("reader_chunk_for_locator", {
       p_publication_id: PUBLICATION_ID,
       p_href: "OEBPS/c1.xhtml",
@@ -409,19 +409,35 @@ describe("getPassageAnchor", () => {
     });
   });
 
-  it("is null when the reader does not own the edition", async () => {
+  // A toc entry usually points within a document; chunks are keyed by the document path.
+  it("matches a fragment-bearing toc href by its path", async () => {
+    const client = readableBookClient({ rpcs: { reader_chunk_for_locator: { data: 7, error: null } } });
+    vi.mocked(createClient).mockResolvedValue(client);
+
+    await expect(getPassageAnchor("en", EDITION_ID, { href: "OEBPS/c2.xhtml#section", progression: 0 })).resolves.toEqual({
+      owned: true,
+      anchor: 7,
+    });
+    expect(client.rpc).toHaveBeenCalledWith("reader_chunk_for_locator", {
+      p_publication_id: PUBLICATION_ID,
+      p_href: "OEBPS/c2.xhtml",
+      p_progression: 0,
+    });
+  });
+
+  it("reports an edition the reader does not own without looking up the passage", async () => {
     const client = readableBookClient({ owned: [], rpcs: { reader_chunk_for_locator: { data: 3, error: null } } });
     vi.mocked(createClient).mockResolvedValue(client);
-    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toBeNull();
+    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toEqual({ owned: false, anchor: null });
     expect(client.rpc).not.toHaveBeenCalledWith("reader_chunk_for_locator", expect.anything());
   });
 
   it.each([
     ["the href is not in the publication", { data: null, error: null }],
     ["the RPC fails", { data: null, error: { code: "XX000", message: "boom" } }],
-  ])("is null when %s", async (_label, result) => {
+  ])("is owned without an anchor when %s", async (_label, result) => {
     vi.mocked(createClient).mockResolvedValue(readableBookClient({ rpcs: { reader_chunk_for_locator: result } }));
-    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toBeNull();
+    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toEqual({ owned: true, anchor: null });
     if (result.error) {
       expect(console.error).toHaveBeenCalledWith("Passage anchor lookup failed.", {
         operation: "reader_chunk_for_locator",

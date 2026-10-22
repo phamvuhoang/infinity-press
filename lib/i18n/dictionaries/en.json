@@ -748,6 +748,7 @@
     },
     "empty": "This journey has no sessions yet.",
     "openReader": "Open the reader at this passage",
+    "claimAndOpen": "Get the free edition and open the reader here",
     "markDone": "Mark this session done",
     "done": "Done",
     "pending": "Saving…",

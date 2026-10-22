@@ -40,7 +40,12 @@ file. Any signed-in reader may open every session of a published journey.
   the guide, the questions, a link that opens the reader at the session start, **Mark this session
   done**, and on the last position a free reflection (at most 2000 characters).
 - The reader link carries `?anchor=` when the session start maps to a passage; otherwise it is the
-  plain reader link and the reader opens at the saved position.
+  plain reader link and the reader opens at the saved position. A toc href with a fragment
+  (`chapter-2.xhtml#section`) maps by its document path.
+- A reader who does not hold the edition sees **Get the free edition and open the reader here**
+  instead of the link. It claims the edition the way the book page's **Get free** does, then opens
+  the reader at the session start. When the edition is not free (or the email is not verified) it
+  lands on the book page with the same error message **Get free** shows.
 - `/{locale}/library` shows a **Reading journeys** section with done/total for each journey the
   reader has started. It appears even for a reader who owns no book.
 
