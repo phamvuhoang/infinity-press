@@ -3,6 +3,7 @@ import Link from "next/link";
 import { updateOfferAction } from "@/app/admin/books/[bookId]/editor-actions";
 import {
   createOfferAction,
+  recomputeAlignmentAction,
   setDefaultEditionAction,
   saveProvenanceAction,
   setDefaultOfferAction,
@@ -21,7 +22,7 @@ import {
 import { ProvenanceForm, ReviewForm } from "@/components/admin/book-editor/edition-editorial-forms";
 import { EpubUploadForm } from "@/components/admin/epub-upload-form";
 import { requireAdmin } from "@/lib/auth/admin";
-import { getAdminEdition, listPricingDefaults } from "@/lib/data/admin-editions";
+import { getAdminEdition, getAlignmentCoverage, listPricingDefaults } from "@/lib/data/admin-editions";
 import { getAdminBook } from "@/lib/data/books";
 import { getPublicationVersionHistory } from "@/lib/data/publications";
 import { listContentLanguages } from "@/lib/i18n/settings";
@@ -48,9 +49,10 @@ export default async function AdminEditionPage({ params }: { params: Promise<{ b
     getAdminBook(bookId),
     listContentLanguages(),
   ]);
-  const [pricingDefaults, versions] = await Promise.all([
+  const [pricingDefaults, versions, alignmentCoverage] = await Promise.all([
     listPricingDefaults(edition.languageCode),
     getPublicationVersionHistory(editionId),
+    edition.activePublicationId ? getAlignmentCoverage(edition.activePublicationId) : null,
   ]);
   const languageName = languages.find((language) => language.code === edition.languageCode)?.name ?? edition.languageCode;
   const title = book.localization?.title ?? book.canonicalKey;
@@ -145,6 +147,19 @@ export default async function AdminEditionPage({ params }: { params: Promise<{ b
               <SampleFullForm
                 action={setSampleFullAction.bind(null, bookId, editionId)}
                 sampleFull={edition.sampleFull}
+              />
+            </div>
+          ) : null}
+          {alignmentCoverage !== null ? (
+            <div className="mt-6 space-y-2">
+              {/* Computed after every publish; a resource that cannot be paired has no compare. */}
+              <p className="text-sm">
+                Passage alignment: {Math.round(alignmentCoverage * 100)}% of passages line up with another edition.
+              </p>
+              <DefaultButtonForm
+                action={recomputeAlignmentAction.bind(null, bookId, editionId)}
+                label="Recompute alignment"
+                pendingLabel="Recomputing…"
               />
             </div>
           ) : null}

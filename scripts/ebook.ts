@@ -15,6 +15,8 @@
 //                                            up by job id) and run it again. Does not bypass
 //                                            the lease mechanism - if another worker holds an
 //                                            unexpired lease on it, this reports no work.
+//   ebook align <bookId>                    Recompute passage alignment between every pair of
+//                                            the work's live editions (also runs after publish).
 //
 // Every command prints a small JSON summary to stdout on success. Every failure prints the
 // job's correlation id and the stable ProcessingFailureCode to stderr and exits non-zero -
@@ -23,6 +25,7 @@ import { readFile } from "node:fs/promises";
 import { hostname } from "node:os";
 import { parseArgs } from "node:util";
 
+import { computeAlignmentsForBook } from "@/lib/data/alignments";
 import { processingFailure, type ProcessingFailure } from "@/lib/epub/errors";
 import { createJobStoreClient, SupabaseJobStore, type ProcessingJob } from "@/lib/epub/job-store";
 import { processEpub } from "@/lib/epub/process";
@@ -241,9 +244,15 @@ async function main(): Promise<void> {
       await runIndexSearch(values.publication);
       return;
     }
+    case "align": {
+      const bookId = rest[0];
+      if (!bookId) fail("align: usage: ebook align <bookId>");
+      reportSuccess({ bookId, runs: await computeAlignmentsForBook(bookId) });
+      return;
+    }
     default: {
       fail(
-        "usage: ebook <validate <file.epub> | process --asset <uuid> | process-next | retry --job <uuid> | index-search --publication <uuid>> [--worker <id>] [--lease <seconds>]",
+        "usage: ebook <validate <file.epub> | process --asset <uuid> | process-next | retry --job <uuid> | index-search --publication <uuid> | align <bookId>> [--worker <id>] [--lease <seconds>]",
       );
     }
   }

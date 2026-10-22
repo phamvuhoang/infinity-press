@@ -114,6 +114,9 @@ vi.mock("@/lib/reader/readium-engine", () => ({
 // `Dictionary["reader"]` and the assertions below are written against these words.
 const copy: ReaderCopy = {
   annotationTooLong: "Select at most 1,000 characters to highlight or add a note.",
+  compare: "Compare",
+  compareNone: "No other edition you own lines up with this passage.",
+  compareOpenOther: "Open in that edition",
   title: "Reader",
   loading: "Opening this book…",
   failed: "This book could not be opened.",
@@ -1207,6 +1210,26 @@ describe("analytics", () => {
         publicationId: "publication-id",
         locale: "en",
       });
+    });
+  });
+
+  it("shows compare only when an alignment exists, and records compare_opened on open", async () => {
+    const reader = renderReader({ mode: "entitled" });
+    await screen.findByRole("button", { name: /Next page/ });
+    expect(screen.queryByRole("button", { name: "Compare" })).toBeNull();
+    reader.unmount();
+    vi.mocked(sendAnalyticsEvent).mockClear();
+
+    renderReader({ mode: "entitled", compareAvailable: true });
+    await screen.findByRole("button", { name: /Next page/ });
+    await waitFor(() => expect(sendAnalyticsEvent).toHaveBeenCalledOnce());
+    vi.mocked(sendAnalyticsEvent).mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
+    expect(sendAnalyticsEvent).toHaveBeenCalledExactlyOnceWith({
+      eventName: "compare_opened",
+      bookId: "book-id",
+      publicationId: "publication-id",
+      locale: "en",
     });
   });
 

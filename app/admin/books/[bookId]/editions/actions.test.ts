@@ -10,8 +10,10 @@ import {
   setDefaultOfferAction,
   setReviewAction,
   setSampleFullAction,
+  recomputeAlignmentAction,
   updateEditionAction,
 } from "@/app/admin/books/[bookId]/editions/actions";
+import { computeAlignmentsForBook } from "@/lib/data/alignments";
 import { requireAdmin } from "@/lib/auth/admin";
 import { initialAdminFormState } from "@/lib/catalog/form";
 import {
@@ -31,6 +33,8 @@ import {
 } from "@/lib/data/admin-editions";
 
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: vi.fn() }));
+vi.mock("@/lib/data/alignments", () => ({ computeAlignmentsForBook: vi.fn() }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-request-id": "req-align-1" }) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => {
@@ -75,13 +79,31 @@ describe("every edition action denies before touching anything", () => {
     ["setReviewAction", () => setReviewAction(bookId, editionId, initialAdminFormState, form({ state: "approved" }))],
     ["setDefaultOfferAction", () => setDefaultOfferAction(bookId, editionId, offerId, initialAdminFormState, form({}))],
     ["setSampleFullAction", () => setSampleFullAction(bookId, editionId, initialAdminFormState, form({ full: "on" }))],
+    ["recomputeAlignmentAction", () => recomputeAlignmentAction(bookId, editionId, initialAdminFormState, form({}))],
   ])("%s", async (_name, call) => {
     const denied = new Error("NEXT_FORBIDDEN");
     vi.mocked(requireAdmin).mockRejectedValue(denied);
     await expect(call()).rejects.toBe(denied);
-    for (const mutation of [createEdition, updateEdition, createOffer, setDefaultEdition, setDefaultOffer, setSampleFull]) {
+    for (const mutation of [createEdition, updateEdition, createOffer, setDefaultEdition, setDefaultOffer, setSampleFull, computeAlignmentsForBook]) {
       expect(mutation).not.toHaveBeenCalled();
     }
+  });
+});
+
+describe("recomputeAlignmentAction", () => {
+  it("recomputes the work's alignments", async () => {
+    vi.mocked(computeAlignmentsForBook).mockResolvedValue([]);
+    const state = await recomputeAlignmentAction(bookId, editionId, initialAdminFormState, form({}));
+    expect(computeAlignmentsForBook).toHaveBeenCalledExactlyOnceWith(bookId);
+    expect(state.formError).toBeNull();
+  });
+
+  it("reports a failure without its text and logs the request ID", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(computeAlignmentsForBook).mockRejectedValue(new Error("boom"));
+    const state = await recomputeAlignmentAction(bookId, editionId, initialAdminFormState, form({}));
+    expect(state.formError).toBe("Alignment could not be recomputed. Try again.");
+    expect(log).toHaveBeenCalledWith("Recompute alignment failed.", expect.objectContaining({ bookId, requestId: "req-align-1" }));
   });
 });
 

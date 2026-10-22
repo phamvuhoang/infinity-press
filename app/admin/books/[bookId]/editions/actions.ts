@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
@@ -33,6 +34,8 @@ import {
   UnknownLanguageError,
   updateEdition,
 } from "@/lib/data/admin-editions";
+import { computeAlignmentsForBook } from "@/lib/data/alignments";
+import { getRequestId } from "@/lib/observability/request-id";
 
 // Every runtime export of a "use server" module must be an async function. Each action calls
 // requireAdmin() first, names its edition explicitly, never returns raw database text, and
@@ -234,6 +237,25 @@ export async function setSampleFullAction(
     await setSampleFull(edition.activePublicationId, full);
   } catch (error) {
     return knownFailure(error);
+  }
+  revalidateEdition(bookId, editionId);
+  return saved();
+}
+
+// Recomputes passage alignment for every pair of this work's live editions. Automatic, like the run
+// after a publish: the admin only asks for it again, never edits a pairing.
+export async function recomputeAlignmentAction(
+  bookId: string,
+  editionId: string,
+  _previous: AdminFormState, // eslint-disable-line @typescript-eslint/no-unused-vars -- form action signature
+  _formData: FormData, // eslint-disable-line @typescript-eslint/no-unused-vars -- form action signature
+): Promise<AdminFormState> {
+  await requireAdmin({ next: `/admin/books/${bookId}/editions/${editionId}` });
+  try {
+    await computeAlignmentsForBook(bookId);
+  } catch (error) {
+    console.error("Recompute alignment failed.", { bookId, requestId: getRequestId(await headers()), error: String(error) });
+    return { fieldErrors: {}, formError: "Alignment could not be recomputed. Try again.", savedAt: null };
   }
   revalidateEdition(bookId, editionId);
   return saved();

@@ -69,14 +69,18 @@ type OwnedEditionRow = Database["public"]["Functions"]["my_library_editions"]["R
 
 // A passage lookup that fails still opens the reader (at the saved position); the failure goes to
 // the log with the request ID.
-async function logAnchorFailure(operation: string, cause: { code?: string }): Promise<void> {
+async function logAnchorFailure(
+  operation: string,
+  cause: { code?: string },
+  message = "Passage anchor lookup failed.",
+): Promise<void> {
   let requestId: string | null = null;
   try {
     requestId = getRequestId(await headers());
   } catch {
     // Outside a request scope there is no request ID.
   }
-  console.error("Passage anchor lookup failed.", { operation, code: cause.code ?? null, requestId });
+  console.error(message, { operation, code: cause.code ?? null, requestId });
 }
 
 type LibraryRow = {
@@ -193,6 +197,8 @@ export async function getReadableEdition(
   // by the client so the engine is handed its starting position at mount time - a locator applied
   // after mount would show the opening page first and then jump, which reads as a bug.
   initialLocator: ReaderLocator | null;
+  // alignment_coverage > 0: some passage pairs with another edition of the work.
+  compareAvailable: boolean;
 } | null> {
   await requireUser(locale, withLocale(locale, `/read/editions/${editionId}`));
 
@@ -246,6 +252,14 @@ export async function getReadableEdition(
     else anchored = chunkLocator(chunk, (href) => toReaderResourceHref(publicationId, href));
   }
 
+  // The compare button shows only when some passage of this publication is aligned with another
+  // edition. A failed lookup hides it: compare never blocks the reader.
+  const { data: coverage, error: coverageError } = await supabase.rpc("alignment_coverage", {
+    p_publication_id: publicationId,
+  });
+  if (coverageError) await logAnchorFailure("alignment_coverage", coverageError, "Alignment coverage lookup failed.");
+  const compareAvailable = !coverageError && typeof coverage === "number" && coverage > 0;
+
   return {
     bookId: edition.book_id,
     editionId: edition.edition_id,
@@ -268,6 +282,7 @@ export async function getReadableEdition(
     // degrades to "open at the beginning" rather than taking the whole reader page down.
     initialLocator:
       anchored ?? (isReaderLocator(progress?.locator_json) ? parseReaderLocator(progress.locator_json) : null),
+    compareAvailable,
   };
 }
 

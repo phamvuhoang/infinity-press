@@ -14,5 +14,5 @@ export type ReaderCopy = {
   search: string; searchPlaceholder: string; searchPrompt: string; searching: string; searchEmpty: string; searchFailed: string; untitledChapter: string;
   annotationsFailed: string; page: string; pages: string; searchOpen: string; menu: string; onePage: string; twoPages: string;
   relatedBooks: string; noRelatedBooks: string; rateBook: string; askAuthor: string; reportError: string; reportHere: string;
-  annotationTooLong: string;
+  annotationTooLong: string; compare: string; compareNone: string; compareOpenOther: string;
 };

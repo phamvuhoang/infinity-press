@@ -54,7 +54,14 @@ npm run ebook -- process --asset <uuid>     # claim and run the job for one spec
 npm run ebook -- process-next               # claim and run whichever job is next in queue
 npm run ebook -- retry --job <uuid>         # reclaim a failed job and run it again
 npm run ebook -- index-search --publication <uuid> # rebuild private search rows from stored sanitized XHTML
+npm run ebook -- align <bookId>             # recompute passage alignment between the work's live editions
 ```
+
+`align` runs automatically after every publish and rollback, and from the admin edition page's
+"Recompute alignment" button. It pairs search chunks resource by resource (equal counts 1:1,
+counts within 10% by relative position, anything else skipped) and prints one JSON line of
+pair counts and coverage per direction. There is no manual alignment: a resource it cannot pair
+has no compare in the reader. Index search first; a publication without chunks pairs nothing.
 
 Every command that touches a job accepts `--worker <id>` (defaults to
 `<hostname>-<pid>`) and `--lease <seconds>` (defaults to `EBOOK_LEASE_SECONDS` if set, else

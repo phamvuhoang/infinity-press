@@ -369,6 +369,31 @@ describe("getReadableEdition anchor", () => {
   });
 });
 
+describe("getReadableEdition compareAvailable", () => {
+  it.each([
+    ["coverage is above 0", { data: 0.5, error: null }, true],
+    ["coverage is 0", { data: 0, error: null }, false],
+    ["the lookup fails", { data: null, error: { code: "XX000", message: "boom" } }, false],
+  ])("is %s -> %s", async (_label, result, expected) => {
+    const client = readableBookClient({ rpcs: { alignment_coverage: result } });
+    vi.mocked(createClient).mockResolvedValue(client);
+    await expect(getReadableEdition("en", EDITION_ID)).resolves.toMatchObject({ compareAvailable: expected });
+    expect(client.rpc).toHaveBeenCalledWith("alignment_coverage", { p_publication_id: PUBLICATION_ID });
+  });
+
+  it("logs a failed coverage lookup with the request ID", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      readableBookClient({ rpcs: { alignment_coverage: { data: null, error: { code: "XX000", message: "boom" } } } }),
+    );
+    await getReadableEdition("en", EDITION_ID);
+    expect(console.error).toHaveBeenCalledWith("Alignment coverage lookup failed.", {
+      operation: "alignment_coverage",
+      code: "XX000",
+      requestId: "req_library123",
+    });
+  });
+});
+
 describe("getPassageAnchor", () => {
   const start = { href: "OEBPS/c1.xhtml", progression: 0.25 };
 

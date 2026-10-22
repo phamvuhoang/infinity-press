@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 
 import { ProgressLine } from "@/components/brand/progress-line";
 import { ReaderAnnotationEditor } from "@/components/reader/reader-annotation-editor";
+import { ReaderComparePanel } from "@/components/reader/reader-compare-panel";
 import { ReaderCompletionPanel } from "@/components/reader/reader-completion-panel";
 import { ReaderSearchPanel } from "@/components/reader/reader-search-panel";
 import { ReaderSelectionToolbar } from "@/components/reader/reader-selection-toolbar";
@@ -74,9 +75,12 @@ export type ReaderClientProps = ReaderClientBaseProps &
         reviewHref: string | null;
         askHref: string | null;
         relatedBooks: Array<{ title: string; authorName: string; href: string; coverUrl: string | null }>;
+        // Some passage of this publication is aligned with another edition: show the compare button.
+        compareAvailable?: boolean;
       }
     | {
         mode: "sample";
+        compareAvailable?: never;
         authorName?: string;
         canonicalBookUrl?: string;
         reviewHref?: string;
@@ -151,6 +155,7 @@ export function ReaderClient({
   askHref,
   relatedBooks = [],
   sampleFullNotice,
+  compareAvailable = false,
 }: ReaderClientProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -194,6 +199,9 @@ export function ReaderClient({
   const [editor, setEditor] = useState<{ mode: "bookmark" | "note"; key?: string; selection?: ReaderSelection } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // The place being read when the compare panel last opened.
+  const [compareLocator, setCompareLocator] = useState<ReaderLocator | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -907,6 +915,16 @@ export function ReaderClient({
           {depthEnabled ? <Dialog onOpenChange={(open) => { setSearchOpen(open); if (open) setSelection(null); }} open={searchOpen}>
             <DialogTrigger aria-label={copy.searchOpen} className="hidden size-11 items-center justify-center rounded-md text-sm outline-none hover:bg-current/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current xl:inline-flex">⌕</DialogTrigger>
             <DialogPanel className={preferences.theme === "dark" ? "bg-ink text-ivory" : undefined} side="right"><div className="flex items-center justify-between gap-4"><DialogTitle>{copy.search}</DialogTitle><DialogClose>{copy.close}</DialogClose></div><ReaderSearchPanel copy={copy} onNavigate={async (locator) => { const moved = await goToLocator(locator); if (moved) setSearchOpen(false); return moved; }} publicationId={publicationId} request={request} /></DialogPanel>
+          </Dialog> : null}
+          {depthEnabled && compareAvailable ? <Dialog onOpenChange={(open) => {
+            setCompareOpen(open);
+            if (!open) return;
+            setSelection(null);
+            setCompareLocator(locatorRef.current);
+            sendAnalyticsEvent({ eventName: "compare_opened", bookId, publicationId, locale });
+          }} open={compareOpen}>
+            <DialogTrigger className="inline-flex min-h-11 items-center justify-center rounded-md px-2 text-sm outline-none hover:bg-current/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current">{copy.compare}</DialogTrigger>
+            <DialogPanel className={preferences.theme === "dark" ? "bg-ink text-ivory" : undefined} side="right"><div className="flex items-center justify-between gap-4"><DialogTitle>{copy.compare}</DialogTitle><DialogClose>{copy.close}</DialogClose></div><ReaderComparePanel copy={copy} currentLocator={compareLocator} locale={locale} onOpenOther={(href) => void flush().then((saved) => { if (saved) window.location.assign(href); })} publicationId={publicationId} request={request} /></DialogPanel>
           </Dialog> : null}
           {depthEnabled ? <ReaderTocDrawer
             copy={{

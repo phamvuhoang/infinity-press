@@ -59,6 +59,7 @@ export default async function ReadEditionPage({
         bookId={book.bookId}
         bookTitle={book.title}
         canonicalBookUrl={book.canonicalBookUrl}
+        compareAvailable={book.compareAvailable}
         copy={copy}
         initialLocator={book.initialLocator}
         libraryHref={withLocale(locale, "/library")}

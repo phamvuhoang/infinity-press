@@ -1,9 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { revalidateStorefront } from "@/lib/catalog/revalidate";
+import { computeAlignmentsForBook } from "@/lib/data/alignments";
+import { getRequestId } from "@/lib/observability/request-id";
 import {
   CrossBookRollbackError,
   MissingRejectionReasonError,
@@ -38,6 +41,16 @@ function toActionResult(error: unknown): PublicationActionResult {
   return { ok: false, error: "Something went wrong. Try again." };
 }
 
+// Pairs the newly live publication with the work's other editions. Best-effort: the transition has
+// committed, and a work without alignment simply has no compare.
+async function alignBestEffort(bookId: string): Promise<void> {
+  try {
+    await computeAlignmentsForBook(bookId);
+  } catch (error) {
+    console.error("Alignment after a publication change failed.", { bookId, requestId: getRequestId(await headers()), error: String(error) });
+  }
+}
+
 // `assetId` is this page's own route param (app/admin/publications/[publicationId]/page.tsx -
 // see lib/data/publications.ts's header comment on why that segment holds an ebook_asset id, not
 // an ebook_publications id) - used only to redirect a lapsed session back to the right page and
@@ -54,6 +67,8 @@ export async function publishPublicationAction(
   } catch (error) {
     return toActionResult(error);
   }
+
+  await alignBestEffort(bookId);
 
   revalidatePath(`/admin/publications/${assetId}`);
   // Fix round 1, Minor #5: `/admin/books` names no route - app/admin/ has only
@@ -99,6 +114,7 @@ export async function rollbackPublicationAction(
   } catch (error) {
     return toActionResult(error);
   }
+  await alignBestEffort(bookId);
 
   revalidatePath(`/admin/publications/${assetId}`);
   revalidatePath(`/admin/publications/${targetAssetId}`);

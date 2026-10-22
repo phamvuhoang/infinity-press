@@ -206,6 +206,19 @@ describe("POST /api/analytics/events", () => {
     );
   });
 
+  it("records compare_opened with its publication", async () => {
+    signIn();
+    const response = await POST(
+      request({ eventId: EVENT_ID, eventName: "compare_opened", bookId: BOOK_ID, publicationId: PUBLICATION_ID, locale: "vi" }),
+    );
+
+    expect(response.status).toBe(202);
+    expect(trackEventBestEffort).toHaveBeenCalledWith(
+      expect.objectContaining({ eventName: "compare_opened", bookId: BOOK_ID, publicationId: PUBLICATION_ID }),
+      expect.anything(),
+    );
+  });
+
   it("accepts change_reader_setting without a publication", async () => {
     signIn();
     const response = await POST(
@@ -418,6 +431,10 @@ describe("POST /api/analytics/events", () => {
           bookId: BOOK_ID,
           locale: "vi",
         },
+      ],
+      [
+        "compare_opened",
+        { eventId: EVENT_ID, eventName: "compare_opened", bookId: BOOK_ID, publicationId: PUBLICATION_ID, locale: "vi" },
       ],
     ])(
       "refuses an anonymous %s with 401 and writes nothing",

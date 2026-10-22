@@ -2750,6 +2750,69 @@ export type Database = {
           },
         ]
       }
+      passage_alignments: {
+        Row: {
+          book_id: string
+          confidence: number
+          source_chunk_id: string
+          source_publication_id: string
+          target_chunk_id: string
+          target_publication_id: string
+        }
+        Insert: {
+          book_id: string
+          confidence: number
+          source_chunk_id: string
+          source_publication_id: string
+          target_chunk_id: string
+          target_publication_id: string
+        }
+        Update: {
+          book_id?: string
+          confidence?: number
+          source_chunk_id?: string
+          source_publication_id?: string
+          target_chunk_id?: string
+          target_publication_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passage_alignments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_alignments_source_chunk_id_fkey"
+            columns: ["source_chunk_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_search_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_alignments_source_publication_id_fkey"
+            columns: ["source_publication_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_publications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_alignments_target_chunk_id_fkey"
+            columns: ["target_chunk_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_search_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_alignments_target_publication_id_fkey"
+            columns: ["target_publication_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_events: {
         Row: {
           id: string
@@ -4163,6 +4226,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      alignment_coverage: { Args: { p_publication_id: string }; Returns: number }
       apply_coupon_to_order: {
         Args: { p_code: string; p_order_id: string }
         Returns: {
@@ -4823,6 +4887,10 @@ export type Database = {
         Args: { p_publication_id: string }
         Returns: undefined
       }
+      reader_aligned_passage: {
+        Args: { p_ordinal: number; p_publication_id: string }
+        Returns: Json
+      }
       reader_annotation_request: {
         Args: {
           p_annotation_id?: string
@@ -4919,6 +4987,15 @@ export type Database = {
       }
       remove_gift: { Args: { p_order_id: string }; Returns: undefined }
       remove_shared_quote: { Args: { p_code: string }; Returns: undefined }
+      replace_passage_alignments: {
+        Args: {
+          p_book_id: string
+          p_pairs: Json
+          p_source_publication_id: string
+          p_target_publication_id: string
+        }
+        Returns: undefined
+      }
       replace_publication_search: {
         Args: {
           p_positions: Json

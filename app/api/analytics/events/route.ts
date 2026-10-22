@@ -18,7 +18,7 @@ const MAX_BODY_BYTES = 1024;
 // Only a signed-in person can reach the library or the full reader, so these events never come from
 // an anonymous browser. Requiring a session for them keeps the only anonymous events to view_book,
 // open_sample, click_external_store and view_quote, which the shared anonymous quota bounds.
-const sessionBoundEvents = new Set(["view_library", "open_reader", "change_reader_setting"]);
+const sessionBoundEvents = new Set(["view_library", "open_reader", "change_reader_setting", "compare_opened"]);
 
 // Database ids are checked for shape only (any 8-4-4-4-12 hex), because seeded and imported rows are
 // not always RFC 4122 v4. The event ID is minted by crypto.randomUUID(), so it must be a real UUID.
@@ -37,7 +37,7 @@ const browserEventSchema = z.discriminatedUnion("eventName", [
   z.strictObject({ eventName: z.enum(["view_book", "open_sample"]), bookId: id, ...common }),
   z.strictObject({ eventName: z.literal("click_external_store"), bookId: id, retailer: z.enum(retailers), ...common }),
   z.strictObject({ eventName: z.literal("view_quote"), sharedQuoteId: id, bookId: id, ...common }),
-  z.strictObject({ eventName: z.literal("open_reader"), bookId: id, publicationId: id, ...common }),
+  z.strictObject({ eventName: z.enum(["open_reader", "compare_opened"]), bookId: id, publicationId: id, ...common }),
   z.strictObject({ eventName: z.literal("change_reader_setting"), bookId: id, publicationId: id.optional(), ...common }),
   z.strictObject({ eventName: z.literal("view_library"), ...common }),
 ]);

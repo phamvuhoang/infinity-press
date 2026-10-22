@@ -407,6 +407,17 @@ export async function setEditionReview(editionId: string, input: EditionReviewIn
   if (error) throw failure("setEditionReview", error);
 }
 
+// The share of this publication's passages aligned with another edition (0 to 1).
+export async function getAlignmentCoverage(publicationId: string): Promise<number> {
+  await requireAdmin();
+  assertUuid(publicationId);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("alignment_coverage", { p_publication_id: publicationId });
+  if (error) throw failure("getAlignmentCoverage", error);
+  return Number(data);
+}
+
 // Opens the whole publication as a free sample (["*"]) or puts back the worker's default sample list.
 export async function setSampleFull(publicationId: string, full: boolean): Promise<void> {
   await requireAdmin();

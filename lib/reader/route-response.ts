@@ -10,7 +10,7 @@ import {
 import { REQUEST_ID_HEADER } from "@/lib/observability/request-id";
 import { ReaderRequestNotFoundError, ReaderRequestUnauthorizedError } from "@/lib/reader/request-context";
 
-type ReaderApiArea = "annotation" | "search" | "quote";
+type ReaderApiArea = "annotation" | "search" | "quote" | "compare";
 
 export function readerJsonResponse(
   requestId: string,
