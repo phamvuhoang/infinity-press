@@ -11,9 +11,28 @@ set search_path = ''
 as $$
 declare
   v_actor uuid;
+  v_edition_id uuid;
 begin
   if not public.is_admin() then
     raise exception 'admin_set_sample_full: caller is not an admin' using errcode = '42501';
+  end if;
+
+  -- Only a free edition opens in full. Free means the offer readers are shown
+  -- (catalog_edition_offer: the default offer, or the sole active one) costs 0, or the edition has
+  -- no active offer at all. Closing is always allowed, so an admin can undo it after a price change.
+  select a.edition_id into v_edition_id
+  from public.ebook_publications p
+  join public.ebook_assets a on a.id = p.ebook_asset_id
+  where p.id = p_publication_id;
+  if p_full and not (
+    exists (select 1 from public.catalog_edition_offer(v_edition_id) o where o.price_minor = 0)
+    or not exists (
+      select 1 from public.offers o
+      join public.skus s on s.id = o.sku_id
+      where s.edition_id = v_edition_id and o.active and s.active
+    )
+  ) then
+    raise exception 'admin_set_sample_full: only a free edition can open its whole book as a sample' using errcode = '22023';
   end if;
 
   update public.book_samples

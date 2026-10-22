@@ -406,3 +406,11 @@ export async function setSampleFull(publicationId: string, full: boolean): Promi
   const { error } = await supabase.rpc("admin_set_sample_full", { p_publication_id: publicationId, p_full: full });
   if (error) throw failure("setSampleFull", error);
 }
+
+// The rule admin_set_sample_full enforces, for the editor's checkbox and its message: the default
+// offer is active and free, or the edition has no active offer at all. The database function is the
+// boundary; this only decides what the form offers.
+export function editionIsFree(offers: AdminOfferDTO[]): boolean {
+  const shown = offers.find((offer) => offer.isDefault);
+  return (shown?.active === true && shown.priceMinor === 0) || !offers.some((offer) => offer.active);
+}

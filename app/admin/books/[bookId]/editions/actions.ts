@@ -21,6 +21,7 @@ import {
   createOffer,
   DuplicateEditionError,
   EditionIdentityLockedError,
+  editionIsFree,
   EditionNotFoundError,
   getAdminEdition,
   ProvenanceIncompleteError,
@@ -226,8 +227,8 @@ export async function setSampleFullAction(
   if (!edition.activePublicationId) {
     return { fieldErrors: {}, formError: "No EPUB version is live for this edition yet.", savedAt: null };
   }
-  if (full && edition.offers.find((offer) => offer.isDefault)?.priceMinor !== 0) {
-    return { fieldErrors: {}, formError: "Only an edition whose default offer is free can be opened in full.", savedAt: null };
+  if (full && !editionIsFree(edition.offers)) {
+    return { fieldErrors: {}, formError: "Only a free edition can be opened in full.", savedAt: null };
   }
 
   try {

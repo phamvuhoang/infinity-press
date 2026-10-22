@@ -1,8 +1,8 @@
 begin;
-select plan(3);
+select plan(4);
 
--- admin_set_sample_full: admin only; true writes exactly ["*"]; false restores the worker's list,
--- which is the publication's access_class = 'sample' resources.
+-- admin_set_sample_full: admin only; true needs a free edition and writes exactly ["*"]; false
+-- restores the worker's list, which is the publication's access_class = 'sample' resources.
 
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
@@ -21,15 +21,27 @@ insert into public.ebook_resources (publication_id, href, media_type, storage_ke
   ('f9600000-0000-0000-0000-000000000001', 'OEBPS/c1.xhtml', 'application/xhtml+xml', 'sf/c1.xhtml', 10, 'sha-sf-1', 'sample'),
   ('f9600000-0000-0000-0000-000000000001', 'OEBPS/c9.xhtml', 'application/xhtml+xml', 'sf/c9.xhtml', 10, 'sha-sf-9', 'paid');
 insert into public.book_samples (publication_id, allowed_hrefs) values ('f9600000-0000-0000-0000-000000000001', '["OEBPS/c1.xhtml"]');
+-- A paid default offer first; it is made free before the admin opens the whole book.
+insert into public.skus (id, edition_id, sku_code) values ('f9700000-0000-0000-0000-000000000001', 'f9400000-0000-0000-0000-000000000001', 'SF-EN');
+insert into public.offers (id, sku_id, market_code, currency, price_minor) values
+  ('f9800000-0000-0000-0000-000000000001', 'f9700000-0000-0000-0000-000000000001', 'VN', 'VND', 50000);
+insert into public.edition_default_offers (edition_id, sku_id, offer_id) values
+  ('f9400000-0000-0000-0000-000000000001', 'f9700000-0000-0000-0000-000000000001', 'f9800000-0000-0000-0000-000000000001');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f9100000-0000-0000-0000-000000000002', true);
 select throws_ok($$select public.admin_set_sample_full('f9600000-0000-0000-0000-000000000001', true)$$, '42501', null, 'a non-admin cannot open the whole book');
 
 select set_config('request.jwt.claim.sub', 'f9100000-0000-0000-0000-000000000001', true);
+select throws_ok($$select public.admin_set_sample_full('f9600000-0000-0000-0000-000000000001', true)$$, '22023', null, 'an admin cannot open a paid edition in full');
+reset role;
+update public.offers set price_minor = 0 where id = 'f9800000-0000-0000-0000-000000000001';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'f9100000-0000-0000-0000-000000000001', true);
 select public.admin_set_sample_full('f9600000-0000-0000-0000-000000000001', true);
 reset role;
-select is((select allowed_hrefs from public.book_samples where publication_id = 'f9600000-0000-0000-0000-000000000001'), '["*"]'::jsonb, 'admin true writes exactly ["*"]');
+select is((select allowed_hrefs from public.book_samples where publication_id = 'f9600000-0000-0000-0000-000000000001'), '["*"]'::jsonb, 'admin true on a free edition writes exactly ["*"]');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f9100000-0000-0000-0000-000000000001', true);
