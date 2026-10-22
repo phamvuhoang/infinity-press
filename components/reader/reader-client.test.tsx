@@ -115,6 +115,7 @@ vi.mock("@/lib/reader/readium-engine", () => ({
 const copy: ReaderCopy = {
   annotationTooLong: "Select at most 1,000 characters to highlight or add a note.",
   shareQuestionLabel: "Your question (optional)",
+  textKindLabel: "Text kind",
   textKind: { verbatim: "Verbatim", translation: "Translation", paraphrase: "Paraphrase" },
   compare: "Compare",
   compareNone: "No other edition you own lines up with this passage.",

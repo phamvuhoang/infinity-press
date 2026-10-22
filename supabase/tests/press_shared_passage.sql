@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(10);
 
 -- S20 passage cards: create_shared_quote takes a question, a text kind and a chunk ordinal; a share
 -- with an ordinal writes passage_shared; catalog_shared_quote says whether the chunk still exists,
@@ -12,15 +12,20 @@ insert into public.authors (id, canonical_slug, display_name, status) values ('f
 insert into public.books (id, canonical_key, original_language, primary_author_id, status) values ('f9300000-0000-0000-0000-000000000001', 'sp-book', 'vi', 'f9200000-0000-0000-0000-000000000001', 'published');
 insert into public.editions (id, book_id, language_code) values
   ('f9400000-0000-0000-0000-000000000001', 'f9300000-0000-0000-0000-000000000001', 'vi'),
-  ('f9400000-0000-0000-0000-000000000002', 'f9300000-0000-0000-0000-000000000001', 'en');
+  ('f9400000-0000-0000-0000-000000000002', 'f9300000-0000-0000-0000-000000000001', 'en'),
+  ('f9400000-0000-0000-0000-000000000003', 'f9300000-0000-0000-0000-000000000001', 'ja');
 insert into public.ebook_assets (id, edition_id, source_storage_key, version, status) values
   ('f9500000-0000-0000-0000-000000000001', 'f9400000-0000-0000-0000-000000000001', 'sp/vi.epub', 1, 'published'),
-  ('f9500000-0000-0000-0000-000000000002', 'f9400000-0000-0000-0000-000000000002', 'sp/en.epub', 1, 'published');
+  ('f9500000-0000-0000-0000-000000000002', 'f9400000-0000-0000-0000-000000000002', 'sp/en.epub', 1, 'published'),
+  ('f9500000-0000-0000-0000-000000000003', 'f9400000-0000-0000-0000-000000000003', 'sp/ja.epub', 1, 'published');
 insert into public.ebook_publications (id, ebook_asset_id, version, manifest_key, status) values
   ('f9600000-0000-0000-0000-000000000001', 'f9500000-0000-0000-0000-000000000001', 1, 'sp/vi.json', 'published'),
-  ('f9600000-0000-0000-0000-000000000002', 'f9500000-0000-0000-0000-000000000002', 1, 'sp/en.json', 'published');
+  ('f9600000-0000-0000-0000-000000000002', 'f9500000-0000-0000-0000-000000000002', 1, 'sp/en.json', 'published'),
+  ('f9600000-0000-0000-0000-000000000003', 'f9500000-0000-0000-0000-000000000003', 1, 'sp/ja.json', 'published');
 update public.editions set active_publication_id = 'f9600000-0000-0000-0000-000000000001', status = 'published' where id = 'f9400000-0000-0000-0000-000000000001';
 update public.editions set active_publication_id = 'f9600000-0000-0000-0000-000000000002', status = 'published' where id = 'f9400000-0000-0000-0000-000000000002';
+-- ja is live but blocked: it must never appear to a visitor.
+update public.editions set active_publication_id = 'f9600000-0000-0000-0000-000000000003', status = 'published', editorial_state = 'blocked', reviewed_at = now(), reviewed_by = (select id from public.profiles where auth_user_id = 'f9100000-0000-0000-0000-000000000001') where id = 'f9400000-0000-0000-0000-000000000003';
 insert into public.entitlements (profile_id, book_id, edition_id, source_type, actor_profile_id, reason, status)
 select id, 'f9300000-0000-0000-0000-000000000001', 'f9400000-0000-0000-0000-000000000001', 'admin_grant', id, 'fixture', 'active'
 from public.profiles where auth_user_id = 'f9100000-0000-0000-0000-000000000001';
@@ -35,9 +40,11 @@ insert into public.ebook_resources (publication_id, href, media_type, storage_ke
 insert into public.ebook_search_chunks (id, publication_id, href, ordinal, plain_text, locator_json) values
   ('f9700000-0000-0000-0000-000000000001', 'f9600000-0000-0000-0000-000000000001', 'c1', 1, 'một', '{"href":"c1","progression":0,"totalProgression":0,"locations":{"position":1},"text":{"highlight":"một"}}'),
   ('f9700000-0000-0000-0000-000000000002', 'f9600000-0000-0000-0000-000000000001', 'c2', 2, 'hai', '{"href":"c2","progression":0,"totalProgression":0.5,"locations":{"position":2},"text":{"highlight":"hai"}}'),
-  ('f9700000-0000-0000-0000-000000000003', 'f9600000-0000-0000-0000-000000000002', 'c1', 4, 'one', '{"href":"c1","progression":0,"totalProgression":0,"locations":{"position":1},"text":{"highlight":"one"}}');
+  ('f9700000-0000-0000-0000-000000000003', 'f9600000-0000-0000-0000-000000000002', 'c1', 4, 'one', '{"href":"c1","progression":0,"totalProgression":0,"locations":{"position":1},"text":{"highlight":"one"}}'),
+  ('f9700000-0000-0000-0000-000000000004', 'f9600000-0000-0000-0000-000000000003', 'c1', 5, 'ichi', '{"href":"c1","progression":0,"totalProgression":0,"locations":{"position":1},"text":{"highlight":"ichi"}}');
 insert into public.passage_alignments (book_id, source_publication_id, target_publication_id, source_chunk_id, target_chunk_id, confidence) values
-  ('f9300000-0000-0000-0000-000000000001', 'f9600000-0000-0000-0000-000000000001', 'f9600000-0000-0000-0000-000000000002', 'f9700000-0000-0000-0000-000000000001', 'f9700000-0000-0000-0000-000000000003', 0.9);
+  ('f9300000-0000-0000-0000-000000000001', 'f9600000-0000-0000-0000-000000000001', 'f9600000-0000-0000-0000-000000000002', 'f9700000-0000-0000-0000-000000000001', 'f9700000-0000-0000-0000-000000000003', 0.9),
+  ('f9300000-0000-0000-0000-000000000001', 'f9600000-0000-0000-0000-000000000001', 'f9600000-0000-0000-0000-000000000003', 'f9700000-0000-0000-0000-000000000001', 'f9700000-0000-0000-0000-000000000004', 0.8);
 
 create temporary table t_cards (name text, card jsonb);
 grant all on t_cards to public;
@@ -79,6 +86,19 @@ select is(
   '[{"editionId":"f9400000-0000-0000-0000-000000000001","languageCode":"vi","ordinal":1,"sampleAllows":true},
     {"editionId":"f9400000-0000-0000-0000-000000000002","languageCode":"en","ordinal":4,"sampleAllows":false}]'::jsonb,
   'languages lists the shared edition, then the aligned live edition with its ordinal and its own sample rule');
+reset role;
+
+-- The blocked edition is absent; once unblocked, the same alignment shows it (the positive control).
+create temporary table t_blocked (present boolean);
+grant all on t_blocked to public;
+set local role anon;
+insert into t_blocked select public.catalog_shared_quote((select card ->> 'code' from t_cards where name = 'passage')) -> 'languages' @> '[{"languageCode":"ja"}]';
+reset role;
+update public.editions set editorial_state = 'approved' where id = 'f9400000-0000-0000-0000-000000000003';
+set local role anon;
+select is(
+  array[(select present from t_blocked), public.catalog_shared_quote((select card ->> 'code' from t_cards where name = 'passage')) -> 'languages' @> '[{"languageCode":"ja"}]'],
+  array[false, true], 'a blocked aligned edition is absent from languages');
 reset role;
 
 -- The sample chapter is taken off the allowlist: the chunk exists but the sample refuses it.

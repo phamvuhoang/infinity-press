@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReaderSelectionToolbar } from "@/components/reader/reader-selection-toolbar";
 
 afterEach(cleanup);
-const copy = { highlightYellow: "Yellow", highlightGreen: "Green", highlightRose: "Rose", addNote: "Add note", copy: "Copy", share: "Share", askInfinity: "Ask Infinity", comingSoon: "Coming soon", copied: "Copied", copyFailed: "Copy failed", shareCancelled: "Share cancelled", quoteTruncated: "Quote shortened", shareUnavailable: "Share unavailable", shareCreated: "Public quote page created", sharePublic: "Sharing creates a public page", dismiss: "Keep reading", cancel: "Cancel", shareQuestionLabel: "Your question", textKind: { verbatim: "Verbatim", translation: "Translation", paraphrase: "Paraphrase" } };
+const copy = { highlightYellow: "Yellow", highlightGreen: "Green", highlightRose: "Rose", addNote: "Add note", copy: "Copy", share: "Share", askInfinity: "Ask Infinity", comingSoon: "Coming soon", copied: "Copied", copyFailed: "Copy failed", shareCancelled: "Share cancelled", quoteTruncated: "Quote shortened", shareUnavailable: "Share unavailable", shareCreated: "Public quote page created", sharePublic: "Sharing creates a public page", dismiss: "Keep reading", cancel: "Cancel", shareQuestionLabel: "Your question", textKindLabel: "Text kind", textKind: { verbatim: "Verbatim", translation: "Translation", paraphrase: "Paraphrase" } };
 const selection = { locator: { href: "/chapter.xhtml", progression: 0, totalProgression: 0, locations: {} }, text: "Selected text", rect: { x: -20, y: 10, width: 50, height: 20 } };
 // With a card to mint, Share first opens the question dialog; its own Share button sends.
 async function shareThroughDialog(user: ReturnType<typeof userEvent.setup>) {
@@ -192,6 +192,7 @@ describe("ReaderSelectionToolbar", () => {
     await user.click(screen.getByRole("button", { name: "Share" }));
     expect(createShareUrl).not.toHaveBeenCalled();
     const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("group", { name: "Text kind" })).toBeInTheDocument();
     expect(within(dialog).getByRole("radio", { name: "Verbatim" })).toBeChecked();
     const question = within(dialog).getByRole("textbox", { name: "Your question" });
     expect(question).toHaveAttribute("maxLength", "280");
@@ -208,5 +209,39 @@ describe("ReaderSelectionToolbar", () => {
     await user.click(screen.getByRole("button", { name: "Share" }));
     await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancel" }));
     expect(createShareUrl).not.toHaveBeenCalled();
+  });
+
+  it("opens every share dialog empty: after a share, after a cancel, and for another selection", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "share", { configurable: true, value: vi.fn().mockResolvedValue(undefined) });
+    const createShareUrl = vi.fn().mockResolvedValue("https://example.test/vi/q/AbCdEfGh12");
+    const props = { copy, book: { title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }, viewport: { width: 100, height: 100 }, createShareUrl };
+    const { rerender } = render(<ReaderSelectionToolbar {...props} selection={selection} />);
+    async function draft() {
+      await user.click(screen.getByRole("button", { name: "Share" }));
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByRole("textbox", { name: "Your question" }), "Old question");
+      await user.click(within(dialog).getByRole("radio", { name: "Translation" }));
+      return dialog;
+    }
+    async function expectEmpty() {
+      await user.click(screen.getByRole("button", { name: "Share" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByRole("textbox", { name: "Your question" })).toHaveValue("");
+      expect(within(dialog).getByRole("radio", { name: "Verbatim" })).toBeChecked();
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    }
+    await user.click(within(await draft()).getByRole("button", { name: "Share" }));
+    expect(createShareUrl).toHaveBeenCalledWith(expect.objectContaining({ question: "Old question", textKind: "translation" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await expectEmpty();
+    await user.click(within(await draft()).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await expectEmpty();
+    await user.click(within(await draft()).getByRole("button", { name: "Cancel" }));
+    rerender(<ReaderSelectionToolbar {...props} selection={{ ...selection, text: "Another passage" }} />);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await expectEmpty();
   });
 });

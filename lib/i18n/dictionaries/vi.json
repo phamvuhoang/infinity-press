@@ -675,6 +675,7 @@
       "description": "Bạn sở hữu nhiều bản ngôn ngữ của tác phẩm này."
     },
     "shareQuestionLabel": "Câu hỏi của bạn (không bắt buộc)",
+    "textKindLabel": "Loại văn bản",
     "textKind": {
       "verbatim": "Nguyên văn",
       "translation": "Bản dịch",

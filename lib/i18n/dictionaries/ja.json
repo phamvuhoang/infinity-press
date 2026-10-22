@@ -675,6 +675,7 @@
       "description": "この作品の言語版を複数お持ちです。"
     },
     "shareQuestionLabel": "質問（任意）",
+    "textKindLabel": "テキストの種類",
     "textKind": {
       "verbatim": "原文",
       "translation": "翻訳",

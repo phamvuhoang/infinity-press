@@ -103,7 +103,7 @@ grant execute on function public.create_shared_quote(uuid, text, text, text, tex
 -- chunkExists: the chunk row is still there. sampleAllowsChunk: sample_chunk_locator would serve it,
 -- which also requires the shared publication to still be its edition's live one, so a stale ordinal
 -- never opens a different passage of a re-uploaded book. languages: the shared edition first, then
--- each edition whose live publication has a passage aligned with this chunk, with the ordinal to
+-- each sellable edition whose live publication has a passage aligned with this chunk, with the ordinal to
 -- open there and whether that edition's sample lets the visitor in.
 create or replace function public.catalog_shared_quote(p_code text)
 returns jsonb language sql stable security definer set search_path = '' as $$
@@ -123,7 +123,8 @@ returns jsonb language sql stable security definer set search_path = '' as $$
         from public.passage_alignments pa
         join public.ebook_search_chunks t on t.id = pa.target_chunk_id
         join public.editions ted on ted.active_publication_id = pa.target_publication_id
-        where pa.source_chunk_id = src.id and ted.id <> a.edition_id), '[]'::jsonb)
+        -- edition_is_sellable: an unpublished, archived or blocked edition never appears to a visitor.
+        where pa.source_chunk_id = src.id and ted.id <> a.edition_id and public.edition_is_sellable(ted.id)), '[]'::jsonb)
     end)
   from public.shared_quotes q
   join public.books b on b.id = q.book_id and b.status = 'published'

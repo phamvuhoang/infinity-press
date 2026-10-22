@@ -675,6 +675,7 @@
       "description": "You own more than one language edition of this work."
     },
     "shareQuestionLabel": "Your question (optional)",
+    "textKindLabel": "Text kind",
     "textKind": {
       "verbatim": "Verbatim",
       "translation": "Translation",
