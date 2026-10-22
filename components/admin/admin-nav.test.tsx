@@ -14,7 +14,8 @@ it("links the knowledge editors beside the catalog entities, without a locale pr
   const labels = within(nav)
     .getAllByRole("link")
     .map((link) => link.textContent);
-  expect(labels.slice(labels.indexOf("Topics"), labels.indexOf("Topics") + 3)).toEqual(["Topics", "Ideas", "Articles"]);
+  expect(labels.slice(labels.indexOf("Topics"), labels.indexOf("Topics") + 4)).toEqual(["Topics", "Ideas", "Journeys", "Articles"]);
+  expect(within(nav).getByRole("link", { name: "Journeys" })).toHaveAttribute("href", "/admin/journeys");
   expect(within(nav).getByRole("link", { name: "Reviews" })).toHaveAttribute("href", "/admin/reviews");
   expect(within(nav).getByRole("link", { name: "Translation reports" })).toHaveAttribute("href", "/admin/feedback");
   expect(within(nav).getByRole("link", { name: "Questions" })).toHaveAttribute("href", "/admin/questions");

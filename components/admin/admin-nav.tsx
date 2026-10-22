@@ -10,6 +10,7 @@ const links = [
   { href: "/admin/series", label: "Series" },
   { href: "/admin/topics", label: "Topics" },
   { href: "/admin/ideas", label: "Ideas" },
+  { href: "/admin/journeys", label: "Journeys" },
   { href: "/admin/articles", label: "Articles" },
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/feedback", label: "Translation reports" },
