@@ -40,7 +40,7 @@ export function GrowthPanel({ days, report }: { days: GrowthDays; report: Growth
       <div className="flex flex-col gap-12">
         <AdminSection title="Reading funnel by book">
           <p className="mb-4 text-sm text-ink-soft">
-            Sample opens count events (visitors may be anonymous). Each later step counts distinct readers, shown against the step before it.
+            Sample opens count events, including anonymous visitors; the later steps count signed-in readers. Sessions and journeys are shown against the step before them.
           </p>
           {report.funnel.length === 0 ? (
             <p className="text-sm text-ink-soft">No reading events in this window.</p>
@@ -61,7 +61,8 @@ export function GrowthPanel({ days, report }: { days: GrowthDays; report: Growth
                     <tr key={row.bookId}>
                       <th className={cell} scope="row">{row.bookTitle}</th>
                       <td className={cell}>{row.openSample}</td>
-                      <td className={cell}><Fraction d={row.openSample} n={row.openReader} /></td>
+                      {/* Readers over events is not a ratio: two plain counts. */}
+                      <td className={cell}>{row.openReader}</td>
                       <td className={cell}><Fraction d={row.openReader} n={row.sessionCompletedReaders} /></td>
                       <td className={cell}><Fraction d={row.sessionCompletedReaders} n={row.journeyCompleted} /></td>
                     </tr>
@@ -79,22 +80,24 @@ export function GrowthPanel({ days, report }: { days: GrowthDays; report: Growth
           {report.retention.length === 0 ? (
             <p className="text-sm text-ink-soft">No first sessions in this window.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr>
-                  <th className={cell} scope="col">First session</th>
-                  <th className={cell} scope="col">Returned on day 7</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.retention.map((row) => (
-                  <tr key={row.cohortDay}>
-                    <th className={cell} scope="row"><time dateTime={row.cohortDay}>{row.cohortDay}</time></th>
-                    <td className={cell}><Fraction d={row.activated} n={row.returnedD7} /></td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className={cell} scope="col">First session</th>
+                    <th className={cell} scope="col">Returned on day 7</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {report.retention.map((row) => (
+                    <tr key={row.cohortDay}>
+                      <th className={cell} scope="row"><time dateTime={row.cohortDay}>{row.cohortDay}</time></th>
+                      <td className={cell}><Fraction d={row.activated} n={row.returnedD7} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </AdminSection>
 

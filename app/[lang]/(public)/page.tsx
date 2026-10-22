@@ -225,6 +225,7 @@ export default async function Home({ params }: Props) {
                     <blockquote className="font-serif text-lg leading-relaxed text-ink">{side.text}</blockquote>
                     <figcaption className="mt-4">
                       <Link
+                        aria-label={`${dictionary.catalog.quoteCard.readIn} ${editionLanguageLabel(side.lang)}`}
                         className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline underline-offset-4"
                         href={`${catalogRoutes.sample(featured.slug)}?${new URLSearchParams({ edition: side.editionId, anchor: String(side.ordinal) })}`}
                         hrefLang={side.lang}

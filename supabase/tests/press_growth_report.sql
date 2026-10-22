@@ -37,8 +37,9 @@ insert into public.shared_quotes (id, code, book_id, publication_id, profile_id,
 select 'fa800000-0000-0000-0000-000000000001', 'grcode0001', 'fa300000-0000-0000-0000-000000000001', 'fa600000-0000-0000-0000-000000000001', id, 'Một câu.', 'vi', 3
 from public.profiles where auth_user_id = 'fa100000-0000-0000-0000-000000000002';
 
--- Reader 1: first session 20 days ago, opens the reader 7 days later. Reader 2: same cohort day, never
--- returns. An open_sample outside a 30-day window does not count.
+-- Reader 1: first session 20 days ago, opens the reader 7 days later. Reader 2: same cohort day, opens
+-- the reader only on day +5 and day +9, both outside the +6..+8 return window. An open_sample outside
+-- a 30-day window does not count.
 insert into public.analytics_events (event_name, profile_id, book_id, shared_quote_id, occurred_at)
 select v.event_name, p.id, 'fa300000-0000-0000-0000-000000000001', v.quote::uuid, v.at
 from (values
@@ -49,6 +50,8 @@ from (values
   ('fa100000-0000-0000-0000-000000000002', 'open_reader', null, now() - interval '13 days'),
   ('fa100000-0000-0000-0000-000000000002', 'journey_completed', null, now() - interval '12 days'),
   ('fa100000-0000-0000-0000-000000000003', 'session_completed', null, now() - interval '20 days'),
+  ('fa100000-0000-0000-0000-000000000003', 'open_reader', null, now() - interval '15 days'),
+  ('fa100000-0000-0000-0000-000000000003', 'open_reader', null, now() - interval '11 days'),
   ('fa100000-0000-0000-0000-000000000002', 'passage_shared', 'fa800000-0000-0000-0000-000000000001', now() - interval '5 days'),
   ('fa100000-0000-0000-0000-000000000003', 'view_quote', 'fa800000-0000-0000-0000-000000000001', now() - interval '4 days'),
   ('fa100000-0000-0000-0000-000000000003', 'view_quote', 'fa800000-0000-0000-0000-000000000001', now() - interval '3 days'),
@@ -89,13 +92,13 @@ select set_config('request.jwt.claim.sub', 'fa100000-0000-0000-0000-000000000001
 select results_eq(
   $$select open_sample, open_reader, session_completed_readers, journey_completed from public.admin_growth_funnel(30)
     where book_id = 'fa300000-0000-0000-0000-000000000001'$$,
-  $$values (1::bigint, 1::bigint, 2::bigint, 1::bigint)$$,
+  $$values (1::bigint, 2::bigint, 2::bigint, 1::bigint)$$,
   'the funnel counts one open_sample and one journey_completed in the window, readers distinct');
 select results_eq(
   $$select activated, returned_d7 from public.admin_growth_retention(30)
     where cohort_day = ((now() - interval '20 days') at time zone 'UTC')::date$$,
   $$values (2::bigint, 1::bigint)$$,
-  'retention cohorts by first session_completed and counts an open_reader 7 days later');
+  'retention cohorts by first session_completed, counts an open_reader 7 days later, and excludes day +5 and day +9');
 select results_eq(
   $$select shared, opened, continued from public.admin_growth_share(30)$$,
   $$values (1::bigint, 1::bigint, 1::bigint)$$,
