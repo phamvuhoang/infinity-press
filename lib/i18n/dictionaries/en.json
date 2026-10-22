@@ -79,7 +79,11 @@
   },
   "home": {
     "eyebrow": "World classics, in your language",
-    "title": "Classic works, brought closer through every language.",
+    "heroTitle": "One classic. Many languages. A shared conversation.",
+    "heroBody": "Free classics you can read right in your browser. A 21-session journey and side-by-side bilingual passages help you finish the book and understand it.",
+    "ctaSample": "Read a sample now",
+    "ctaJourney": "Start the journey",
+    "passageEyebrow": "A passage in two languages",
     "description": "Infinity Books Press curates the world’s classic works, presents their translations, and lets you read right in your browser. Explore a work, choose a language, and find the edition that suits you.",
     "getStarted": "Get started",
     "coverQuote": "Stories without an ending.",

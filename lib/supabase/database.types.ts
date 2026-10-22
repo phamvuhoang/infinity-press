@@ -3904,6 +3904,32 @@ export type Database = {
           starts_at: string
         }[]
       }
+      admin_growth_funnel: {
+        Args: { p_days: number }
+        Returns: {
+          book_id: string
+          journey_completed: number
+          open_reader: number
+          open_sample: number
+          session_completed_readers: number
+        }[]
+      }
+      admin_growth_retention: {
+        Args: { p_days: number }
+        Returns: {
+          activated: number
+          cohort_day: string
+          returned_d7: number
+        }[]
+      }
+      admin_growth_share: {
+        Args: { p_days: number }
+        Returns: {
+          continued: number
+          opened: number
+          shared: number
+        }[]
+      }
       admin_list_coupons: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -4500,6 +4526,7 @@ export type Database = {
         Returns: boolean
       }
       catalog_home_hero: { Args: Record<PropertyKey, never>; Returns: Json }
+      catalog_home_passage: { Args: { p_book_id: string }; Returns: Json }
       catalog_home_topics: {
         Args: { p_locale: string }
         Returns: {
@@ -4732,6 +4759,7 @@ export type Database = {
         Args: { p_edition_id: string; p_profile_id: string; p_reason: string }
         Returns: string
       }
+      growth_report_guard: { Args: { p_days: number; p_name: string }; Returns: undefined }
       idea_readiness_issues: { Args: { p_idea_id: string }; Returns: string[] }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_supported_locale: { Args: { p_locale: string }; Returns: boolean }

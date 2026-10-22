@@ -42,3 +42,14 @@ test("sends an anonymous admin visitor to sign-in without losing the admin desti
   await expect(page).toHaveURL(/\/en\/sign-in\?next=%2Fadmin%2Fbooks%2Fnew$/);
   await expect(page.locator('input[name="next"]')).toHaveValue("/admin/books/new");
 });
+
+for (const locale of ["vi", "en", "ja"] as const) {
+  test(`the ${locale} home page names its three locales and canonicalizes to itself`, async ({ page }) => {
+    await page.goto(`/${locale}`);
+    for (const alternate of ["vi", "en", "ja"]) {
+      await expect(page.locator(`link[rel="alternate"][hreflang="${alternate}"]`)).toHaveCount(1);
+    }
+    await expect(page.locator('link[rel="alternate"][hreflang]:not([hreflang="x-default"])')).toHaveCount(3);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", new RegExp(`/${locale}$`));
+  });
+}

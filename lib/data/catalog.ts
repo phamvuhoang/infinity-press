@@ -268,6 +268,30 @@ export const getHomeHero = cache(async (): Promise<CatalogHomeHero | null> => {
   };
 });
 
+const homePassageSchema = z.object({
+  sourceText: z.string(),
+  sourceLang: z.string(),
+  sourceEditionId: z.string(),
+  ordinal: z.number().int(),
+  targetText: z.string(),
+  targetLang: z.string(),
+  targetEditionId: z.string(),
+  targetOrdinal: z.number().int(),
+});
+export type HomePassage = z.infer<typeof homePassageSchema>;
+
+// The homepage's bilingual passage for a book (the featured one): an exact aligned pair, both sides
+// inside their edition's sample, or null - the ordinary state for a book without alignment.
+export const getHomePassage = cache(async (bookId: string): Promise<HomePassage | null> => {
+  const { data, error } = await createPublicClient().rpc("catalog_home_passage", { p_book_id: bookId });
+  if (error) throw await failure("getHomePassage", error);
+  if (data === null) return null;
+
+  const parsed = homePassageSchema.safeParse(data);
+  if (!parsed.success) throw await failure("getHomePassage", parsed.error);
+  return parsed.data;
+});
+
 // Topic entry points for the home page. Every row already has at least one published book, so each
 // card leads to a page with content.
 export const getHomeTopics = cache(

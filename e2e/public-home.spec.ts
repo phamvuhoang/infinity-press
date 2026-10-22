@@ -15,3 +15,14 @@ test("home presents the Press platform without the previous brand or an author b
   const html = await page.content();
   expect(html).not.toMatch(/Phuong Bui|Phương Bùi|infinitybooks\.vn/i);
 });
+
+for (const [locale, title] of [
+  ["vi", "Một tác phẩm. Nhiều ngôn ngữ. Cùng thảo luận."],
+  ["en", "One classic. Many languages. A shared conversation."],
+  ["ja", "一つの古典。多くの言語。ひとつの対話。"],
+] as const) {
+  test(`home leads with the positioning title in ${locale}`, async ({ page }) => {
+    await page.goto(`/${locale}`);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+  });
+}

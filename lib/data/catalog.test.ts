@@ -11,6 +11,7 @@ import {
   getBookCards,
   getBookPage,
   getEntityPage,
+  getHomePassage,
   getSampleReaderBook,
   listEntitySlugs,
   publicBookAction,
@@ -199,6 +200,24 @@ describe("getBookCardById", () => {
   it("returns null when the id has no visible card in the requested locale", async () => {
     mockRpc({ catalog_book_card_by_id: { data: [], error: null } });
     await expect(getBookCardById("en", BOOK_ID)).resolves.toBeNull();
+  });
+});
+
+describe("getHomePassage", () => {
+  const pair = {
+    sourceText: "Một đoạn.", sourceLang: "vi", sourceEditionId: "e-vi", ordinal: 3,
+    targetText: "A passage.", targetLang: "en", targetEditionId: "e-en", targetOrdinal: 4,
+  };
+
+  it("returns the aligned pair for the book", async () => {
+    const rpc = mockRpc({ catalog_home_passage: { data: pair, error: null } });
+    await expect(getHomePassage(BOOK_ID)).resolves.toEqual(pair);
+    expect(rpc).toHaveBeenCalledWith("catalog_home_passage", { p_book_id: BOOK_ID });
+  });
+
+  it("returns null when no pair qualifies", async () => {
+    mockRpc({ catalog_home_passage: { data: null, error: null } });
+    await expect(getHomePassage(BOOK_ID)).resolves.toBeNull();
   });
 });
 

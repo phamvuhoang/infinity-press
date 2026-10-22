@@ -119,7 +119,7 @@ function locatorFor(href: string): ReaderLocator {
 }
 
 // Edition language, then English, then whatever exists: an admin list always shows a name.
-function adminTitle(rows: { locale: string; title: string }[], language: string): string | undefined {
+export function adminTitle(rows: { locale: string; title: string }[], language: string): string | undefined {
   return (rows.find((row) => row.locale === language) ?? rows.find((row) => row.locale === "en") ?? rows[0])?.title;
 }
 

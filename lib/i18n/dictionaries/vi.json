@@ -79,7 +79,11 @@
   },
   "home": {
     "eyebrow": "Kinh điển thế giới, bằng ngôn ngữ của bạn",
-    "title": "Tác phẩm kinh điển, đến gần hơn qua từng ngôn ngữ.",
+    "heroTitle": "Một tác phẩm. Nhiều ngôn ngữ. Cùng thảo luận.",
+    "heroBody": "Sách kinh điển miễn phí, đọc ngay trên trình duyệt. Hành trình 21 buổi và bản đối chiếu song ngữ giúp bạn đọc hết và hiểu.",
+    "ctaSample": "Đọc thử ngay",
+    "ctaJourney": "Bắt đầu hành trình",
+    "passageEyebrow": "Đoạn mẫu song ngữ",
     "description": "Infinity Books Press tuyển chọn những tác phẩm kinh điển thế giới, giới thiệu các bản dịch và giúp bạn đọc ngay trên trình duyệt. Khám phá tác phẩm, chọn ngôn ngữ và tìm bản đọc phù hợp.",
     "getStarted": "Bắt đầu",
     "coverQuote": "Những câu chuyện không có hồi kết.",
