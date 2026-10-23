@@ -98,6 +98,7 @@ describe("GET /api/catalog/books/[bookId]/action-state", () => {
         isDefault: false,
         offer: { offerId: "o1", priceMinor: 500, currency: "JPY", listPriceMinor: null, saleEndsAt: null },
         hasSample: false,
+        record: null,
       });
       vi.mocked(getBookActionState).mockResolvedValue({ action: "buy", signedIn: true });
 

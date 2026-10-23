@@ -79,7 +79,11 @@
   },
   "home": {
     "eyebrow": "世界の古典を、あなたの言語で",
-    "title": "世界の古典を、さまざまな言語でもっと身近に。",
+    "heroTitle": "一つの古典。多くの言語。ひとつの対話。",
+    "heroBody": "無料の古典を、ブラウザですぐに読めます。21回の読書の旅と二言語の対訳で、最後まで読み通し、理解できます。",
+    "ctaSample": "今すぐ試し読み",
+    "ctaJourney": "旅を始める",
+    "passageEyebrow": "二つの言語で読む一節",
     "description": "Infinity Books Press は世界の古典作品を厳選し、その翻訳版を紹介して、ブラウザですぐに読めるようにします。作品を探し、言語を選び、あなたに合った版を見つけてください。",
     "getStarted": "はじめる",
     "coverQuote": "終わりのない物語。",
@@ -128,17 +132,49 @@
       "fallbackNote": "{requested}版はまだありません。こちらは{language}版です。",
       "metadataNote": "タイトルと説明は{language}で表示しています。"
     },
+    "editionRecord": {
+      "title": "この版について",
+      "textSourceNote": "原文の出典",
+      "translationSource": "翻訳の出典",
+      "rightsNote": "権利",
+      "territoryNote": "販売地域",
+      "textKind": "テキストの種類",
+      "textKinds": {
+        "literal": "逐語訳",
+        "adapted": "翻案",
+        "commentary": "注釈・解説"
+      },
+      "reviewScope": "レビュー範囲",
+      "reviewScopes": {
+        "full": "全文",
+        "sample": "一部",
+        "none": "未レビュー"
+      },
+      "reviewedAt": "承認日",
+      "versionNote": "版の注記"
+    },
     "quoteCard": {
       "eyebrow": "引用元",
       "sharedFrom": "Infinity Books Press から共有",
       "readSample": "試し読み",
-      "openBook": "作品について"
+      "openBook": "作品について",
+      "continueReading": "ここから続きを読む",
+      "kind": {
+        "verbatim": "原文",
+        "translation": "翻訳",
+        "paraphrase": "言い換え"
+      },
+      "readIn": "次の言語で読む"
     },
     "retail": {
       "title": "紙の本",
       "intro": "紙の本はこちらで購入できます：",
       "listPrice": "定価 {price}",
-      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+      "labels": {
+        "shopee": "Shopee",
+        "fahasa": "Fahasa",
+        "tiki": "Tiki"
+      }
     },
     "browseAll": "すべての作品を見る",
     "featuredEyebrow": "注目",
@@ -608,6 +644,9 @@
     "shareCancelled": "共有をキャンセルしました",
     "quoteTruncated": "引用を300文字に短縮しました",
     "annotationTooLong": "ハイライトやメモに使える選択範囲は1,000文字までです。この選択範囲のコピーや共有はできます。",
+    "compare": "対訳",
+    "compareNone": "お持ちの他の版には、この箇所に対応する文章がありません。",
+    "compareOpenOther": "その版で開く",
     "shareUnavailable": "共有を利用できないため、コピーしました。",
     "shareCreated": "公開の引用ページを作成しました。ライブラリから削除できます。",
     "sharePublic": "共有すると公開の引用ページが作成されます。ライブラリから削除できます。",
@@ -634,9 +673,17 @@
     "rateBook": "この作品を評価",
     "askAuthor": "編集部に質問する",
     "reportError": "翻訳の誤りを報告",
+    "reportHere": "この箇所の誤りを報告",
     "chooseEdition": {
       "title": "読む版を選んでください",
       "description": "この作品の言語版を複数お持ちです。"
+    },
+    "shareQuestionLabel": "質問（任意）",
+    "textKindLabel": "テキストの種類",
+    "textKind": {
+      "verbatim": "原文",
+      "translation": "翻訳",
+      "paraphrase": "言い換え"
     }
   },
   "forbidden": {
@@ -686,6 +733,34 @@
       "authorReply": "編集部からの返信：",
       "open": "レビューを開く",
       "signOff": "素敵な読書の時間を。\nInfinity Books Press"
+    }
+  },
+  "journeys": {
+    "eyebrow": "読書の旅",
+    "libraryTitle": "読書の旅",
+    "start": "旅を始める",
+    "continue": "続ける",
+    "sessionsDone": "{done}/{total} セッション完了",
+    "sessionOf": "セッション {position} / {total}",
+    "sessionCount": {
+      "one": "{count} セッション",
+      "other": "{count} セッション"
+    },
+    "empty": "この旅にはまだセッションがありません。",
+    "openReader": "この箇所をリーダーで開く",
+    "claimAndOpen": "無料版を受け取ってこの箇所を開く",
+    "markDone": "このセッションを完了にする",
+    "done": "完了",
+    "pending": "保存中…",
+    "reflectionLabel": "この旅から何を持ち帰りますか？",
+    "reflectionSubmit": "旅を終える",
+    "completedTitle": "旅を完了しました",
+    "signInToTrack": "サインインすると各セッションの進み具合を保存できます。",
+    "questionsTitle": "考えてみたい問い",
+    "errors": {
+      "notAvailable": "この旅は現在ご利用いただけません。",
+      "reflectionTooLong": "振り返りが長すぎます。2,000文字以内にしてください。",
+      "generic": "問題が発生しました。もう一度お試しください。"
     }
   }
 }

@@ -119,6 +119,18 @@ describe("POST /api/analytics/events", () => {
     );
   });
 
+  it("accepts an anonymous passage_opened and refuses one carrying the question", async () => {
+    const event = { eventId: EVENT_ID, eventName: "passage_opened", sharedQuoteId: QUOTE_ID, bookId: BOOK_ID, locale: "vi" };
+    expect((await POST(request(event))).status).toBe(202);
+    expect(trackEventBestEffort).toHaveBeenCalledWith(
+      expect.objectContaining({ eventName: "passage_opened", sharedQuoteId: QUOTE_ID, bookId: BOOK_ID }),
+      expect.anything(),
+    );
+    vi.mocked(trackEventBestEffort).mockClear();
+    expect((await POST(request({ ...event, question: "Vì sao?" }))).status).toBe(400);
+    expect(trackEventBestEffort).not.toHaveBeenCalled();
+  });
+
   it("refuses a view_quote carrying the quote text", async () => {
     const response = await POST(
       request({
@@ -202,6 +214,19 @@ describe("POST /api/analytics/events", () => {
         bookId: BOOK_ID,
         publicationId: PUBLICATION_ID,
       }),
+      expect.anything(),
+    );
+  });
+
+  it("records compare_opened with its publication", async () => {
+    signIn();
+    const response = await POST(
+      request({ eventId: EVENT_ID, eventName: "compare_opened", bookId: BOOK_ID, publicationId: PUBLICATION_ID, locale: "vi" }),
+    );
+
+    expect(response.status).toBe(202);
+    expect(trackEventBestEffort).toHaveBeenCalledWith(
+      expect.objectContaining({ eventName: "compare_opened", bookId: BOOK_ID, publicationId: PUBLICATION_ID }),
       expect.anything(),
     );
   });
@@ -418,6 +443,10 @@ describe("POST /api/analytics/events", () => {
           bookId: BOOK_ID,
           locale: "vi",
         },
+      ],
+      [
+        "compare_opened",
+        { eventId: EVENT_ID, eventName: "compare_opened", bookId: BOOK_ID, publicationId: PUBLICATION_ID, locale: "vi" },
       ],
     ])(
       "refuses an anonymous %s with 401 and writes nothing",

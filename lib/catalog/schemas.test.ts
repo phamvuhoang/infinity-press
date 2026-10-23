@@ -26,6 +26,7 @@ import {
   knowledgeSeoSchema,
   merchandisingSchema,
   offerSchema,
+  provenanceSchema,
   relatedBooksSchema,
 } from "@/lib/catalog/schemas";
 
@@ -393,5 +394,15 @@ describe("book details", () => {
     expect(
       bookDetailsSchema.safeParse({ canonicalKey: "les-miserables", originalLanguage: "fr", primaryAuthorId: "4a1b2c3d-0000-4000-8000-000000000001" }).success,
     ).toBe(true);
+  });
+});
+
+describe("edition provenance", () => {
+  const notes = { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, publicVersionNote: null };
+  it("accepts a listed text kind or none, and rejects any other", () => {
+    expect(provenanceSchema.safeParse({ ...notes, textKind: "literal", reviewScope: "full" }).success).toBe(true);
+    expect(provenanceSchema.safeParse({ ...notes, textKind: null, reviewScope: "none" }).success).toBe(true);
+    expect(provenanceSchema.safeParse({ ...notes, textKind: "poem", reviewScope: "none" }).success).toBe(false);
+    expect(provenanceSchema.safeParse({ ...notes, textKind: null, reviewScope: "partial" }).success).toBe(false);
   });
 });

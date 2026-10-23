@@ -79,7 +79,11 @@
   },
   "home": {
     "eyebrow": "World classics, in your language",
-    "title": "Classic works, brought closer through every language.",
+    "heroTitle": "One classic. Many languages. A shared conversation.",
+    "heroBody": "Free classics you can read right in your browser. A 21-session journey and side-by-side bilingual passages help you finish the book and understand it.",
+    "ctaSample": "Read a sample now",
+    "ctaJourney": "Start the journey",
+    "passageEyebrow": "A passage in two languages",
     "description": "Infinity Books Press curates the world’s classic works, presents their translations, and lets you read right in your browser. Explore a work, choose a language, and find the edition that suits you.",
     "getStarted": "Get started",
     "coverQuote": "Stories without an ending.",
@@ -128,17 +132,49 @@
       "fallbackNote": "There is no {requested} edition yet. This is the {language} edition.",
       "metadataNote": "Title and description are shown in {language}."
     },
+    "editionRecord": {
+      "title": "About this edition",
+      "textSourceNote": "Source text",
+      "translationSource": "Translation source",
+      "rightsNote": "Rights",
+      "territoryNote": "Territories",
+      "textKind": "Text kind",
+      "textKinds": {
+        "literal": "Literal translation",
+        "adapted": "Adapted",
+        "commentary": "Commentary"
+      },
+      "reviewScope": "Review scope",
+      "reviewScopes": {
+        "full": "Full text",
+        "sample": "Sample",
+        "none": "Not reviewed"
+      },
+      "reviewedAt": "Approved on",
+      "versionNote": "Version notes"
+    },
     "quoteCard": {
       "eyebrow": "A quote from",
       "sharedFrom": "Shared from Infinity Books Press",
       "readSample": "Read a sample",
-      "openBook": "About the book"
+      "openBook": "About the book",
+      "continueReading": "Continue reading from here",
+      "kind": {
+        "verbatim": "Verbatim",
+        "translation": "Translation",
+        "paraphrase": "Paraphrase"
+      },
+      "readIn": "Read in"
     },
     "retail": {
       "title": "Paperback",
       "intro": "Buy the printed book at:",
       "listPrice": "List price {price}",
-      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+      "labels": {
+        "shopee": "Shopee",
+        "fahasa": "Fahasa",
+        "tiki": "Tiki"
+      }
     },
     "browseAll": "Browse all books",
     "featuredEyebrow": "Featured",
@@ -608,6 +644,9 @@
     "shareCancelled": "Sharing cancelled",
     "quoteTruncated": "Quote shortened to 300 characters",
     "annotationTooLong": "Select at most 1,000 characters to highlight or add a note. You can still copy or share this selection.",
+    "compare": "Compare",
+    "compareNone": "No other edition you own lines up with this passage.",
+    "compareOpenOther": "Open in that edition",
     "shareUnavailable": "Sharing is unavailable; copied instead.",
     "shareCreated": "A public quote page was created. You can remove it from your library.",
     "sharePublic": "Sharing creates a public quote page you can remove from your library.",
@@ -634,9 +673,17 @@
     "rateBook": "Rate this book",
     "askAuthor": "Ask the editors",
     "reportError": "Report a translation error",
+    "reportHere": "Report an error at this passage",
     "chooseEdition": {
       "title": "Choose an edition to read",
       "description": "You own more than one language edition of this work."
+    },
+    "shareQuestionLabel": "Your question (optional)",
+    "textKindLabel": "Text kind",
+    "textKind": {
+      "verbatim": "Verbatim",
+      "translation": "Translation",
+      "paraphrase": "Paraphrase"
     }
   },
   "forbidden": {
@@ -686,6 +733,34 @@
       "authorReply": "The editors' reply:",
       "open": "Open your review",
       "signOff": "Happy reading,\nInfinity Books Press"
+    }
+  },
+  "journeys": {
+    "eyebrow": "Reading journey",
+    "libraryTitle": "Reading journeys",
+    "start": "Start the journey",
+    "continue": "Continue",
+    "sessionsDone": "{done}/{total} sessions done",
+    "sessionOf": "Session {position} of {total}",
+    "sessionCount": {
+      "one": "{count} session",
+      "other": "{count} sessions"
+    },
+    "empty": "This journey has no sessions yet.",
+    "openReader": "Open the reader at this passage",
+    "claimAndOpen": "Get the free edition and open the reader here",
+    "markDone": "Mark this session done",
+    "done": "Done",
+    "pending": "Saving…",
+    "reflectionLabel": "What will you take with you from this journey?",
+    "reflectionSubmit": "Finish the journey",
+    "completedTitle": "Journey completed",
+    "signInToTrack": "Sign in to save your progress through each session.",
+    "questionsTitle": "Questions to sit with",
+    "errors": {
+      "notAvailable": "This journey is not available right now.",
+      "reflectionTooLong": "Your reflection is too long. Keep it under 2,000 characters.",
+      "generic": "Something went wrong. Try again."
     }
   }
 }

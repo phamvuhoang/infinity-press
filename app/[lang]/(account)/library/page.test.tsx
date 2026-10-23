@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LibraryPage from "@/app/[lang]/(account)/library/page";
 import { requireUser } from "@/lib/auth/session";
 import type { CatalogBookCard } from "@/lib/catalog/public-types";
+import { getMyJourneys } from "@/lib/data/journeys";
 import { type LibraryItemDTO, getLibrary } from "@/lib/data/library";
 import { getShelfRecommendations } from "@/lib/data/recommendations";
 import { listMySharedQuotes, type MySharedQuote } from "@/lib/data/shared-quotes";
@@ -19,6 +20,7 @@ vi.mock("next/headers", () => ({
 }));
 vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 vi.mock("@/lib/data/library", () => ({ getLibrary: vi.fn() }));
+vi.mock("@/lib/data/journeys", () => ({ getMyJourneys: vi.fn() }));
 vi.mock("@/lib/data/recommendations", () => ({ getShelfRecommendations: vi.fn() }));
 vi.mock("@/lib/data/shared-quotes", () => ({ listMySharedQuotes: vi.fn() }));
 
@@ -74,6 +76,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(requireUser).mockResolvedValue({} as Awaited<ReturnType<typeof requireUser>>);
   vi.mocked(listMySharedQuotes).mockResolvedValue([]);
+  vi.mocked(getMyJourneys).mockResolvedValue([]);
 });
 
 afterEach(cleanup);
@@ -215,4 +218,41 @@ it("tags each owned edition with its language and counts a work once for recomme
   expect(getShelfRecommendations).toHaveBeenCalledWith(
     expect.objectContaining({ seedBookIds: [OWNED_A], excludeBookIds: [OWNED_A] }),
   );
+});
+
+describe("reading journeys", () => {
+  beforeEach(() => {
+    vi.mocked(getLibrary).mockResolvedValue([]);
+    vi.mocked(getShelfRecommendations).mockResolvedValue([]);
+  });
+
+  it("has no journeys section when the reader is on none", async () => {
+    render(await LibraryPage({ params }));
+    expect(screen.queryByRole("heading", { name: "Reading journeys" })).toBeNull();
+  });
+
+  it("lists a journey with its progress and completed state, even with an empty shelf", async () => {
+    vi.mocked(getMyJourneys).mockResolvedValue([
+      {
+        id: "40000000-0000-4000-8000-000000000001",
+        slug: "still-water",
+        title: "Still Water",
+        summary: "",
+        sessionCount: 3,
+        bookId: OWNED_A,
+        bookSlug: "a",
+        bookTitle: "A",
+        editionId: "edition-a",
+        languageCode: "en",
+        coverUrl: null,
+        completedPositions: [1, 2, 3],
+        completed: true,
+        reflection: null,
+      },
+    ]);
+    render(await LibraryPage({ params }));
+    const section = screen.getByRole("region", { name: "Reading journeys" });
+    expect(within(section).getByRole("link", { name: "Still Water" })).toHaveAttribute("href", "/en/journeys/still-water");
+    expect(within(section).getByText("3/3 sessions done · Journey completed")).toBeInTheDocument();
+  });
 });

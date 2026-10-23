@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import AdminEditionPage from "./page";
 import { requireAdmin } from "@/lib/auth/admin";
-import { getAdminEdition, listPricingDefaults, type AdminEditionDTO } from "@/lib/data/admin-editions";
+import { getAdminEdition, getAlignmentCoverage, listPricingDefaults, type AdminEditionDTO } from "@/lib/data/admin-editions";
 import { getAdminBook } from "@/lib/data/books";
 import { getPublicationVersionHistory } from "@/lib/data/publications";
 import { listContentLanguages } from "@/lib/i18n/settings";
@@ -12,6 +12,7 @@ vi.mock("@/lib/auth/admin", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/lib/data/admin-editions", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/data/admin-editions")>()),
   getAdminEdition: vi.fn(),
+  getAlignmentCoverage: vi.fn(),
   listPricingDefaults: vi.fn(),
 }));
 vi.mock("@/lib/data/books", () => ({ getAdminBook: vi.fn() }));
@@ -24,6 +25,8 @@ vi.mock("../actions", () => ({
   setDefaultOfferAction: vi.fn(),
   saveProvenanceAction: vi.fn(),
   setReviewAction: vi.fn(),
+  setSampleFullAction: vi.fn(),
+  recomputeAlignmentAction: vi.fn(),
 }));
 vi.mock("@/app/admin/books/[bookId]/editor-actions", () => ({ updateOfferAction: vi.fn() }));
 vi.mock("@/app/admin/books/[bookId]/epub/actions", () => ({ createEpubUploadAction: vi.fn(), finalizeEpubUploadAction: vi.fn() }));
@@ -43,9 +46,10 @@ const edition: AdminEditionDTO = {
   status: "draft",
   isDefault: false,
   activePublicationId: null,
+  sampleFull: false,
   identityLocked: false,
   sku: { id: "sku-id", skuCode: "golden-ja-ebook", active: true },
-  editorial: { state: "unreviewed", textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, reviewedAt: null, reviewNote: null },
+  editorial: { state: "unreviewed", textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, textKind: null, reviewScope: "none", publicVersionNote: null, reviewedAt: null, reviewNote: null },
   offers: [
     { id: "offer-id", marketCode: "JP", currency: "JPY", priceMinor: 500, active: true, isDefault: true, sale: null, effectivePriceMinor: 500, saleState: "none" },
   ],
@@ -120,6 +124,21 @@ it("links each EPUB version to its own publication page, so this edition's versi
   expect(getPublicationVersionHistory).toHaveBeenCalledWith(editionId);
   expect(screen.getByRole("link", { name: "Version 2 · Ready for preview" })).toHaveAttribute("href", "/admin/publications/asset-2");
   expect(screen.getByRole("link", { name: "Version 1 · Superseded" })).toHaveAttribute("href", "/admin/publications/asset-1");
+});
+
+it("shows a live edition's alignment coverage with a recompute button, and nothing without a live EPUB", async () => {
+  vi.mocked(requireAdmin).mockResolvedValue({} as Awaited<ReturnType<typeof requireAdmin>>);
+  render(await AdminEditionPage(props));
+  expect(screen.queryByRole("button", { name: "Recompute alignment" })).not.toBeInTheDocument();
+  expect(getAlignmentCoverage).not.toHaveBeenCalled();
+  cleanup();
+
+  vi.mocked(getAdminEdition).mockResolvedValue({ ...edition, activePublicationId: "c0000000-0000-4000-8000-000000000001" });
+  vi.mocked(getAlignmentCoverage).mockResolvedValue(0.426);
+  render(await AdminEditionPage(props));
+  expect(getAlignmentCoverage).toHaveBeenCalledWith("c0000000-0000-4000-8000-000000000001");
+  expect(screen.getByText("Passage alignment: 43% of passages line up with another edition.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Recompute alignment" })).toBeInTheDocument();
 });
 
 it("prefills a new offer from the pricing template but offers the default offer button only for non-default offers", async () => {

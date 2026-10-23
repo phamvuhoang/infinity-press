@@ -22,6 +22,7 @@ Infinity Books Press implements one complete ebook path on Next.js 16 and Supaba
 - The reader uses short sessions and saves progress through database functions.
 - Public and customer pages support Vietnamese, English, and Japanese. English is the default interface locale. `lib/i18n/config.ts` is the locale registry; `supported_locales` mirrors it in the database.
 - Email magic links are the main sign-in method. Password pages are an internal fallback.
+- The S20 pilot adds free reading journeys, passage deep links with automatic bilingual compare, and shared passages with a question. See `docs/runbooks/reading-journeys.md`.
 
 The payment simulator is for local, test, and staging only. Production rejects this provider.
 
@@ -73,3 +74,8 @@ The payment simulator is for local, test, and staging only. Production rejects t
 - Do not run EPUB `process` or `retry` commands against cloud data by accident.
 - Do not commit `.env.local`, EPUB files, keys, tokens, or customer data.
 - Preserve request IDs in server errors and operational logs.
+
+## Workflow rules
+
+- Work in the current checkout. Do not create a git worktree unless the user asks for one.
+- Do not add `Co-Authored-By` or other attribution trailers to commit messages.

@@ -3,10 +3,12 @@ import Link from "next/link";
 import { updateOfferAction } from "@/app/admin/books/[bookId]/editor-actions";
 import {
   createOfferAction,
+  recomputeAlignmentAction,
   setDefaultEditionAction,
   saveProvenanceAction,
   setDefaultOfferAction,
   setReviewAction,
+  setSampleFullAction,
   updateEditionAction,
 } from "@/app/admin/books/[bookId]/editions/actions";
 import { AdminPageHeader, AdminSection } from "@/components/admin/admin-page-header";
@@ -15,11 +17,12 @@ import {
   DefaultButtonForm,
   EditionForm,
   OfferForm,
+  SampleFullForm,
 } from "@/components/admin/book-editor/edition-offer-forms";
 import { ProvenanceForm, ReviewForm } from "@/components/admin/book-editor/edition-editorial-forms";
 import { EpubUploadForm } from "@/components/admin/epub-upload-form";
 import { requireAdmin } from "@/lib/auth/admin";
-import { getAdminEdition, listPricingDefaults } from "@/lib/data/admin-editions";
+import { getAdminEdition, getAlignmentCoverage, listPricingDefaults } from "@/lib/data/admin-editions";
 import { getAdminBook } from "@/lib/data/books";
 import { getPublicationVersionHistory } from "@/lib/data/publications";
 import { listContentLanguages } from "@/lib/i18n/settings";
@@ -46,9 +49,10 @@ export default async function AdminEditionPage({ params }: { params: Promise<{ b
     getAdminBook(bookId),
     listContentLanguages(),
   ]);
-  const [pricingDefaults, versions] = await Promise.all([
+  const [pricingDefaults, versions, alignmentCoverage] = await Promise.all([
     listPricingDefaults(edition.languageCode),
     getPublicationVersionHistory(editionId),
+    edition.activePublicationId ? getAlignmentCoverage(edition.activePublicationId) : null,
   ]);
   const languageName = languages.find((language) => language.code === edition.languageCode)?.name ?? edition.languageCode;
   const title = book.localization?.title ?? book.canonicalKey;
@@ -138,6 +142,27 @@ export default async function AdminEditionPage({ params }: { params: Promise<{ b
             Publishing or rolling back here never changes another language&apos;s edition.
           </p>
           <EpubUploadForm bookId={bookId} editionId={editionId} />
+          {edition.activePublicationId ? (
+            <div className="mt-6">
+              <SampleFullForm
+                action={setSampleFullAction.bind(null, bookId, editionId)}
+                sampleFull={edition.sampleFull}
+              />
+            </div>
+          ) : null}
+          {alignmentCoverage !== null ? (
+            <div className="mt-6 space-y-2">
+              {/* Computed after every publish; a resource that cannot be paired has no compare. */}
+              <p className="text-sm">
+                Passage alignment: {Math.round(alignmentCoverage * 100)}% of passages line up with another edition.
+              </p>
+              <DefaultButtonForm
+                action={recomputeAlignmentAction.bind(null, bookId, editionId)}
+                label="Recompute alignment"
+                pendingLabel="Recomputing…"
+              />
+            </div>
+          ) : null}
           {versions.length > 0 ? (
             <ul className="mt-6 space-y-1 text-sm">
               {versions.map((version) => (

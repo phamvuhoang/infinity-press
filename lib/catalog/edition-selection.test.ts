@@ -10,6 +10,7 @@ function edition(overrides: Partial<CatalogEditionOption> & { editionId: string 
     isDefault: false,
     offer: { offerId: "offer-1", priceMinor: 500, currency: "VND", listPriceMinor: null, saleEndsAt: null },
     hasSample: false,
+    record: null,
     ...overrides,
   };
 }

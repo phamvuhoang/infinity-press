@@ -1,5 +1,7 @@
 import "server-only";
 
+import { headers } from "next/headers";
+
 import { requireUser } from "@/lib/auth/session";
 import { getBookAcceptsQuestions, getBookCards } from "@/lib/data/catalog";
 import { getCurrentProfile } from "@/lib/data/profiles";
@@ -7,8 +9,12 @@ import { getServerEnv } from "@/lib/config/server-env";
 import { coverPublicUrl } from "@/lib/catalog/covers";
 import { isLocale, type Locale, locales, withLocale } from "@/lib/i18n/config";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
+import { getRequestId } from "@/lib/observability/request-id";
+import { chunkLocator } from "@/lib/reader/anchor";
 import { FINISHED_TOTAL_PROGRESSION } from "@/lib/reader/completion";
 import { isReaderLocator, parseReaderLocator } from "@/lib/reader/engine";
+import { toReaderResourceHref } from "@/lib/reader/locator-paths";
+import { pathOf } from "@/lib/reader/toc";
 import type { ReaderLocator } from "@/lib/reader/types";
 import { absoluteUrl } from "@/lib/seo/metadata";
 import { createClient } from "@/lib/supabase/server";
@@ -61,6 +67,22 @@ export type LibraryItemDTO = {
 
 // The session client is untyped, so the RPC's row shape is pinned from the generated types here.
 type OwnedEditionRow = Database["public"]["Functions"]["my_library_editions"]["Returns"][number];
+
+// A passage lookup that fails still opens the reader (at the saved position); the failure goes to
+// the log with the request ID.
+async function logAnchorFailure(
+  operation: string,
+  cause: { code?: string },
+  message = "Passage anchor lookup failed.",
+): Promise<void> {
+  let requestId: string | null = null;
+  try {
+    requestId = getRequestId(await headers());
+  } catch {
+    // Outside a request scope there is no request ID.
+  }
+  console.error(message, { operation, code: cause.code ?? null, requestId });
+}
 
 type LibraryRow = {
   book_id: string;
@@ -153,9 +175,13 @@ function relatedBooks(source: CatalogBookCard, cards: CatalogBookCard[], locale:
 //
 // Nothing here depends on the interface locale beyond the RPC's own title fallback, so a reader
 // browsing in Japanese can open the English edition they own.
+//
+// `anchor` is a passage (?anchor=<chunk ordinal>). When reader_chunk_locator resolves it, the reader
+// opens there instead of at the saved position; any refusal or failure keeps the saved position.
 export async function getReadableEdition(
   locale: Locale,
   editionId: string,
+  options: { anchor?: number | null } = {},
 ): Promise<{
   bookId: string;
   editionId: string;
@@ -168,10 +194,12 @@ export async function getReadableEdition(
   publicationId: string;
   // Same meaning as LibraryItemDTO.inCatalog: the reader links to the review form only when true.
   inCatalog: boolean;
-  // Where this reader left off, or null to open at the beginning. Read here rather than fetched
+  // Where this reader left off (or the requested passage), or null to open at the beginning. Read here rather than fetched
   // by the client so the engine is handed its starting position at mount time - a locator applied
   // after mount would show the opening page first and then jump, which reads as a bug.
   initialLocator: ReaderLocator | null;
+  // alignment_coverage > 0: some passage pairs with another edition of the work.
+  compareAvailable: boolean;
 } | null> {
   await requireUser(locale, withLocale(locale, `/read/editions/${editionId}`));
 
@@ -215,6 +243,24 @@ export async function getReadableEdition(
     throw new Error(`getReadableEdition: failed to load reading progress: ${progressError.message}`);
   }
 
+  let anchored: ReaderLocator | null = null;
+  if (options.anchor !== undefined && options.anchor !== null) {
+    const { data: chunk, error: chunkError } = await supabase.rpc("reader_chunk_locator", {
+      p_publication_id: publicationId,
+      p_ordinal: options.anchor,
+    });
+    if (chunkError) await logAnchorFailure("reader_chunk_locator", chunkError);
+    else anchored = chunkLocator(chunk, (href) => toReaderResourceHref(publicationId, href));
+  }
+
+  // The compare button shows only when some passage of this publication is aligned with another
+  // edition. A failed lookup hides it: compare never blocks the reader.
+  const { data: coverage, error: coverageError } = await supabase.rpc("alignment_coverage", {
+    p_publication_id: publicationId,
+  });
+  if (coverageError) await logAnchorFailure("alignment_coverage", coverageError, "Alignment coverage lookup failed.");
+  const compareAvailable = !coverageError && typeof coverage === "number" && coverage > 0;
+
   return {
     bookId: edition.book_id,
     editionId: edition.edition_id,
@@ -235,10 +281,47 @@ export async function getReadableEdition(
     inCatalog: edition.in_catalog,
     // Validated, not cast. locator_json is jsonb with no shape constraint, so a malformed row
     // degrades to "open at the beginning" rather than taking the whole reader page down.
-    initialLocator: isReaderLocator(progress?.locator_json)
-      ? parseReaderLocator(progress.locator_json)
-      : null,
+    initialLocator:
+      anchored ?? (isReaderLocator(progress?.locator_json) ? parseReaderLocator(progress.locator_json) : null),
+    compareAvailable,
   };
+}
+
+// Whether the caller owns a journey's edition, and the chunk ordinal its session start falls in,
+// for the session page's reader link. `owned` is false when the caller holds no entitlement (the
+// page then offers the free-edition claim); `anchor` is null when the edition has nothing readable
+// or the href is not in its current publication (an EPUB re-upload): the page then links to the
+// plain reader URL. A toc href routinely carries a fragment (`chapter-2.xhtml#section`); chunks are
+// keyed by path, so the lookup is by path alone, like every other toc match in lib/reader/toc.ts.
+export type PassageAnchor = { owned: boolean; anchor: number | null };
+
+export async function getPassageAnchor(
+  locale: Locale,
+  editionId: string,
+  locator: { href: string; progression: number },
+): Promise<PassageAnchor> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc("my_library_editions", { p_locale: locale })
+    .eq("edition_id", editionId)
+    .maybeSingle();
+  if (error) {
+    await logAnchorFailure("my_library_editions", error);
+    return { owned: false, anchor: null };
+  }
+  const edition = data as unknown as OwnedEditionRow | null;
+  if (!edition) return { owned: false, anchor: null };
+  if (!edition.publication_id) return { owned: true, anchor: null };
+  const { data: ordinal, error: ordinalError } = await supabase.rpc("reader_chunk_for_locator", {
+    p_publication_id: edition.publication_id,
+    p_href: pathOf(locator.href),
+    p_progression: locator.progression,
+  });
+  if (ordinalError) {
+    await logAnchorFailure("reader_chunk_for_locator", ordinalError);
+    return { owned: true, anchor: null };
+  }
+  return { owned: true, anchor: typeof ordinal === "number" ? ordinal : null };
 }
 
 // The editions of ONE work the caller owns, for the legacy `/read/{bookId}` deep link. One edition

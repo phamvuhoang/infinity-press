@@ -37,7 +37,7 @@ from public.profiles p where p.auth_user_id = 'e1600000-0000-0000-0000-000000000
 select is(has_table_privilege('anon', 'public.shared_quotes', 'select'), false, 'anon cannot read the table');
 select is(has_table_privilege('authenticated', 'public.shared_quotes', 'select'), false, 'authenticated cannot read the table');
 select is(has_function_privilege('anon', 'public.catalog_shared_quote(text)', 'execute'), true, 'anon can read a card through the RPC');
-select is(has_function_privilege('anon', 'public.create_shared_quote(uuid, text, text)', 'execute'), false, 'anon cannot create');
+select is(has_function_privilege('anon', 'public.create_shared_quote(uuid, text, text, text, text, integer)', 'execute'), false, 'anon cannot create');
 select is(has_function_privilege('authenticated', 'public.shared_quote_graphemes(text)', 'execute'), false, 'the grapheme counter is internal');
 select is(public.shared_quote_graphemes(repeat(E'e\u0302\u0301', 300)), 300, 'decomposed Vietnamese counts one per grapheme');
 

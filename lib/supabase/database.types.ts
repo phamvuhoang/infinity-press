@@ -1521,13 +1521,16 @@ export type Database = {
           introduction: string | null
           isbn: string | null
           language_code: string
+          public_version_note: string | null
           publication_date: string | null
           review_note: string | null
+          review_scope: string
           reviewed_at: string | null
           reviewed_by: string | null
           rights_note: string | null
           status: Database["public"]["Enums"]["content_status"]
           territory_note: string | null
+          text_kind: string | null
           text_source_note: string | null
           translation_source: string | null
         }
@@ -1541,13 +1544,16 @@ export type Database = {
           introduction?: string | null
           isbn?: string | null
           language_code: string
+          public_version_note?: string | null
           publication_date?: string | null
           review_note?: string | null
+          review_scope?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           rights_note?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           territory_note?: string | null
+          text_kind?: string | null
           text_source_note?: string | null
           translation_source?: string | null
         }
@@ -1561,13 +1567,16 @@ export type Database = {
           introduction?: string | null
           isbn?: string | null
           language_code?: string
+          public_version_note?: string | null
           publication_date?: string | null
           review_note?: string | null
+          review_scope?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           rights_note?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           territory_note?: string | null
+          text_kind?: string | null
           text_source_note?: string | null
           translation_source?: string | null
         }
@@ -1941,6 +1950,185 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      journey_completions: {
+        Row: {
+          completed_at: string
+          journey_id: string
+          profile_id: string
+          reflection: string | null
+        }
+        Insert: {
+          completed_at?: string
+          journey_id: string
+          profile_id: string
+          reflection?: string | null
+        }
+        Update: {
+          completed_at?: string
+          journey_id?: string
+          profile_id?: string
+          reflection?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_completions_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "reading_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_completions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_localizations: {
+        Row: {
+          journey_id: string
+          locale: string
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          journey_id: string
+          locale: string
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          journey_id?: string
+          locale?: string
+          summary?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_localizations_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "reading_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      journey_progress: {
+        Row: {
+          completed_at: string
+          journey_id: string
+          position: number
+          profile_id: string
+        }
+        Insert: {
+          completed_at?: string
+          journey_id: string
+          position: number
+          profile_id: string
+        }
+        Update: {
+          completed_at?: string
+          journey_id?: string
+          position?: number
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_progress_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "reading_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journey_progress_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_session_localizations: {
+        Row: {
+          guide_md: string | null
+          locale: string
+          questions: Json
+          session_id: string
+          title: string
+        }
+        Insert: {
+          guide_md?: string | null
+          locale: string
+          questions?: Json
+          session_id: string
+          title: string
+        }
+        Update: {
+          guide_md?: string | null
+          locale?: string
+          questions?: Json
+          session_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_session_localizations_locale_fkey"
+            columns: ["locale"]
+            isOneToOne: false
+            referencedRelation: "supported_locales"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "journey_session_localizations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "journey_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journey_sessions: {
+        Row: {
+          end_locator: Json | null
+          id: string
+          journey_id: string
+          position: number
+          start_locator: NonNullable<Json>
+        }
+        Insert: {
+          end_locator?: Json | null
+          id?: string
+          journey_id: string
+          position: number
+          start_locator: NonNullable<Json>
+        }
+        Update: {
+          end_locator?: Json | null
+          id?: string
+          journey_id?: string
+          position?: number
+          start_locator?: NonNullable<Json>
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_sessions_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "reading_journeys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       library_items: {
         Row: {
@@ -2562,6 +2750,69 @@ export type Database = {
           },
         ]
       }
+      passage_alignments: {
+        Row: {
+          book_id: string
+          confidence: number
+          source_chunk_id: string
+          source_publication_id: string
+          target_chunk_id: string
+          target_publication_id: string
+        }
+        Insert: {
+          book_id: string
+          confidence: number
+          source_chunk_id: string
+          source_publication_id: string
+          target_chunk_id: string
+          target_publication_id: string
+        }
+        Update: {
+          book_id?: string
+          confidence?: number
+          source_chunk_id?: string
+          source_publication_id?: string
+          target_chunk_id?: string
+          target_publication_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passage_alignments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_alignments_source_chunk_id_fkey"
+            columns: ["source_chunk_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_search_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_alignments_source_publication_id_fkey"
+            columns: ["source_publication_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_publications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_alignments_target_chunk_id_fkey"
+            columns: ["target_chunk_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_search_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "passage_alignments_target_publication_id_fkey"
+            columns: ["target_publication_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_events: {
         Row: {
           id: string
@@ -2952,6 +3203,54 @@ export type Database = {
           },
         ]
       }
+      reading_journeys: {
+        Row: {
+          book_id: string
+          created_at: string
+          edition_id: string
+          id: string
+          session_count: number
+          slug: string
+          status: Database["public"]["Enums"]["content_status"]
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          edition_id: string
+          id?: string
+          session_count?: number
+          slug: string
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          edition_id?: string
+          id?: string
+          session_count?: number
+          slug?: string
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_journeys_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_journeys_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "editions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reading_progress: {
         Row: {
           client_sequence: number
@@ -3132,42 +3431,51 @@ export type Database = {
       shared_quotes: {
         Row: {
           book_id: string
+          chunk_ordinal: number | null
           code: string
           created_at: string
           id: string
           locale: string
           profile_id: string
           publication_id: string | null
+          question: string | null
           quote: string
           removed_by: string | null
           status: string
+          text_kind: string
           updated_at: string
           shared_quote_json: Json | null
         }
         Insert: {
           book_id: string
+          chunk_ordinal?: number | null
           code: string
           created_at?: string
           id?: string
           locale: string
           profile_id: string
           publication_id?: string | null
+          question?: string | null
           quote: string
           removed_by?: string | null
           status?: string
+          text_kind?: string
           updated_at?: string
         }
         Update: {
           book_id?: string
+          chunk_ordinal?: number | null
           code?: string
           created_at?: string
           id?: string
           locale?: string
           profile_id?: string
           publication_id?: string | null
+          question?: string | null
           quote?: string
           removed_by?: string | null
           status?: string
+          text_kind?: string
           updated_at?: string
         }
         Relationships: [
@@ -3596,6 +3904,32 @@ export type Database = {
           starts_at: string
         }[]
       }
+      admin_growth_funnel: {
+        Args: { p_days: number }
+        Returns: {
+          book_id: string
+          journey_completed: number
+          open_reader: number
+          open_sample: number
+          session_completed_readers: number
+        }[]
+      }
+      admin_growth_retention: {
+        Args: { p_days: number }
+        Returns: {
+          activated: number
+          cohort_day: string
+          returned_d7: number
+        }[]
+      }
+      admin_growth_share: {
+        Args: { p_days: number }
+        Returns: {
+          continued: number
+          opened: number
+          shared: number
+        }[]
+      }
       admin_list_coupons: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -3724,8 +4058,11 @@ export type Database = {
       admin_save_edition_provenance: {
         Args: {
           p_edition_id: string
+          p_public_version_note?: string
           p_rights_note: string
+          p_review_scope?: string
           p_territory_note: string
+          p_text_kind?: string
           p_text_source_note: string
           p_translation_source: string
         }
@@ -3898,6 +4235,10 @@ export type Database = {
         Args: { p_book_id: string; p_related_book_ids: string[] }
         Returns: undefined
       }
+      admin_set_sample_full: {
+        Args: { p_full: boolean; p_publication_id: string }
+        Returns: undefined
+      }
       admin_update_article: {
         Args: { p_article_id: string; p_author_id: string }
         Returns: undefined
@@ -3920,6 +4261,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      alignment_coverage: { Args: { p_publication_id: string }; Returns: number }
       apply_coupon_to_order: {
         Args: { p_code: string; p_order_id: string }
         Returns: {
@@ -4184,6 +4526,7 @@ export type Database = {
         Returns: boolean
       }
       catalog_home_hero: { Args: Record<PropertyKey, never>; Returns: Json }
+      catalog_home_passage: { Args: { p_book_id: string }; Returns: Json }
       catalog_home_topics: {
         Args: { p_locale: string }
         Returns: {
@@ -4215,6 +4558,15 @@ export type Database = {
         }[]
       }
       catalog_shared_quote: { Args: { p_code: string }; Returns: Json }
+      chunk_lengths: {
+        Args: { p_publication_id: string }
+        Returns: {
+          href: string
+          id: string
+          length: number
+          ordinal: number
+        }[]
+      }
       claim_gift: {
         Args: { p_token: string }
         Returns: {
@@ -4259,6 +4611,10 @@ export type Database = {
           target_id: string
           version: number
         }[]
+      }
+      complete_journey: {
+        Args: { p_journey_id: string; p_reflection: string }
+        Returns: undefined
       }
       complete_notification_outbox: {
         Args: {
@@ -4336,7 +4692,14 @@ export type Database = {
         }[]
       }
       create_shared_quote: {
-        Args: { p_locale: string; p_publication_id: string; p_quote: string }
+        Args: {
+          p_chunk_ordinal?: number
+          p_locale: string
+          p_publication_id: string
+          p_question?: string
+          p_quote: string
+          p_text_kind?: string
+        }
         Returns: Json
       }
       currency_is_payable: { Args: { p_currency: string }; Returns: boolean }
@@ -4396,6 +4759,7 @@ export type Database = {
         Args: { p_edition_id: string; p_profile_id: string; p_reason: string }
         Returns: string
       }
+      growth_report_guard: { Args: { p_days: number; p_name: string }; Returns: undefined }
       idea_readiness_issues: { Args: { p_idea_id: string }; Returns: string[] }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_supported_locale: { Args: { p_locale: string }; Returns: boolean }
@@ -4515,6 +4879,10 @@ export type Database = {
         Returns: Json
       }
       knowledge_uuid_ok: { Args: { p_value: Json }; Returns: boolean }
+      mark_journey_session: {
+        Args: { p_journey_id: string; p_position: number }
+        Returns: undefined
+      }
       mask_email: { Args: { p_email: string }; Returns: string }
       my_library_editions: {
         Args: { p_locale: string }
@@ -4572,6 +4940,10 @@ export type Database = {
         Args: { p_publication_id: string }
         Returns: undefined
       }
+      reader_aligned_passage: {
+        Args: { p_ordinal: number; p_publication_id: string }
+        Returns: Json
+      }
       reader_annotation_request: {
         Args: {
           p_annotation_id?: string
@@ -4599,6 +4971,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      reader_chunk_for_locator: {
+        Args: { p_href: string; p_progression: number; p_publication_id: string }
+        Returns: number
+      }
+      reader_chunk_locator: {
+        Args: { p_ordinal: number; p_publication_id: string }
+        Returns: Json
       }
       reader_edition_for_publication: {
         Args: { p_profile_id: string; p_publication_id: string }
@@ -4660,6 +5040,15 @@ export type Database = {
       }
       remove_gift: { Args: { p_order_id: string }; Returns: undefined }
       remove_shared_quote: { Args: { p_code: string }; Returns: undefined }
+      replace_passage_alignments: {
+        Args: {
+          p_book_id: string
+          p_pairs: Json
+          p_source_publication_id: string
+          p_target_publication_id: string
+        }
+        Returns: undefined
+      }
       replace_publication_search: {
         Args: {
           p_positions: Json
@@ -4691,6 +5080,10 @@ export type Database = {
       rollback_publication: {
         Args: { p_book_id: string; p_publication_id: string }
         Returns: undefined
+      }
+      sample_chunk_locator: {
+        Args: { p_ordinal: number; p_publication_id: string }
+        Returns: Json
       }
       save_reading_progress: {
         Args: {

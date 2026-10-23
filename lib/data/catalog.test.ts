@@ -11,13 +11,14 @@ import {
   getBookCards,
   getBookPage,
   getEntityPage,
+  getHomePassage,
   getSampleReaderBook,
   listEntitySlugs,
   publicBookAction,
   searchCatalog,
 } from "@/lib/data/catalog";
 import { getCurrentProfile } from "@/lib/data/profiles";
-import { resolveSamplePublicationId } from "@/lib/reader/session";
+import { resolveSamplePublication } from "@/lib/reader/session";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,7 +33,7 @@ vi.mock("next/headers", () => ({ headers: vi.fn() }));
 // is a same-module reference that vi.mock cannot intercept. The getSampleReaderBook tests below
 // exercise getBookPage for real, through mockRpc, matching this file's existing convention instead.
 vi.mock("@/lib/reader/session", () => ({
-  resolveSamplePublicationId: vi.fn(),
+  resolveSamplePublication: vi.fn(),
 }));
 
 const BOOK_ID = "30000000-0000-4000-8000-000000000001";
@@ -202,6 +203,24 @@ describe("getBookCardById", () => {
   });
 });
 
+describe("getHomePassage", () => {
+  const pair = {
+    sourceText: "Một đoạn.", sourceLang: "vi", sourceEditionId: "e-vi", ordinal: 3,
+    targetText: "A passage.", targetLang: "en", targetEditionId: "e-en", targetOrdinal: 4,
+  };
+
+  it("returns the aligned pair for the book", async () => {
+    const rpc = mockRpc({ catalog_home_passage: { data: pair, error: null } });
+    await expect(getHomePassage(BOOK_ID)).resolves.toEqual(pair);
+    expect(rpc).toHaveBeenCalledWith("catalog_home_passage", { p_book_id: BOOK_ID });
+  });
+
+  it("returns null when no pair qualifies", async () => {
+    mockRpc({ catalog_home_passage: { data: null, error: null } });
+    await expect(getHomePassage(BOOK_ID)).resolves.toBeNull();
+  });
+});
+
 describe("read failures", () => {
   const dbError = {
     code: "42P01",
@@ -352,6 +371,7 @@ describe("getBookPage", () => {
   });
 
   it("lists the readable editions and drops a malformed one", async () => {
+    const record = { textSourceNote: "1912", translationSource: null, rightsNote: null, territoryNote: null, textKind: "adapted", reviewScope: "sample", reviewedAt: null, versionNote: "Fixed typos." };
     const edition = {
       editionId: "edition-ja",
       languageCode: "ja",
@@ -363,11 +383,13 @@ describe("getBookPage", () => {
       listPriceMinor: null,
       saleEndsAt: null,
       hasSample: false,
+      // An internal review note in the payload is never carried to the page.
+      record: { ...record, reviewNote: "internal: blocked for rights" },
     };
     mockRpc({
       catalog_book_cards: { data: [cardRow()], error: null },
       catalog_book_page: {
-        data: bookPageData({ editions: [edition, { editionId: 7 }, { ...edition, editionId: "edition-none", offerId: null, priceMinor: null, currency: null }] }),
+        data: bookPageData({ editions: [edition, { editionId: 7 }, { ...edition, editionId: "edition-none", offerId: null, priceMinor: null, currency: null, record: { ...record, reviewScope: "partial" } }] }),
         error: null,
       },
     });
@@ -380,8 +402,10 @@ describe("getBookPage", () => {
         isDefault: false,
         offer: { offerId: "offer-ja", priceMinor: 500, currency: "JPY", listPriceMinor: null, saleEndsAt: null },
         hasSample: false,
+        record,
       },
-      { editionId: "edition-none", languageCode: "ja", epubLanguage: "ja", isDefault: false, offer: null, hasSample: false },
+      // A malformed record hides the record, not the edition.
+      { editionId: "edition-none", languageCode: "ja", epubLanguage: "ja", isDefault: false, offer: null, hasSample: false, record: null },
     ]);
   });
 
@@ -508,7 +532,7 @@ describe("getSampleReaderBook", () => {
     });
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toBeNull();
-    expect(resolveSamplePublicationId).not.toHaveBeenCalled();
+    expect(resolveSamplePublication).not.toHaveBeenCalled();
   });
 
   // The sample belongs to an edition: the default one, or the one `?edition=` names.
@@ -525,7 +549,7 @@ describe("getSampleReaderBook", () => {
     });
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toBeNull();
-    expect(resolveSamplePublicationId).not.toHaveBeenCalled();
+    expect(resolveSamplePublication).not.toHaveBeenCalled();
   });
 
   it("returns null when no publication can be resolved", async () => {
@@ -533,7 +557,7 @@ describe("getSampleReaderBook", () => {
       catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
       catalog_book_page: { data: bookPageData({ editions: [english] }), error: null },
     });
-    vi.mocked(resolveSamplePublicationId).mockResolvedValue(null);
+    vi.mocked(resolveSamplePublication).mockResolvedValue(null);
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toBeNull();
   });
@@ -543,15 +567,16 @@ describe("getSampleReaderBook", () => {
       catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
       catalog_book_page: { data: bookPageData({ editions: [english, japanese] }), error: null },
     });
-    vi.mocked(resolveSamplePublicationId).mockResolvedValue("pub-1");
+    vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: "pub-1", sampleFull: false });
 
     await expect(getSampleReaderBook("en", "a-book")).resolves.toMatchObject({
       publicationId: "pub-1",
+      sampleFull: false,
       slug: "a-book",
       editionId: "edition-1",
       offer: { offerId: "offer-en", priceMinor: 100 },
     });
-    expect(resolveSamplePublicationId).toHaveBeenCalledWith("edition-1");
+    expect(resolveSamplePublication).toHaveBeenCalledWith("edition-1");
   });
 
   it("opens the sample of the edition the reader selected, with that edition's offer", async () => {
@@ -559,14 +584,56 @@ describe("getSampleReaderBook", () => {
       catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
       catalog_book_page: { data: bookPageData({ editions: [english, japanese] }), error: null },
     });
-    vi.mocked(resolveSamplePublicationId).mockResolvedValue("pub-ja");
+    vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: "pub-ja", sampleFull: true });
 
     await expect(getSampleReaderBook("en", "a-book", "edition-ja")).resolves.toMatchObject({
       publicationId: "pub-ja",
+      sampleFull: true,
       editionId: "edition-ja",
       offer: { offerId: "offer-ja", priceMinor: 500 },
     });
-    expect(resolveSamplePublicationId).toHaveBeenCalledWith("edition-ja");
+    expect(resolveSamplePublication).toHaveBeenCalledWith("edition-ja");
+  });
+
+  // Review Focus 2: an allowed passage opens there, in the sample manifest's own href form; a
+  // refused or failed one opens at the start.
+  const SAMPLE_PUB = "60000000-0000-4000-8000-000000000001";
+  const chunk = { href: "OEBPS/c2.xhtml", progression: 0, totalProgression: 0.5, locations: { position: 4 }, text: { highlight: "here" } };
+
+  it("opens at an allowed passage", async () => {
+    const rpc = mockRpc({
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [english] }), error: null },
+      sample_chunk_locator: { data: chunk, error: null },
+    });
+    vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: SAMPLE_PUB, sampleFull: false });
+
+    await expect(getSampleReaderBook("en", "a-book", null, { anchor: 9 })).resolves.toMatchObject({
+      initialLocator: { ...chunk, href: `/api/samples/${SAMPLE_PUB}/resources/OEBPS/c2.xhtml` },
+    });
+    expect(rpc).toHaveBeenCalledWith("sample_chunk_locator", { p_publication_id: SAMPLE_PUB, p_ordinal: 9 });
+  });
+
+  it.each([
+    ["refused", { data: null, error: null }],
+    ["failed", { data: null, error: { code: "XX000" } }],
+  ])("opens at the start when the passage is %s", async (_label, result) => {
+    mockRpc({
+      catalog_book_cards: { data: [cardRow({ has_sample: true })], error: null },
+      catalog_book_page: { data: bookPageData({ editions: [english] }), error: null },
+      sample_chunk_locator: result,
+    });
+    vi.mocked(resolveSamplePublication).mockResolvedValue({ publicationId: SAMPLE_PUB, sampleFull: false });
+
+    await expect(getSampleReaderBook("en", "a-book", null, { anchor: 9 })).resolves.toMatchObject({ initialLocator: null });
+    if (result.error) {
+      expect(console.error).toHaveBeenCalledWith(
+        "Catalog read failed.",
+        expect.objectContaining({ operation: "sample_chunk_locator", code: "XX000", requestId: "req_catalog123" }),
+      );
+    } else {
+      expect(console.error).not.toHaveBeenCalled();
+    }
   });
 
   // A forged or stale id never falls through to the default edition's sample.
@@ -577,7 +644,7 @@ describe("getSampleReaderBook", () => {
     });
 
     await expect(getSampleReaderBook("en", "a-book", "edition-forged")).resolves.toBeNull();
-    expect(resolveSamplePublicationId).not.toHaveBeenCalled();
+    expect(resolveSamplePublication).not.toHaveBeenCalled();
   });
 });
 

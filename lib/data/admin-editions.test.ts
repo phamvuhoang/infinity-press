@@ -9,6 +9,8 @@ import {
   EditionIdentityLockedError,
   getAdminEdition,
   listPricingDefaults,
+  SampleNotFreeError,
+  setSampleFull,
   setDefaultEdition,
   ProvenanceIncompleteError,
   saveEditionProvenance,
@@ -50,7 +52,7 @@ describe("admin gate ordering", () => {
     ["setDefaultEdition", () => setDefaultEdition(bookId, "ja", editionId)],
     ["setDefaultOffer", () => setDefaultOffer(editionId, offerId)],
     ["listPricingDefaults", () => listPricingDefaults("ja")],
-    ["saveEditionProvenance", () => saveEditionProvenance(editionId, { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null })],
+    ["saveEditionProvenance", () => saveEditionProvenance(editionId, { textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, textKind: null, reviewScope: "none", publicVersionNote: null })],
     ["setEditionReview", () => setEditionReview(editionId, { state: "approved", note: null })],
   ])("%s never builds a client when the admin gate denies", async (_name, call) => {
     vi.mocked(requireAdmin).mockRejectedValue(new Error("NEXT_FORBIDDEN"));
@@ -188,6 +190,9 @@ describe("getAdminEdition", () => {
     translation_source: "Translated 1925",
     rights_note: null,
     territory_note: null,
+    text_kind: "adapted",
+    review_scope: "sample",
+    public_version_note: "Fixed typos.",
     editorial_state: "unreviewed",
     reviewed_at: null,
     review_note: null,
@@ -217,6 +222,9 @@ describe("getAdminEdition", () => {
       translationSource: "Translated 1925",
       rightsNote: null,
       territoryNote: null,
+      textKind: "adapted",
+      reviewScope: "sample",
+      publicVersionNote: "Fixed typos.",
       reviewedAt: null,
       reviewNote: null,
     });
@@ -249,6 +257,9 @@ describe("editorial review", () => {
       translationSource: "Translated 1925",
       rightsNote: "Public domain",
       territoryNote: "Worldwide",
+      textKind: "literal",
+      reviewScope: "full",
+      publicVersionNote: "Fixed chapter 3.",
     });
 
     expect(fake.rpc).toHaveBeenCalledWith("admin_save_edition_provenance", {
@@ -257,6 +268,9 @@ describe("editorial review", () => {
       p_translation_source: "Translated 1925",
       p_rights_note: "Public domain",
       p_territory_note: "Worldwide",
+      p_text_kind: "literal",
+      p_review_scope: "full",
+      p_public_version_note: "Fixed chapter 3.",
     });
   });
 
@@ -283,5 +297,16 @@ describe("editorial review", () => {
   it("rejects a malformed edition id before calling the database", async () => {
     await expect(setEditionReview("nope", { state: "approved", note: null })).rejects.toThrow();
     expect(createClient).not.toHaveBeenCalled();
+  });
+});
+
+describe("setSampleFull", () => {
+  const publicationId = "9a1b2c3d-0000-4000-8000-000000000001";
+
+  it("turns the RPC's 22023 refusal into SampleNotFreeError", async () => {
+    vi.mocked(createClient).mockResolvedValue({
+      rpc: vi.fn().mockResolvedValue({ data: null, error: { code: "22023", message: "only a free edition" } }),
+    } as unknown as Awaited<ReturnType<typeof createClient>>);
+    await expect(setSampleFull(publicationId, true)).rejects.toBeInstanceOf(SampleNotFreeError);
   });
 });

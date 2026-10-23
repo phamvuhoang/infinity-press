@@ -9,8 +9,11 @@ import {
   setDefaultEditionAction,
   setDefaultOfferAction,
   setReviewAction,
+  setSampleFullAction,
+  recomputeAlignmentAction,
   updateEditionAction,
 } from "@/app/admin/books/[bookId]/editions/actions";
+import { computeAlignmentsForBook } from "@/lib/data/alignments";
 import { requireAdmin } from "@/lib/auth/admin";
 import { initialAdminFormState } from "@/lib/catalog/form";
 import {
@@ -18,15 +21,20 @@ import {
   createOffer,
   DuplicateEditionError,
   EditionIdentityLockedError,
+  getAdminEdition,
   ProvenanceIncompleteError,
+  SampleNotFreeError,
   saveEditionProvenance,
   setDefaultEdition,
   setDefaultOffer,
   setEditionReview,
+  setSampleFull,
   updateEdition,
 } from "@/lib/data/admin-editions";
 
 vi.mock("@/lib/auth/admin", () => ({ requireAdmin: vi.fn() }));
+vi.mock("@/lib/data/alignments", () => ({ computeAlignmentsForBook: vi.fn() }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-request-id": "req-align-1" }) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => {
@@ -42,6 +50,8 @@ vi.mock("@/lib/data/admin-editions", async (importOriginal) => ({
   setDefaultOffer: vi.fn(),
   saveEditionProvenance: vi.fn(),
   setEditionReview: vi.fn(),
+  getAdminEdition: vi.fn(),
+  setSampleFull: vi.fn(),
 }));
 
 const bookId = "3a1b2c3d-0000-4000-8000-000000000001";
@@ -68,13 +78,32 @@ describe("every edition action denies before touching anything", () => {
     ["saveProvenanceAction", () => saveProvenanceAction(bookId, editionId, initialAdminFormState, form({}))],
     ["setReviewAction", () => setReviewAction(bookId, editionId, initialAdminFormState, form({ state: "approved" }))],
     ["setDefaultOfferAction", () => setDefaultOfferAction(bookId, editionId, offerId, initialAdminFormState, form({}))],
+    ["setSampleFullAction", () => setSampleFullAction(bookId, editionId, initialAdminFormState, form({ full: "on" }))],
+    ["recomputeAlignmentAction", () => recomputeAlignmentAction(bookId, editionId, initialAdminFormState, form({}))],
   ])("%s", async (_name, call) => {
     const denied = new Error("NEXT_FORBIDDEN");
     vi.mocked(requireAdmin).mockRejectedValue(denied);
     await expect(call()).rejects.toBe(denied);
-    for (const mutation of [createEdition, updateEdition, createOffer, setDefaultEdition, setDefaultOffer]) {
+    for (const mutation of [createEdition, updateEdition, createOffer, setDefaultEdition, setDefaultOffer, setSampleFull, computeAlignmentsForBook]) {
       expect(mutation).not.toHaveBeenCalled();
     }
+  });
+});
+
+describe("recomputeAlignmentAction", () => {
+  it("recomputes the work's alignments", async () => {
+    vi.mocked(computeAlignmentsForBook).mockResolvedValue([]);
+    const state = await recomputeAlignmentAction(bookId, editionId, initialAdminFormState, form({}));
+    expect(computeAlignmentsForBook).toHaveBeenCalledExactlyOnceWith(bookId);
+    expect(state.formError).toBeNull();
+  });
+
+  it("reports a failure without its text and logs the request ID", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(computeAlignmentsForBook).mockRejectedValue(new Error("boom"));
+    const state = await recomputeAlignmentAction(bookId, editionId, initialAdminFormState, form({}));
+    expect(state.formError).toBe("Alignment could not be recomputed. Try again.");
+    expect(log).toHaveBeenCalledWith("Recompute alignment failed.", expect.objectContaining({ bookId, requestId: "req-align-1" }));
   });
 });
 
@@ -168,13 +197,16 @@ describe("defaults", () => {
 });
 
 describe("editorial actions", () => {
-  it("saves provenance, treating blank notes as none", async () => {
-    const state = await saveProvenanceAction(bookId, editionId, initialAdminFormState, form({ translationSource: " Translated 1925 ", rightsNote: "", textSourceNote: "", territoryNote: "Worldwide" }));
+  it("saves provenance, treating blank notes as none and a missing review scope as none", async () => {
+    const state = await saveProvenanceAction(bookId, editionId, initialAdminFormState, form({ translationSource: " Translated 1925 ", rightsNote: "", textSourceNote: "", territoryNote: "Worldwide", textKind: "commentary", publicVersionNote: " Fixed chapter 3. " }));
     expect(saveEditionProvenance).toHaveBeenCalledWith(editionId, {
       textSourceNote: null,
       translationSource: "Translated 1925",
       rightsNote: null,
       territoryNote: "Worldwide",
+      textKind: "commentary",
+      reviewScope: "none",
+      publicVersionNote: "Fixed chapter 3.",
     });
     expect(state.savedAt).not.toBeNull();
     expect(revalidatePath).toHaveBeenCalledWith(`/admin/books/${bookId}/editions/${editionId}`);
@@ -202,5 +234,31 @@ describe("editorial actions", () => {
     vi.mocked(setEditionReview).mockRejectedValue(new ProvenanceIncompleteError());
     const state = await setReviewAction(bookId, editionId, initialAdminFormState, form({ state: "approved" }));
     expect(state.formError).toContain("translation source");
+  });
+});
+
+describe("setSampleFullAction", () => {
+  const publicationId = "9a1b2c3d-0000-4000-8000-000000000001";
+  beforeEach(() => {
+    vi.mocked(getAdminEdition).mockResolvedValue({ activePublicationId: publicationId, offers: [] } as unknown as Awaited<
+      ReturnType<typeof getAdminEdition>
+    >);
+  });
+
+  it("asks the database with the edition's own live publication, never one from the form", async () => {
+    const state = await setSampleFullAction(bookId, editionId, initialAdminFormState, form({ full: "on", publicationId: "forged" }));
+    expect(setSampleFull).toHaveBeenCalledExactlyOnceWith(publicationId, true);
+    expect(state.savedAt).not.toBeNull();
+  });
+
+  it("reports the database's free-edition refusal as a form error", async () => {
+    vi.mocked(setSampleFull).mockRejectedValue(new SampleNotFreeError());
+    const state = await setSampleFullAction(bookId, editionId, initialAdminFormState, form({ full: "on" }));
+    expect(state.formError).toBe("Only a free edition can be opened in full as a sample.");
+  });
+
+  it("closes without a checkbox value", async () => {
+    await setSampleFullAction(bookId, editionId, initialAdminFormState, form({}));
+    expect(setSampleFull).toHaveBeenCalledExactlyOnceWith(publicationId, false);
   });
 });

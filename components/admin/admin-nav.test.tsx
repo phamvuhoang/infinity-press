@@ -14,11 +14,13 @@ it("links the knowledge editors beside the catalog entities, without a locale pr
   const labels = within(nav)
     .getAllByRole("link")
     .map((link) => link.textContent);
-  expect(labels.slice(labels.indexOf("Topics"), labels.indexOf("Topics") + 3)).toEqual(["Topics", "Ideas", "Articles"]);
+  expect(labels.slice(labels.indexOf("Topics"), labels.indexOf("Topics") + 4)).toEqual(["Topics", "Ideas", "Journeys", "Articles"]);
+  expect(within(nav).getByRole("link", { name: "Journeys" })).toHaveAttribute("href", "/admin/journeys");
   expect(within(nav).getByRole("link", { name: "Reviews" })).toHaveAttribute("href", "/admin/reviews");
   expect(within(nav).getByRole("link", { name: "Translation reports" })).toHaveAttribute("href", "/admin/feedback");
   expect(within(nav).getByRole("link", { name: "Questions" })).toHaveAttribute("href", "/admin/questions");
   expect(labels.slice(labels.indexOf("Articles"), labels.indexOf("Articles") + 5)).toEqual(["Articles", "Reviews", "Translation reports", "Questions", "Quotes"]);
   expect(within(nav).getByRole("link", { name: "Quotes" })).toHaveAttribute("href", "/admin/quotes");
+  expect(within(nav).getByRole("link", { name: "Growth" })).toHaveAttribute("href", "/admin/growth");
   for (const link of within(nav).getAllByRole("link")) expect(link.getAttribute("href")).toMatch(/^\/admin(\/|$)/);
 });

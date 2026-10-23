@@ -41,6 +41,8 @@ describe("analyticsEventNames", () => {
       "view_library",
       "share_quote",
       "view_quote",
+      "compare_opened",
+      "passage_opened",
     ]);
   });
 });

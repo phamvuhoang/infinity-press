@@ -18,10 +18,11 @@ const edition: AdminEditionDTO = {
   status: "draft",
   isDefault: false,
   activePublicationId: null,
+  sampleFull: false,
   identityLocked: false,
   sku: null,
   offers: [],
-  editorial: { state: "unreviewed", textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, reviewedAt: null, reviewNote: null },
+  editorial: { state: "unreviewed", textSourceNote: null, translationSource: null, rightsNote: null, territoryNote: null, textKind: null, reviewScope: "none", publicVersionNote: null, reviewedAt: null, reviewNote: null },
 };
 import { RelationsForm } from "./relations-form";
 import type { AdminFormState } from "@/lib/catalog/form";

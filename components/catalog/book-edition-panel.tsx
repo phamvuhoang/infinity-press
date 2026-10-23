@@ -8,11 +8,11 @@ import { EditionSelector } from "@/components/catalog/edition-selector";
 import { PriceLabel } from "@/components/catalog/price-label";
 import { ViewerBookAction } from "@/components/catalog/viewer-book-action";
 import { editionPublicAction, selectEdition } from "@/lib/catalog/edition-selection";
-import type { CatalogEditionOption } from "@/lib/catalog/public-types";
+import type { CatalogEditionOption, CatalogEditionRecord } from "@/lib/catalog/public-types";
 import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionary";
-import { fillTemplate } from "@/lib/i18n/format";
+import { fillTemplate, formatDate } from "@/lib/i18n/format";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
 
 type PanelProps = {
@@ -33,6 +33,31 @@ type PanelProps = {
   // Whether the selector and `?edition=` are in play. False on pages that sell one fixed edition.
   selectable: boolean;
 };
+
+// "About this edition": the provenance and review record, collapsed by default. A field is listed
+// only when it has a value.
+function EditionRecord({ record, copy, locale }: { record: CatalogEditionRecord; copy: Dictionary["catalog"]["editionRecord"]; locale: Locale }) {
+  const rows: [string, string | null][] = [
+    [copy.textKind, record.textKind && copy.textKinds[record.textKind]],
+    [copy.textSourceNote, record.textSourceNote],
+    [copy.translationSource, record.translationSource],
+    [copy.rightsNote, record.rightsNote],
+    [copy.territoryNote, record.territoryNote],
+    [copy.reviewScope, copy.reviewScopes[record.reviewScope]],
+    [copy.reviewedAt, record.reviewedAt && formatDate(record.reviewedAt, locale)],
+    [copy.versionNote, record.versionNote],
+  ];
+  return (
+    <details className="border-t border-hairline pt-4 text-sm">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center font-medium text-ink">{copy.title}</summary>
+      <div className="mt-2 space-y-2 text-ink-soft">
+        {rows.filter(([, value]) => value).map(([label, value]) => (
+          <p className="whitespace-pre-line" key={label}><span className="font-medium text-ink">{label}:</span> {value}</p>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 // The price, format and action for ONE edition. Everything here is per edition: the price, the
 // language of the EPUB, whether the viewer owns it, and the order it starts.
@@ -107,6 +132,7 @@ function EditionView({ requested, hydrating = false, ...props }: PanelProps & { 
           </Link>
         </p>
       ) : null}
+      {edition.record ? <EditionRecord copy={copy.editionRecord} locale={locale} record={edition.record} /> : null}
     </div>
   );
 }

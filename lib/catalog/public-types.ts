@@ -55,6 +55,19 @@ export type CatalogEditionOption = {
   isDefault: boolean;
   offer: { offerId: string; priceMinor: number; currency: string; listPriceMinor: number | null; saleEndsAt: string | null } | null;
   hasSample: boolean;
+  // The public edition record ("About this edition"). Null when the edition states nothing yet.
+  record: CatalogEditionRecord | null;
+};
+
+export type CatalogEditionRecord = {
+  textSourceNote: string | null;
+  translationSource: string | null;
+  rightsNote: string | null;
+  territoryNote: string | null;
+  textKind: "literal" | "adapted" | "commentary" | null;
+  reviewScope: "full" | "sample" | "none";
+  reviewedAt: string | null;
+  versionNote: string | null;
 };
 
 export type CatalogReviewSummary = { count: number; average: number };

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { headers } from "next/headers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { requireUser } from "@/lib/auth/session";
@@ -8,6 +9,7 @@ import {
   deriveLibraryState,
   getLibrary,
   getOwnedEditionsOfBook,
+  getPassageAnchor,
   getReadableEdition,
   groupLibraryByWork,
   type LibraryItemDTO,
@@ -20,6 +22,7 @@ vi.mock("@/lib/data/catalog", () => ({ getBookCards: vi.fn(), getBookAcceptsQues
 vi.mock("@/lib/data/profiles", () => ({ getCurrentProfile: vi.fn() }));
 vi.mock("@/lib/config/server-env", () => ({ getServerEnv: () => ({ siteUrl: "http://127.0.0.1:3000" }) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("next/headers", () => ({ headers: vi.fn() }));
 
 const BOOK_ID = "30000000-0000-0000-0000-000000000001";
 const EDITION_ID = "40000000-0000-0000-0000-000000000001";
@@ -91,9 +94,10 @@ function queryBuilder(rows: Row[]) {
 // `my_library_editions` is owner-scoped in SQL (any book or edition status, active entitlement only),
 // so the fake hands back whatever rows the test says the caller owns - the scoping is pinned by
 // pgTAP (supabase/tests/press_owner_reads_unpublished.sql), not here.
-function fakeClient(tables: Record<string, Row[]>, owned: Row[] = []) {
+// `rpcs` answers the scalar RPCs (the passage anchor lookups) by name.
+function fakeClient(tables: Record<string, Row[]>, owned: Row[] = [], rpcs: Record<string, { data: unknown; error: unknown }> = {}) {
   const from = vi.fn((table: string) => queryBuilder(tables[table] ?? []));
-  const rpc = vi.fn(() => queryBuilder(owned));
+  const rpc = vi.fn((name: string) => (name in rpcs ? thenable(rpcs[name]) : queryBuilder(owned)));
   return { from, rpc } as unknown as Awaited<ReturnType<typeof createClient>>;
 }
 
@@ -166,16 +170,21 @@ beforeEach(() => {
     locale: "en",
   });
   vi.mocked(getBookCards).mockResolvedValue([]);
+  vi.mocked(headers).mockResolvedValue(new Headers({ "x-request-id": "req_library123" }) as never);
+  vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 // `owned` is what my_library_editions returns for the caller; an empty list is a reader who owns
 // nothing here (the RPC filters on auth.uid() itself, so another reader's entitlement never shows).
-function readableBookClient(options: { owned?: Row[]; progress?: Row[] } = {}) {
+function readableBookClient(
+  options: { owned?: Row[]; progress?: Row[]; rpcs?: Record<string, { data: unknown; error: unknown }> } = {},
+) {
   return fakeClient(
     { reading_progress: options.progress ?? [] },
     options.owned ?? [
       ownedEdition({ slug: "source-book", title: "Source title", author_name: "Localized author" }),
     ],
+    options.rpcs,
   );
 }
 
@@ -309,6 +318,133 @@ describe("getReadableEdition attribution", () => {
       relatedBooks: [{ title: "English related", href: "/en/books/english-related" }],
     });
     expect(getBookCards).toHaveBeenCalledWith("en");
+  });
+});
+
+// Review Focus 2: a passage link opens at the passage, and anything unresolvable falls back silently.
+describe("getReadableEdition anchor", () => {
+  const saved = { href: "/api/reader/saved.xhtml", progression: 0.4, totalProgression: 0.4, locations: {} };
+  const chunk = { href: "OEBPS/c2.xhtml", progression: 0.5, totalProgression: 0.6, locations: { position: 7 }, text: { highlight: "here" } };
+  const progress = [{ profile_id: PROFILE_ID, publication_id: PUBLICATION_ID, locator_json: saved }];
+
+  it("opens at the RPC's locator, with its href turned into the reader URL", async () => {
+    const client = readableBookClient({ progress, rpcs: { reader_chunk_locator: { data: chunk, error: null } } });
+    vi.mocked(createClient).mockResolvedValue(client);
+
+    const book = await getReadableEdition("en", EDITION_ID, { anchor: 5 });
+
+    expect(client.rpc).toHaveBeenCalledWith("reader_chunk_locator", { p_publication_id: PUBLICATION_ID, p_ordinal: 5 });
+    expect(book?.initialLocator).toEqual({
+      ...chunk,
+      href: `/api/reader/publications/${PUBLICATION_ID}/resources/OEBPS/c2.xhtml`,
+    });
+  });
+
+  it.each([
+    ["the RPC returns null", { data: null, error: null }],
+    ["the RPC fails", { data: null, error: { code: "XX000", message: "boom" } }],
+    ["the locator is malformed", { data: { ...chunk, progression: 7 }, error: null }],
+  ])("keeps the saved position when %s", async (_label, result) => {
+    vi.mocked(createClient).mockResolvedValue(readableBookClient({ progress, rpcs: { reader_chunk_locator: result } }));
+    await expect(getReadableEdition("en", EDITION_ID, { anchor: 5 })).resolves.toMatchObject({ initialLocator: saved });
+  });
+
+  it("logs a failed lookup with the request ID", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      readableBookClient({ progress, rpcs: { reader_chunk_locator: { data: null, error: { code: "XX000", message: "boom" } } } }),
+    );
+    await getReadableEdition("en", EDITION_ID, { anchor: 5 });
+    expect(console.error).toHaveBeenCalledWith("Passage anchor lookup failed.", {
+      operation: "reader_chunk_locator",
+      code: "XX000",
+      requestId: "req_library123",
+    });
+  });
+
+  it("does not ask for a chunk without an anchor", async () => {
+    const client = readableBookClient({ progress });
+    vi.mocked(createClient).mockResolvedValue(client);
+    await expect(getReadableEdition("en", EDITION_ID, { anchor: null })).resolves.toMatchObject({ initialLocator: saved });
+    expect(client.rpc).not.toHaveBeenCalledWith("reader_chunk_locator", expect.anything());
+  });
+});
+
+describe("getReadableEdition compareAvailable", () => {
+  it.each([
+    ["coverage is above 0", { data: 0.5, error: null }, true],
+    ["coverage is 0", { data: 0, error: null }, false],
+    ["the lookup fails", { data: null, error: { code: "XX000", message: "boom" } }, false],
+  ])("is %s -> %s", async (_label, result, expected) => {
+    const client = readableBookClient({ rpcs: { alignment_coverage: result } });
+    vi.mocked(createClient).mockResolvedValue(client);
+    await expect(getReadableEdition("en", EDITION_ID)).resolves.toMatchObject({ compareAvailable: expected });
+    expect(client.rpc).toHaveBeenCalledWith("alignment_coverage", { p_publication_id: PUBLICATION_ID });
+  });
+
+  it("logs a failed coverage lookup with the request ID", async () => {
+    vi.mocked(createClient).mockResolvedValue(
+      readableBookClient({ rpcs: { alignment_coverage: { data: null, error: { code: "XX000", message: "boom" } } } }),
+    );
+    await getReadableEdition("en", EDITION_ID);
+    expect(console.error).toHaveBeenCalledWith("Alignment coverage lookup failed.", {
+      operation: "alignment_coverage",
+      code: "XX000",
+      requestId: "req_library123",
+    });
+  });
+});
+
+describe("getPassageAnchor", () => {
+  const start = { href: "OEBPS/c1.xhtml", progression: 0.25 };
+
+  it("resolves the locator against the owned edition's publication", async () => {
+    const client = readableBookClient({ rpcs: { reader_chunk_for_locator: { data: 3, error: null } } });
+    vi.mocked(createClient).mockResolvedValue(client);
+
+    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toEqual({ owned: true, anchor: 3 });
+    expect(client.rpc).toHaveBeenCalledWith("reader_chunk_for_locator", {
+      p_publication_id: PUBLICATION_ID,
+      p_href: "OEBPS/c1.xhtml",
+      p_progression: 0.25,
+    });
+  });
+
+  // A toc entry usually points within a document; chunks are keyed by the document path.
+  it("matches a fragment-bearing toc href by its path", async () => {
+    const client = readableBookClient({ rpcs: { reader_chunk_for_locator: { data: 7, error: null } } });
+    vi.mocked(createClient).mockResolvedValue(client);
+
+    await expect(getPassageAnchor("en", EDITION_ID, { href: "OEBPS/c2.xhtml#section", progression: 0 })).resolves.toEqual({
+      owned: true,
+      anchor: 7,
+    });
+    expect(client.rpc).toHaveBeenCalledWith("reader_chunk_for_locator", {
+      p_publication_id: PUBLICATION_ID,
+      p_href: "OEBPS/c2.xhtml",
+      p_progression: 0,
+    });
+  });
+
+  it("reports an edition the reader does not own without looking up the passage", async () => {
+    const client = readableBookClient({ owned: [], rpcs: { reader_chunk_for_locator: { data: 3, error: null } } });
+    vi.mocked(createClient).mockResolvedValue(client);
+    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toEqual({ owned: false, anchor: null });
+    expect(client.rpc).not.toHaveBeenCalledWith("reader_chunk_for_locator", expect.anything());
+  });
+
+  it.each([
+    ["the href is not in the publication", { data: null, error: null }],
+    ["the RPC fails", { data: null, error: { code: "XX000", message: "boom" } }],
+  ])("is owned without an anchor when %s", async (_label, result) => {
+    vi.mocked(createClient).mockResolvedValue(readableBookClient({ rpcs: { reader_chunk_for_locator: result } }));
+    await expect(getPassageAnchor("en", EDITION_ID, start)).resolves.toEqual({ owned: true, anchor: null });
+    if (result.error) {
+      expect(console.error).toHaveBeenCalledWith("Passage anchor lookup failed.", {
+        operation: "reader_chunk_for_locator",
+        code: "XX000",
+        requestId: "req_library123",
+      });
+    }
   });
 });
 

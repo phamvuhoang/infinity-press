@@ -79,7 +79,11 @@
   },
   "home": {
     "eyebrow": "Kinh điển thế giới, bằng ngôn ngữ của bạn",
-    "title": "Tác phẩm kinh điển, đến gần hơn qua từng ngôn ngữ.",
+    "heroTitle": "Một tác phẩm. Nhiều ngôn ngữ. Cùng thảo luận.",
+    "heroBody": "Sách kinh điển miễn phí, đọc ngay trên trình duyệt. Hành trình 21 buổi và bản đối chiếu song ngữ giúp bạn đọc hết và hiểu.",
+    "ctaSample": "Đọc thử ngay",
+    "ctaJourney": "Bắt đầu hành trình",
+    "passageEyebrow": "Đoạn mẫu song ngữ",
     "description": "Infinity Books Press tuyển chọn những tác phẩm kinh điển thế giới, giới thiệu các bản dịch và giúp bạn đọc ngay trên trình duyệt. Khám phá tác phẩm, chọn ngôn ngữ và tìm bản đọc phù hợp.",
     "getStarted": "Bắt đầu",
     "coverQuote": "Những câu chuyện không có hồi kết.",
@@ -128,17 +132,49 @@
       "fallbackNote": "Chưa có ấn bản {requested}. Đây là ấn bản {language}.",
       "metadataNote": "Tiêu đề và mô tả hiển thị bằng {language}."
     },
+    "editionRecord": {
+      "title": "Về bản này",
+      "textSourceNote": "Nguồn văn bản gốc",
+      "translationSource": "Nguồn bản dịch",
+      "rightsNote": "Quyền",
+      "territoryNote": "Phạm vi phát hành",
+      "textKind": "Loại văn bản",
+      "textKinds": {
+        "literal": "Dịch sát",
+        "adapted": "Phỏng dịch",
+        "commentary": "Bình giải"
+      },
+      "reviewScope": "Phạm vi review",
+      "reviewScopes": {
+        "full": "Toàn bộ",
+        "sample": "Một phần",
+        "none": "Chưa review"
+      },
+      "reviewedAt": "Ngày duyệt",
+      "versionNote": "Ghi chú phiên bản"
+    },
     "quoteCard": {
       "eyebrow": "Trích dẫn từ",
       "sharedFrom": "Chia sẻ từ Infinity Books Press",
       "readSample": "Đọc thử",
-      "openBook": "Về cuốn sách"
+      "openBook": "Về cuốn sách",
+      "continueReading": "Đọc tiếp từ đây",
+      "kind": {
+        "verbatim": "Nguyên văn",
+        "translation": "Bản dịch",
+        "paraphrase": "Diễn giải"
+      },
+      "readIn": "Đọc bằng"
     },
     "retail": {
       "title": "Sách giấy",
       "intro": "Mua bản in tại:",
       "listPrice": "Giá niêm yết {price}",
-      "labels": { "shopee": "Shopee", "fahasa": "Fahasa", "tiki": "Tiki" }
+      "labels": {
+        "shopee": "Shopee",
+        "fahasa": "Fahasa",
+        "tiki": "Tiki"
+      }
     },
     "browseAll": "Xem tất cả sách",
     "featuredEyebrow": "Nổi bật",
@@ -608,6 +644,9 @@
     "shareCancelled": "Đã hủy chia sẻ",
     "quoteTruncated": "Trích dẫn được rút gọn còn 300 ký tự",
     "annotationTooLong": "Chọn tối đa 1.000 ký tự để tô sáng hoặc thêm ghi chú. Bạn vẫn có thể sao chép hoặc chia sẻ phần đã chọn.",
+    "compare": "Đối chiếu",
+    "compareNone": "Không có ấn bản nào khác bạn sở hữu khớp với đoạn này.",
+    "compareOpenOther": "Mở trong ấn bản đó",
     "shareUnavailable": "Không thể chia sẻ; đã sao chép thay thế.",
     "shareCreated": "Đã tạo trang trích dẫn công khai. Bạn có thể xoá trong Thư viện.",
     "sharePublic": "Chia sẻ sẽ tạo một trang trích dẫn công khai, bạn có thể xoá trong Thư viện.",
@@ -634,9 +673,17 @@
     "rateBook": "Đánh giá sách",
     "askAuthor": "Hỏi ban biên tập",
     "reportError": "Báo lỗi bản dịch",
+    "reportHere": "Báo lỗi tại đoạn này",
     "chooseEdition": {
       "title": "Chọn bản để đọc",
       "description": "Bạn sở hữu nhiều bản ngôn ngữ của tác phẩm này."
+    },
+    "shareQuestionLabel": "Câu hỏi của bạn (không bắt buộc)",
+    "textKindLabel": "Loại văn bản",
+    "textKind": {
+      "verbatim": "Nguyên văn",
+      "translation": "Bản dịch",
+      "paraphrase": "Diễn giải"
     }
   },
   "forbidden": {
@@ -686,6 +733,34 @@
       "authorReply": "Phản hồi từ ban biên tập:",
       "open": "Mở đánh giá của bạn",
       "signOff": "Chúc bạn đọc vui,\nInfinity Books Press"
+    }
+  },
+  "journeys": {
+    "eyebrow": "Hành trình đọc",
+    "libraryTitle": "Hành trình đọc",
+    "start": "Bắt đầu",
+    "continue": "Tiếp tục",
+    "sessionsDone": "Đã xong {done}/{total} buổi",
+    "sessionOf": "Buổi {position} / {total}",
+    "sessionCount": {
+      "one": "{count} buổi",
+      "other": "{count} buổi"
+    },
+    "empty": "Hành trình này chưa có buổi nào.",
+    "openReader": "Mở reader tại đoạn này",
+    "claimAndOpen": "Nhận bản miễn phí và mở reader tại đoạn này",
+    "markDone": "Đánh dấu đã xong",
+    "done": "Đã xong",
+    "pending": "Đang lưu…",
+    "reflectionLabel": "Bạn mang theo điều gì sau hành trình này?",
+    "reflectionSubmit": "Hoàn thành hành trình",
+    "completedTitle": "Đã hoàn thành hành trình",
+    "signInToTrack": "Đăng nhập để lưu tiến độ từng buổi.",
+    "questionsTitle": "Câu hỏi để suy ngẫm",
+    "errors": {
+      "notAvailable": "Hành trình này hiện không khả dụng.",
+      "reflectionTooLong": "Phần suy ngẫm quá dài. Vui lòng viết dưới 2.000 ký tự.",
+      "generic": "Đã có lỗi xảy ra. Vui lòng thử lại."
     }
   }
 }

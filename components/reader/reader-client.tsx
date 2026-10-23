@@ -6,10 +6,11 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 
 import { ProgressLine } from "@/components/brand/progress-line";
 import { ReaderAnnotationEditor } from "@/components/reader/reader-annotation-editor";
+import { ReaderComparePanel } from "@/components/reader/reader-compare-panel";
 import { ReaderCompletionPanel } from "@/components/reader/reader-completion-panel";
 import { ReaderSearchPanel } from "@/components/reader/reader-search-panel";
-import { ReaderSelectionToolbar } from "@/components/reader/reader-selection-toolbar";
-import { ReaderSidebar } from "@/components/reader/reader-sidebar";
+import { ReaderSelectionToolbar, type ShareQuoteInput } from "@/components/reader/reader-selection-toolbar";
+import { ReaderSidebar, reportPlaceHref } from "@/components/reader/reader-sidebar";
 import { ReaderSettingsPanel } from "@/components/reader/reader-settings-panel";
 import { ReaderTocDrawer } from "@/components/reader/reader-toc-drawer";
 import { useReaderAnnotations } from "@/components/reader/use-reader-annotations";
@@ -57,6 +58,11 @@ type ReaderClientBaseProps = {
   // into a client module.
   endSlot?: React.ReactNode;
   copy: ReaderCopy;
+  // Where "Report an error" goes; the reader adds the place being read. Null in the sample reader.
+  reportHref: string | null;
+  // Sample mode only: set when the admin opened the whole edition as a free sample and the visitor is
+  // signed out. The text of a banner that links to signInHref.
+  sampleFullNotice?: string;
 };
 
 export type ReaderClientProps = ReaderClientBaseProps &
@@ -67,17 +73,17 @@ export type ReaderClientProps = ReaderClientBaseProps &
         canonicalBookUrl: string;
         // Null once the book leaves the catalog: the review page 404s for it, so no link is offered.
         reviewHref: string | null;
-        // Where "Report a translation error" goes; the reader adds the place they are reading.
-        reportHref?: string;
         askHref: string | null;
         relatedBooks: Array<{ title: string; authorName: string; href: string; coverUrl: string | null }>;
+        // Some passage of this publication is aligned with another edition: show the compare button.
+        compareAvailable?: boolean;
       }
     | {
         mode: "sample";
+        compareAvailable?: never;
         authorName?: string;
         canonicalBookUrl?: string;
         reviewHref?: string;
-        reportHref?: string;
         askHref?: string;
         relatedBooks?: Array<{ title: string; authorName: string; href: string; coverUrl: string | null }>;
       }
@@ -148,6 +154,8 @@ export function ReaderClient({
   reportHref,
   askHref,
   relatedBooks = [],
+  sampleFullNotice,
+  compareAvailable = false,
 }: ReaderClientProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -191,6 +199,9 @@ export function ReaderClient({
   const [editor, setEditor] = useState<{ mode: "bookmark" | "note"; key?: string; selection?: ReaderSelection } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // The place being read when the compare panel last opened.
+  const [compareLocator, setCompareLocator] = useState<ReaderLocator | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -317,9 +328,10 @@ export function ReaderClient({
     return client.request<T>(path, init);
   }, []);
   // S16: the toolbar hands back the selection; this mints the card through the reader session.
-  const createShareUrl = useCallback(async (quote: string): Promise<string | null> => {
+  const createShareUrl = useCallback(async ({ quote, question, textKind, locator }: ShareQuoteInput): Promise<string | null> => {
     const result = await request<{ url: string }>(`/api/reader/quotes?publicationId=${publicationId}`, {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ quote, locale }),
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ quote, locale, question, textKind, locator: { href: locator.href, progression: locator.progression } }),
       // Sharing must never block on an unavailable server: give up after 3s and let the toolbar fall back.
       signal: AbortSignal.timeout(3000),
     });
@@ -811,6 +823,7 @@ export function ReaderClient({
       activeTab={sidebarTab}
       copy={copy}
       currentHref={currentHref}
+      currentProgression={totalProgression}
       dark={preferences.theme === "dark"}
       entries={toc}
       items={annotations.items}
@@ -824,6 +837,7 @@ export function ReaderClient({
       onRetry={(key) => void annotations.retry(key)}
       onRetryLoad={() => void annotations.reload()}
       onTabChange={setSidebarTab}
+      reportHref={reportHref}
     />
   );
   const saveEditor = (value: string | null) => {
@@ -903,6 +917,16 @@ export function ReaderClient({
             <DialogTrigger aria-label={copy.searchOpen} className="hidden size-11 items-center justify-center rounded-md text-sm outline-none hover:bg-current/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current xl:inline-flex">⌕</DialogTrigger>
             <DialogPanel className={preferences.theme === "dark" ? "bg-ink text-ivory" : undefined} side="right"><div className="flex items-center justify-between gap-4"><DialogTitle>{copy.search}</DialogTitle><DialogClose>{copy.close}</DialogClose></div><ReaderSearchPanel copy={copy} onNavigate={async (locator) => { const moved = await goToLocator(locator); if (moved) setSearchOpen(false); return moved; }} publicationId={publicationId} request={request} /></DialogPanel>
           </Dialog> : null}
+          {depthEnabled && compareAvailable ? <Dialog onOpenChange={(open) => {
+            setCompareOpen(open);
+            if (!open) return;
+            setSelection(null);
+            setCompareLocator(locatorRef.current);
+            sendAnalyticsEvent({ eventName: "compare_opened", bookId, publicationId, locale });
+          }} open={compareOpen}>
+            <DialogTrigger className="inline-flex min-h-11 items-center justify-center rounded-md px-2 text-sm outline-none hover:bg-current/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current">{copy.compare}</DialogTrigger>
+            <DialogPanel className={preferences.theme === "dark" ? "bg-ink text-ivory" : undefined} side="right"><div className="flex items-center justify-between gap-4"><DialogTitle>{copy.compare}</DialogTitle><DialogClose>{copy.close}</DialogClose></div><ReaderComparePanel copy={copy} currentLocator={compareLocator} locale={locale} onOpenOther={(href) => void flush().then((saved) => { if (saved) window.location.assign(href); })} publicationId={publicationId} request={request} /></DialogPanel>
+          </Dialog> : null}
           {depthEnabled ? <ReaderTocDrawer
             copy={{
               contents: copy.contents,
@@ -939,12 +963,7 @@ export function ReaderClient({
                 setMenuOpen(false);
                 // The place being read travels with the report; leaving the page flushes the saved position.
                 const place = locatorRef.current;
-                const query = new URLSearchParams();
-                if (place) {
-                  query.set("href", place.href.slice(0, 500));
-                  query.set("progression", String(place.totalProgression ?? place.progression));
-                }
-                window.location.assign(`${reportHref}?${query}`);
+                window.location.assign(reportPlaceHref(reportHref, { href: place?.href ?? null, progression: place ? place.totalProgression ?? place.progression : null }));
               }} role="menuitem" type="button">{copy.reportError}</button> : null}
               <button aria-describedby="reader-ask-soon" className="min-h-11 rounded-md px-3 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60" disabled role="menuitem" type="button">{copy.askInfinity}</button>
             </div></DialogPanel>
@@ -1001,6 +1020,12 @@ export function ReaderClient({
       {depthEnabled && editor ? <ReaderAnnotationEditor chapterTitle={chapterTitle ?? ""} copy={copy} dark={preferences.theme === "dark"} finalFocus={() => menuTriggerRef.current ?? containerRef.current} initialValue={editorInitialValue} mode={editor.mode} onOpenChange={(open) => { if (!open) { setEditor(null); setSelection(null); } }} onSave={saveEditor} open trigger={<button className="sr-only" type="button">{copy.addBookmark}</button>} /> : null}
 
       {finished && !completionDismissed && mode === "entitled" ? <ReaderCompletionPanel askHref={askHref ?? null} copy={copy} dark={preferences.theme === "dark"} libraryHref={libraryHref} reviewHref={reviewHref ?? null} onOpenSaved={(tab) => { setSelection(null); setSidebarTab(tab); setCompletionDismissed(true); if (viewportWidth < 1280) setDrawerOpen(true); }} relatedBooks={relatedBooks} /> : null}
+
+      {mode === "sample" && sampleFullNotice ? (
+        <p className="mx-auto w-full max-w-[34rem] px-4 pb-3 text-center text-sm text-sage-text" data-testid="sample-full-notice">
+          <a className="underline underline-offset-4" href={signInHref}>{sampleFullNotice}</a>
+        </p>
+      ) : null}
 
       {/* `phase === "ready"` is load-bearing, not belt-and-braces: `navigation` initialises to
           `canGoForward: false`, so without it "That is the end of the sample" is on screen from the

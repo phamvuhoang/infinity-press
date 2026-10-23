@@ -10,6 +10,7 @@ const links = [
   { href: "/admin/series", label: "Series" },
   { href: "/admin/topics", label: "Topics" },
   { href: "/admin/ideas", label: "Ideas" },
+  { href: "/admin/journeys", label: "Journeys" },
   { href: "/admin/articles", label: "Articles" },
   { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/feedback", label: "Translation reports" },
@@ -23,6 +24,7 @@ const links = [
   { href: "/admin/merchandising", label: "Merchandising" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/admin/operations", label: "Operations" },
+  { href: "/admin/growth", label: "Growth" },
 ] as const;
 
 export function AdminNav() {

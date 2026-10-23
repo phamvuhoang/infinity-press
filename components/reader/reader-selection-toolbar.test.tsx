@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -6,8 +6,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReaderSelectionToolbar } from "@/components/reader/reader-selection-toolbar";
 
 afterEach(cleanup);
-const copy = { highlightYellow: "Yellow", highlightGreen: "Green", highlightRose: "Rose", addNote: "Add note", copy: "Copy", share: "Share", askInfinity: "Ask Infinity", comingSoon: "Coming soon", copied: "Copied", copyFailed: "Copy failed", shareCancelled: "Share cancelled", quoteTruncated: "Quote shortened", shareUnavailable: "Share unavailable", shareCreated: "Public quote page created", sharePublic: "Sharing creates a public page", dismiss: "Keep reading" };
+const copy = { highlightYellow: "Yellow", highlightGreen: "Green", highlightRose: "Rose", addNote: "Add note", copy: "Copy", share: "Share", askInfinity: "Ask Infinity", comingSoon: "Coming soon", copied: "Copied", copyFailed: "Copy failed", shareCancelled: "Share cancelled", quoteTruncated: "Quote shortened", shareUnavailable: "Share unavailable", shareCreated: "Public quote page created", sharePublic: "Sharing creates a public page", dismiss: "Keep reading", cancel: "Cancel", shareQuestionLabel: "Your question", textKindLabel: "Text kind", textKind: { verbatim: "Verbatim", translation: "Translation", paraphrase: "Paraphrase" } };
 const selection = { locator: { href: "/chapter.xhtml", progression: 0, totalProgression: 0, locations: {} }, text: "Selected text", rect: { x: -20, y: 10, width: 50, height: 20 } };
+// With a card to mint, Share first opens the question dialog; its own Share button sends.
+async function shareThroughDialog(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Share" }));
+  await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Share" }));
+}
 
 describe("ReaderSelectionToolbar", () => {
   it("keeps overlong selections available for Copy and Share with recoverable annotation feedback", async () => {
@@ -112,8 +117,8 @@ describe("ReaderSelectionToolbar", () => {
     Object.defineProperty(navigator, "share", { configurable: true, value: share });
     const createShareUrl = vi.fn().mockResolvedValue("https://example.test/vi/q/AbCdEfGh12");
     render(<ReaderSelectionToolbar copy={copy} selection={selection} book={{ title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }} viewport={{ width: 100, height: 100 }} createShareUrl={createShareUrl} />);
-    await user.click(screen.getByRole("button", { name: "Share" }));
-    expect(createShareUrl).toHaveBeenCalledWith("Selected text");
+    await shareThroughDialog(user);
+    expect(createShareUrl).toHaveBeenCalledWith({ quote: "Selected text", textKind: "verbatim", locator: selection.locator });
     expect(share).toHaveBeenCalledWith({ text: "“Selected text”\n- Book, Author\nhttps://example.test/vi/q/AbCdEfGh12" });
     expect(screen.getByRole("status")).toHaveTextContent("Public quote page created");
     expect(screen.getByRole("status")).not.toHaveClass("sr-only");
@@ -124,13 +129,13 @@ describe("ReaderSelectionToolbar", () => {
     const share = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "share", { configurable: true, value: share });
     render(<ReaderSelectionToolbar copy={copy} selection={selection} book={{ title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }} viewport={{ width: 100, height: 100 }} createShareUrl={vi.fn().mockRejectedValue(new Error("offline"))} />);
-    await user.click(screen.getByRole("button", { name: "Share" }));
+    await shareThroughDialog(user);
     expect(share).toHaveBeenCalledWith({ text: "“Selected text”\n- Book, Author\nhttps://example.test/book" });
     expect(screen.getByRole("status")).not.toHaveTextContent("failed");
     cleanup();
     share.mockClear();
     render(<ReaderSelectionToolbar copy={copy} selection={selection} book={{ title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }} viewport={{ width: 100, height: 100 }} createShareUrl={vi.fn().mockResolvedValue(null)} />);
-    await user.click(screen.getByRole("button", { name: "Share" }));
+    await shareThroughDialog(user);
     expect(share).toHaveBeenCalledWith({ text: "“Selected text”\n- Book, Author\nhttps://example.test/book" });
     expect(screen.getByRole("status")).not.toHaveTextContent("Public quote page created");
   });
@@ -150,7 +155,7 @@ describe("ReaderSelectionToolbar", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     render(<ReaderSelectionToolbar copy={copy} selection={selection} book={{ title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }} viewport={{ width: 100, height: 100 }} createShareUrl={vi.fn().mockResolvedValue("https://example.test/vi/q/AbCdEfGh12")} />);
-    await user.click(screen.getByRole("button", { name: "Share" }));
+    await shareThroughDialog(user);
     expect(writeText).toHaveBeenCalledWith("“Selected text”\n- Book, Author\nhttps://example.test/vi/q/AbCdEfGh12");
     expect(screen.getByRole("status")).toHaveTextContent("Public quote page created Share unavailable");
     expect(screen.getByRole("status")).not.toHaveTextContent("Copy failed");
@@ -162,7 +167,8 @@ describe("ReaderSelectionToolbar", () => {
     render(<ReaderSelectionToolbar copy={copy} selection={selection} book={{ title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }} viewport={{ width: 100, height: 100 }} createShareUrl={() => new Promise<string | null>(() => {})} />);
     const share = screen.getByRole("button", { name: "Share" });
     expect(share).toHaveAccessibleDescription("Sharing creates a public page");
-    void user.click(share);
+    await user.click(share);
+    void user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Share" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Sharing creates a public page"));
     // Visible, not screen-reader-only: sighted readers must be told too.
     expect(screen.getByRole("status")).not.toHaveClass("sr-only");
@@ -174,7 +180,68 @@ describe("ReaderSelectionToolbar", () => {
     Object.defineProperty(navigator, "share", { configurable: true, value: share });
     const slowFailure = () => new Promise<string | null>((_resolve, reject) => setTimeout(() => reject(new DOMException("timeout", "TimeoutError")), 50));
     render(<ReaderSelectionToolbar copy={copy} selection={selection} book={{ title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }} viewport={{ width: 100, height: 100 }} createShareUrl={slowFailure} />);
-    await user.click(screen.getByRole("button", { name: "Share" }));
+    await shareThroughDialog(user);
     await waitFor(() => expect(share).toHaveBeenCalledWith({ text: "“Selected text”\n- Book, Author\nhttps://example.test/book" }));
+  });
+
+  it("asks for an optional question and the text kind before minting the card", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "share", { configurable: true, value: vi.fn().mockResolvedValue(undefined) });
+    const createShareUrl = vi.fn().mockResolvedValue("https://example.test/vi/q/AbCdEfGh12");
+    render(<ReaderSelectionToolbar copy={copy} selection={selection} book={{ title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }} viewport={{ width: 100, height: 100 }} createShareUrl={createShareUrl} />);
+    await user.click(screen.getByRole("button", { name: "Share" }));
+    expect(createShareUrl).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("group", { name: "Text kind" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("radio", { name: "Verbatim" })).toBeChecked();
+    const question = within(dialog).getByRole("textbox", { name: "Your question" });
+    expect(question).toHaveAttribute("maxLength", "280");
+    await user.type(question, "  Why?  ");
+    await user.click(within(dialog).getByRole("radio", { name: "Paraphrase" }));
+    await user.click(within(dialog).getByRole("button", { name: "Share" }));
+    expect(createShareUrl).toHaveBeenCalledWith({ quote: "Selected text", question: "Why?", textKind: "paraphrase", locator: selection.locator });
+  });
+
+  it("mints nothing when the question dialog is cancelled", async () => {
+    const user = userEvent.setup();
+    const createShareUrl = vi.fn();
+    render(<ReaderSelectionToolbar copy={copy} selection={selection} book={{ title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }} viewport={{ width: 100, height: 100 }} createShareUrl={createShareUrl} />);
+    await user.click(screen.getByRole("button", { name: "Share" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancel" }));
+    expect(createShareUrl).not.toHaveBeenCalled();
+  });
+
+  it("opens every share dialog empty: after a share, after a cancel, and for another selection", async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(navigator, "share", { configurable: true, value: vi.fn().mockResolvedValue(undefined) });
+    const createShareUrl = vi.fn().mockResolvedValue("https://example.test/vi/q/AbCdEfGh12");
+    const props = { copy, book: { title: "Book", author: "Author", canonicalBookUrl: "https://example.test/book" }, viewport: { width: 100, height: 100 }, createShareUrl };
+    const { rerender } = render(<ReaderSelectionToolbar {...props} selection={selection} />);
+    async function draft() {
+      await user.click(screen.getByRole("button", { name: "Share" }));
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByRole("textbox", { name: "Your question" }), "Old question");
+      await user.click(within(dialog).getByRole("radio", { name: "Translation" }));
+      return dialog;
+    }
+    async function expectEmpty() {
+      await user.click(screen.getByRole("button", { name: "Share" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByRole("textbox", { name: "Your question" })).toHaveValue("");
+      expect(within(dialog).getByRole("radio", { name: "Verbatim" })).toBeChecked();
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    }
+    await user.click(within(await draft()).getByRole("button", { name: "Share" }));
+    expect(createShareUrl).toHaveBeenCalledWith(expect.objectContaining({ question: "Old question", textKind: "translation" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await expectEmpty();
+    await user.click(within(await draft()).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await expectEmpty();
+    await user.click(within(await draft()).getByRole("button", { name: "Cancel" }));
+    rerender(<ReaderSelectionToolbar {...props} selection={{ ...selection, text: "Another passage" }} />);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await expectEmpty();
   });
 });

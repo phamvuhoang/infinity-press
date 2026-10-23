@@ -47,6 +47,13 @@ const card = {
   locale: "vi" as const,
   bookId: "30000000-0000-4000-8000-000000000001",
   createdAt: "2026-10-09T00:00:00+00:00",
+  chunkOrdinal: 12,
+  question: null,
+  textKind: "verbatim" as const,
+  editionId: "edition-1",
+  chunkExists: true,
+  sampleAllowsChunk: true,
+  languages: [{ editionId: "edition-1", languageCode: "vi", ordinal: 12, sampleAllows: true }],
 };
 const book: CatalogBookCard = {
   bookId: card.bookId,
@@ -111,6 +118,47 @@ describe("quote card page", () => {
     vi.mocked(getSharedQuote).mockResolvedValue({ ...card, quote: e.repeat(80) });
     const metadata = await generateMetadata({ params: Promise.resolve({ lang: "vi", code: "AbCdEfGh12" }) });
     expect(metadata.title).toBe(`“${e.repeat(60)}…” - Sách S16`);
+  });
+});
+
+describe("quote card passage", () => {
+  const continueName = "Đọc tiếp từ đây";
+
+  it("links to the sample reader at the shared passage and shows the question and the kind", async () => {
+    vi.mocked(getSharedQuote).mockResolvedValue({ ...card, question: "Vì sao tác giả nói vậy?", textKind: "paraphrase" });
+    render(await QuoteCardPage({ params: Promise.resolve({ lang: "vi", code: "AbCdEfGh12" }) }));
+    expect(screen.getByRole("link", { name: continueName })).toHaveAttribute("href", "/vi/read-sample/sach-s16?edition=edition-1&anchor=12");
+    expect(screen.getByText("Vì sao tác giả nói vậy?")).toBeInTheDocument();
+    expect(screen.getByText("Diễn giải")).toBeInTheDocument();
+    // One language only: no "read in" choice.
+    expect(screen.queryByText("Đọc bằng")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["the chunk is gone", { chunkExists: false, sampleAllowsChunk: false }],
+    ["the sample refuses the chunk", { sampleAllowsChunk: false }],
+  ])("hides the continue link when %s", async (_name, change) => {
+    vi.mocked(getSharedQuote).mockResolvedValue({ ...card, ...change });
+    render(await QuoteCardPage({ params: Promise.resolve({ lang: "vi", code: "AbCdEfGh12" }) }));
+    expect(screen.queryByRole("link", { name: continueName })).not.toBeInTheDocument();
+    expect(screen.getByText("Nguyên văn")).toBeInTheDocument();
+  });
+
+  it("offers each aligned language, linking only where its sample allows the passage", async () => {
+    vi.mocked(getSharedQuote).mockResolvedValue({
+      ...card,
+      languages: [
+        { editionId: "edition-1", languageCode: "vi", ordinal: 12, sampleAllows: true },
+        { editionId: "edition-2", languageCode: "en", ordinal: 30, sampleAllows: true },
+        { editionId: "edition-3", languageCode: "ja", ordinal: 41, sampleAllows: false },
+      ],
+    });
+    render(await QuoteCardPage({ params: Promise.resolve({ lang: "vi", code: "AbCdEfGh12" }) }));
+    expect(screen.getByText("Đọc bằng")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "English" })).toHaveAttribute("href", "/vi/read-sample/sach-s16?edition=edition-2&anchor=30");
+    expect(screen.getByRole("link", { name: "Tiếng Việt" })).toHaveAttribute("href", "/vi/read-sample/sach-s16?edition=edition-1&anchor=12");
+    expect(screen.queryByRole("link", { name: "日本語" })).not.toBeInTheDocument();
+    expect(screen.getByText("日本語")).toBeInTheDocument();
   });
 });
 

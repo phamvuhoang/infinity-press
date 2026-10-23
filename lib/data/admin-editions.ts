@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import type { CreateEditionInput, CreateOfferInput, EditionInput, EditionReviewInput, ProvenanceInput } from "@/lib/catalog/schemas";
+import { isWholeBookSample } from "@/lib/reader/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,6 +47,13 @@ export class EditionIdentityLockedError extends Error {
   }
 }
 
+export class SampleNotFreeError extends Error {
+  constructor() {
+    super("Only a free edition can be opened in full as a sample.");
+    this.name = "SampleNotFreeError";
+  }
+}
+
 type DatabaseError = { code?: string; message: string };
 
 function failure(operation: string, error: DatabaseError): Error {
@@ -56,6 +64,9 @@ function failure(operation: string, error: DatabaseError): Error {
   if (error.code === "23503" && error.message.includes("language")) return new UnknownLanguageError();
   if (error.code === "EB044") return new ProvenanceIncompleteError();
   if (error.code === "23514" && error.message.includes("cannot change")) return new EditionIdentityLockedError();
+  // admin_set_sample_full's only 22023 is its free-edition refusal. Other RPCs use 22023 for bad
+  // input, so this is scoped to that one operation.
+  if (operation === "setSampleFull" && error.code === "22023") return new SampleNotFreeError();
   return new Error(`${operation} failed.`);
 }
 
@@ -92,6 +103,8 @@ export type AdminEditionDTO = {
   // The work's default edition for this language (book_language_editions).
   isDefault: boolean;
   activePublicationId: string | null;
+  // The live publication's sample is the whole book (book_samples.allowed_hrefs = ["*"]).
+  sampleFull: boolean;
   // True once an order or entitlement exists: the language and work then never change.
   identityLocked: boolean;
   sku: { id: string; skuCode: string; active: boolean } | null;
@@ -103,6 +116,9 @@ export type AdminEditionDTO = {
     translationSource: string | null;
     rightsNote: string | null;
     territoryNote: string | null;
+    textKind: ProvenanceInput["textKind"];
+    reviewScope: ProvenanceInput["reviewScope"];
+    publicVersionNote: string | null;
     reviewedAt: string | null;
     reviewNote: string | null;
   };
@@ -181,6 +197,9 @@ type EditionRow = {
   translation_source: string | null;
   rights_note: string | null;
   territory_note: string | null;
+  text_kind: ProvenanceInput["textKind"];
+  review_scope: ProvenanceInput["reviewScope"];
+  public_version_note: string | null;
   editorial_state: "unreviewed" | "approved" | "blocked";
   reviewed_at: string | null;
   review_note: string | null;
@@ -201,7 +220,7 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
     .from("editions")
     .select(
       `id, book_id, language_code, edition_number, isbn, publication_date, introduction, contributors, status, active_publication_id,
-       text_source_note, translation_source, rights_note, territory_note, editorial_state, reviewed_at, review_note,
+       text_source_note, translation_source, rights_note, territory_note, text_kind, review_scope, public_version_note, editorial_state, reviewed_at, review_note,
        skus ( id, sku_code, active, offers ( ${offerColumns} ) ),
        default_offer:edition_default_offers ( offer_id )`,
     )
@@ -212,14 +231,18 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
   if (!data) notFound();
   const row = data as unknown as EditionRow;
 
-  const [defaultEdition, entitlements, orderItems] = await Promise.all([
+  const [defaultEdition, entitlements, orderItems, sample] = await Promise.all([
     supabase.from("book_language_editions").select("edition_id").eq("book_id", bookId).eq("language_code", row.language_code).maybeSingle(),
     supabase.from("entitlements").select("id", { count: "exact", head: true }).eq("edition_id", editionId),
     supabase.from("order_items").select("id", { count: "exact", head: true }).eq("edition_id", editionId),
+    row.active_publication_id
+      ? supabase.from("book_samples").select("allowed_hrefs").eq("publication_id", row.active_publication_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
   if (defaultEdition.error) throw failure("getAdminEdition: default edition", defaultEdition.error);
   if (entitlements.error) throw failure("getAdminEdition: entitlements", entitlements.error);
   if (orderItems.error) throw failure("getAdminEdition: order items", orderItems.error);
+  if (sample.error) throw failure("getAdminEdition: sample", sample.error);
 
   const sku = row.skus[0] ?? null;
   const defaultOfferId = oneOrNull(row.default_offer)?.offer_id ?? null;
@@ -237,6 +260,7 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
     status: row.status,
     isDefault: (defaultEdition.data as { edition_id: string } | null)?.edition_id === row.id,
     activePublicationId: row.active_publication_id,
+    sampleFull: isWholeBookSample(sample.data?.allowed_hrefs),
     identityLocked: (entitlements.count ?? 0) > 0 || (orderItems.count ?? 0) > 0,
     sku: sku ? { id: sku.id, skuCode: sku.sku_code, active: sku.active } : null,
     offers: (sku?.offers ?? []).map((offer) => toOfferDto(offer, offer.id === defaultOfferId, now)),
@@ -246,6 +270,9 @@ export async function getAdminEdition(bookId: string, editionId: string): Promis
       translationSource: row.translation_source,
       rightsNote: row.rights_note,
       territoryNote: row.territory_note,
+      textKind: row.text_kind,
+      reviewScope: row.review_scope,
+      publicVersionNote: row.public_version_note,
       reviewedAt: row.reviewed_at,
       reviewNote: row.review_note,
     },
@@ -358,6 +385,9 @@ export async function saveEditionProvenance(editionId: string, input: Provenance
     p_translation_source: input.translationSource ?? "",
     p_rights_note: input.rightsNote ?? "",
     p_territory_note: input.territoryNote ?? "",
+    p_text_kind: input.textKind ?? "",
+    p_review_scope: input.reviewScope,
+    p_public_version_note: input.publicVersionNote ?? "",
   });
   if (error) throw failure("saveEditionProvenance", error);
 }
@@ -375,4 +405,25 @@ export async function setEditionReview(editionId: string, input: EditionReviewIn
     p_note: input.note ?? "",
   });
   if (error) throw failure("setEditionReview", error);
+}
+
+// The share of this publication's passages aligned with another edition (0 to 1).
+export async function getAlignmentCoverage(publicationId: string): Promise<number> {
+  await requireAdmin();
+  assertUuid(publicationId);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("alignment_coverage", { p_publication_id: publicationId });
+  if (error) throw failure("getAlignmentCoverage", error);
+  return Number(data);
+}
+
+// Opens the whole publication as a free sample (["*"]) or puts back the worker's default sample list.
+export async function setSampleFull(publicationId: string, full: boolean): Promise<void> {
+  await requireAdmin();
+  assertUuid(publicationId);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_sample_full", { p_publication_id: publicationId, p_full: full });
+  if (error) throw failure("setSampleFull", error);
 }

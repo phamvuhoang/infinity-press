@@ -114,6 +114,12 @@ vi.mock("@/lib/reader/readium-engine", () => ({
 // `Dictionary["reader"]` and the assertions below are written against these words.
 const copy: ReaderCopy = {
   annotationTooLong: "Select at most 1,000 characters to highlight or add a note.",
+  shareQuestionLabel: "Your question (optional)",
+  textKindLabel: "Text kind",
+  textKind: { verbatim: "Verbatim", translation: "Translation", paraphrase: "Paraphrase" },
+  compare: "Compare",
+  compareNone: "No other edition you own lines up with this passage.",
+  compareOpenOther: "Open in that edition",
   title: "Reader",
   loading: "Opening this book…",
   failed: "This book could not be opened.",
@@ -158,7 +164,7 @@ const copy: ReaderCopy = {
   askInfinity: "Ask Infinity", comingSoon: "Coming soon", copied: "Copied", copyFailed: "Could not copy quote", shareCancelled: "Sharing cancelled",
   quoteTruncated: "Quote shortened to 300 characters", shareUnavailable: "Sharing is unavailable; copied instead.", shareCreated: "A public quote page was created. You can remove it from your library.", sharePublic: "Sharing creates a public quote page you can remove from your library.", emptyBookmarks: "No bookmarks yet.", emptyNotes: "No notes yet.", loadingSavedItems: "Loading saved items…",
   search: "Search this book", searchPlaceholder: "Search words or phrases", searchPrompt: "Type at least 2 characters.", searching: "Searching…", searchEmpty: "No matches found.", searchFailed: "Search is unavailable right now.", untitledChapter: "Untitled chapter",
-  annotationsFailed: "Saved items are unavailable right now.", locationUnavailable: "Location unavailable.", page: "Page", pages: "pages", searchOpen: "Search this book", menu: "Reader menu", onePage: "One page", twoPages: "Two pages", relatedBooks: "Continue reading", noRelatedBooks: "No recommendations yet.", rateBook: "Rate this book", askAuthor: "Ask the author", reportError: "Report a translation error",
+  annotationsFailed: "Saved items are unavailable right now.", locationUnavailable: "Location unavailable.", page: "Page", pages: "pages", searchOpen: "Search this book", menu: "Reader menu", onePage: "One page", twoPages: "Two pages", relatedBooks: "Continue reading", noRelatedBooks: "No recommendations yet.", rateBook: "Rate this book", askAuthor: "Ask the author", reportError: "Report a translation error", reportHere: "Report an error at this passage",
 };
 
 let fetchSpy: MockInstance<typeof fetch>;
@@ -197,6 +203,7 @@ function renderReader(overrides: Partial<ReaderClientProps> = {}) {
       canonicalBookUrl="https://books.example/en/books/test-book"
       copy={copy}
       reviewHref="/en/library/reviews/book-id"
+      reportHref={null}
       initialLocator={null}
       libraryHref="/en/library"
       locale="en"
@@ -452,8 +459,12 @@ describe("reader depth controller", () => {
     const listener = reader.engine.setSelectionListener.mock.calls[0]?.[0] as (selection: ReaderSelection | null) => void;
     listener({ locator: { href: "c1.xhtml", progression: 0, totalProgression: 0, locations: {}, text: { highlight: "A passage" } }, text: "A passage", rect: { x: 10, y: 10, width: 40, height: 20 } });
     await user.click(await screen.findByRole("button", { name: "Share" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Share" }));
     await waitFor(() => expect(fetchSpy.mock.calls.some(([path]) => String(path).includes("/api/reader/quotes"))).toBe(true));
     expect(timeoutSpy).toHaveBeenCalledWith(3000);
+    // The body carries the kind and the selection's locator, reduced to what finds the passage.
+    const sent = fetchSpy.mock.calls.find(([path]) => String(path).includes("/api/reader/quotes"))?.[1];
+    expect(JSON.parse(String(sent?.body))).toEqual({ quote: "A passage", locale: "en", textKind: "verbatim", locator: { href: "c1.xhtml", progression: 0 } });
     expect(share).not.toHaveBeenCalled();
     timeout.abort();
     await waitFor(() => expect(share).toHaveBeenCalledOnce());
@@ -1139,6 +1150,23 @@ describe("completion", () => {
     expect(screen.queryByText("99% read")).toBeNull();
   });
 
+  it("shows the whole-book sign-in banner in sample mode only, and only when given", async () => {
+    const notice = "Sign in to save your progress through each session.";
+    const sample = renderReader({ mode: "sample", sampleFullNotice: notice, signInHref: "/vi/sign-in?next=%2Fvi%2Fread-sample%2Fb" });
+    await screen.findByRole("region", { name: "Reader" });
+    expect(screen.getByRole("link", { name: notice })).toHaveAttribute("href", "/vi/sign-in?next=%2Fvi%2Fread-sample%2Fb");
+    sample.unmount();
+
+    const listed = renderReader({ mode: "sample" });
+    await screen.findByRole("region", { name: "Reader" });
+    expect(screen.queryByTestId("sample-full-notice")).toBeNull();
+    listed.unmount();
+
+    renderReader({ mode: "entitled", sampleFullNotice: notice });
+    await screen.findByRole("region", { name: "Reader" });
+    expect(screen.queryByTestId("sample-full-notice")).toBeNull();
+  });
+
   it("shows no completion card in sample mode", async () => {
     renderReader({ mode: "sample", initialLocator: nearlyDone });
 
@@ -1189,6 +1217,26 @@ describe("analytics", () => {
         publicationId: "publication-id",
         locale: "en",
       });
+    });
+  });
+
+  it("shows compare only when an alignment exists, and records compare_opened on open", async () => {
+    const reader = renderReader({ mode: "entitled" });
+    await screen.findByRole("button", { name: /Next page/ });
+    expect(screen.queryByRole("button", { name: "Compare" })).toBeNull();
+    reader.unmount();
+    vi.mocked(sendAnalyticsEvent).mockClear();
+
+    renderReader({ mode: "entitled", compareAvailable: true });
+    await screen.findByRole("button", { name: /Next page/ });
+    await waitFor(() => expect(sendAnalyticsEvent).toHaveBeenCalledOnce());
+    vi.mocked(sendAnalyticsEvent).mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Compare" }));
+    expect(sendAnalyticsEvent).toHaveBeenCalledExactlyOnceWith({
+      eventName: "compare_opened",
+      bookId: "book-id",
+      publicationId: "publication-id",
+      locale: "en",
     });
   });
 

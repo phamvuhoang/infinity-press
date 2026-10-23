@@ -103,6 +103,14 @@ Checking a page, the sitemap, and robots after a deployment is covered in
 `/admin/merchandising` sets the featured book and the home shelf. A book that is not visible in a
 language is left out of that language's home page.
 
+The hero's primary button opens the featured book's sample when it has one, and a second button
+opens the featured book's first published reading journey when one exists. Under the featured band,
+a passage block shows one passage in two languages from `catalog_home_passage`. It appears only
+when automatic alignment paired the passage with confidence 1, both texts are 120 to 400
+characters, both editions are sellable and live, and both passages are inside their samples. Each
+side links to the sample at that passage (`?edition=…&anchor=…`). No setting controls it; when no
+pair qualifies, the block is simply absent. See [reading journeys](reading-journeys.md).
+
 ## Data access
 
 Public pages call four read functions: `catalog_book_cards`, `catalog_book_page`,

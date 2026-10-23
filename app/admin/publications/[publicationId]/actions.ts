@@ -1,9 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { after } from "next/server";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { revalidateStorefront } from "@/lib/catalog/revalidate";
+import { computeAlignmentsForBook } from "@/lib/data/alignments";
+import { getRequestId } from "@/lib/observability/request-id";
 import {
   CrossBookRollbackError,
   MissingRejectionReasonError,
@@ -38,6 +42,23 @@ function toActionResult(error: unknown): PublicationActionResult {
   return { ok: false, error: "Something went wrong. Try again." };
 }
 
+// Pairs the newly live publication with the work's other editions, after the response is sent: the
+// transition has committed, the admin never waits on a chunk-paging run, and a work without
+// alignment simply has no compare. The request ID is read now, while the request is in scope.
+async function alignBestEffort(bookId: string): Promise<void> {
+  const requestId = getRequestId(await headers());
+  after(async () => {
+    try {
+      await computeAlignmentsForBook(bookId);
+      // The action's own revalidate ran before this finished, so the prerendered home page would
+      // keep its old catalog_home_passage until an unrelated catalog save.
+      revalidateStorefront();
+    } catch (error) {
+      console.error("Alignment after a publication change failed.", { bookId, requestId, error: String(error) });
+    }
+  });
+}
+
 // `assetId` is this page's own route param (app/admin/publications/[publicationId]/page.tsx -
 // see lib/data/publications.ts's header comment on why that segment holds an ebook_asset id, not
 // an ebook_publications id) - used only to redirect a lapsed session back to the right page and
@@ -54,6 +75,8 @@ export async function publishPublicationAction(
   } catch (error) {
     return toActionResult(error);
   }
+
+  await alignBestEffort(bookId);
 
   revalidatePath(`/admin/publications/${assetId}`);
   // Fix round 1, Minor #5: `/admin/books` names no route - app/admin/ has only
@@ -99,6 +122,7 @@ export async function rollbackPublicationAction(
   } catch (error) {
     return toActionResult(error);
   }
+  await alignBestEffort(bookId);
 
   revalidatePath(`/admin/publications/${assetId}`);
   revalidatePath(`/admin/publications/${targetAssetId}`);

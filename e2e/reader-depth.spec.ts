@@ -442,6 +442,8 @@ test.describe.serial("reader depth acceptance", () => {
     expect(copied).toContain(`/en/books/${book.slug}`);
 
     await page.getByRole("button", { name: "Share", exact: true }).click();
+    // S20: Share opens a dialog (optional question, text kind) before it mints the card.
+    await page.getByRole("dialog").getByRole("button", { name: "Share", exact: true }).click();
     await expect.poll(() => page.evaluate(() => (window as typeof window & { __readerShared?: string }).__readerShared ?? "")).not.toBe("");
     const shared = await page.evaluate(() => (window as typeof window & { __readerShared?: string }).__readerShared ?? "");
     // S16: Share carries the public card URL; the quote and attribution lines are unchanged.
@@ -450,6 +452,7 @@ test.describe.serial("reader depth acceptance", () => {
 
     await page.evaluate(() => Object.defineProperty(navigator, "share", { configurable: true, value: undefined }));
     await page.getByRole("button", { name: "Share", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Share", exact: true }).click();
     await expect
       .poll(() => page.evaluate(() => (window as typeof window & { __readerCopied?: string }).__readerCopied))
       .toMatch(/\/en\/q\/[A-Za-z0-9_-]{10}$/);

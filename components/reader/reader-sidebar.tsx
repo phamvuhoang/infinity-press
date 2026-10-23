@@ -25,7 +25,20 @@ export type ReaderSidebarCopy = {
   emptyNotes: string;
   annotationsFailed: string;
   loadingSavedItems: string;
+  reportHere: string;
 };
+
+// The report form's URL with the place being read. The href is the reader's own (what the report
+// form stores in edition_feedback.locator); progression is whole-book progress.
+export function reportPlaceHref(reportHref: string, place: { href: string | null; progression?: number | null }): string {
+  const query = new URLSearchParams();
+  if (place.href) {
+    query.set("href", place.href.slice(0, 500));
+    if (typeof place.progression === "number" && Number.isFinite(place.progression)) query.set("progression", String(place.progression));
+  }
+  const search = query.toString();
+  return search ? `${reportHref}?${search}` : reportHref;
+}
 
 type SidebarTab = "contents" | "bookmarks" | "notes";
 
@@ -34,6 +47,10 @@ type Props = {
   dark?: boolean;
   entries: ReaderTocEntry[];
   currentHref: string | null;
+  // Whole-book progress at currentHref, sent with a report.
+  currentProgression?: number | null;
+  // The report form for this edition; null (the sample reader) offers no report link.
+  reportHref?: string | null;
   items: ReaderAnnotationItem[];
   loadState: ReaderAnnotationLoadState;
   activeTab?: SidebarTab;
@@ -96,6 +113,8 @@ export function ReaderSidebar({
   dark = false,
   entries,
   currentHref,
+  currentProgression = null,
+  reportHref = null,
   items,
   loadState,
   activeTab,
@@ -191,6 +210,11 @@ export function ReaderSidebar({
           </div>
         ) : noteItems.length ? <ul>{noteItems.map((item) => <SavedItemActions copy={copy} dark={dark} item={item} key={item.key} onDelete={onDelete} onEditBookmark={onEditBookmark} onEditNote={onEditNote} onNavigate={onNavigate} onRecolor={onRecolor} onRetry={onRetry} />)}</ul> : <p className={`text-sm ${mutedText}`}>{copy.emptyNotes}</p>}
       </div>
+      {reportHref ? (
+        <a className={`flex min-h-11 items-center border-t border-hairline px-5 text-sm underline-offset-4 outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-[-2px] ${focusOutline}`} href={reportPlaceHref(reportHref, { href: currentHref, progression: currentProgression })}>
+          {copy.reportHere}
+        </a>
+      ) : null}
     </section>
   );
 }

@@ -9,7 +9,7 @@ import type { PublicationMetadata, ReadingOrderItem, TocEntry } from "@/lib/epub
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { parseBoundedReaderLocator } from "@/lib/reader/annotations";
-import { toReaderResourceHref } from "@/lib/reader/locator-paths";
+import { toReaderResourceHref, toSampleResourceHref } from "@/lib/reader/locator-paths";
 import type { ReaderLocator } from "@/lib/reader/types";
 
 // Reader delivery: minting a short-lived session, re-authorizing it on every request, and
@@ -246,6 +246,17 @@ export async function resolveEntitledResource(publicationId: string, href: strin
   return { storageKey: data.storage_key, mediaType: data.media_type };
 }
 
+// The one allowlist test all three sample paths share. "*" anywhere in the list opens the whole
+// publication (admin_set_sample_full writes exactly ["*"]); otherwise the href must be listed.
+// Anything that is not an array allows nothing.
+export function sampleAllows(allowed: unknown, href: string): boolean {
+  return Array.isArray(allowed) && (allowed.includes("*") || allowed.includes(href));
+}
+
+export function isWholeBookSample(allowed: unknown): boolean {
+  return Array.isArray(allowed) && allowed.includes("*");
+}
+
 // Ruling AR: this takes no user gate of any kind, because anonymous visitors are the expected
 // caller. The explicit server-side allowlist in book_samples.allowed_hrefs is the entire trust
 // boundary, and it is what authorizes the read - sample membership is never inferred from a
@@ -263,12 +274,18 @@ export async function resolveEntitledResource(publicationId: string, href: strin
 // Both sources of the one truth Task 1's review flagged must also agree: the href has to be named
 // in the allowlist AND its ebook_resources row has to carry access_class = 'sample'. Either alone
 // is refused, so a drifting allowlist cannot promote a paid resource on its own.
+//
+// The one exception is the whole-book sample: an allowlist of ["*"] is an explicit admin decision
+// (admin_set_sample_full) to open every resource of this publication, so the access_class check
+// is skipped there. Everything else still holds: the publication must be servable, and the href
+// must be an ebook_resources row of this same publication.
 export async function resolveSampleResource(publicationId: string, href: string): Promise<ResolvedResource> {
   const admin = createAdminClient();
 
   // Same call, same error, as resolveSampleManifest - the two sample paths now share one notion
   // of "is this publication servable at all".
   await loadServablePublication(admin, publicationId);
+  await requireSellableEdition(admin, publicationId);
 
   const { data: sample, error: sampleError } = await admin
     .from("book_samples")
@@ -278,8 +295,8 @@ export async function resolveSampleResource(publicationId: string, href: string)
 
   if (sampleError || !sample) throw new ReaderAccessDeniedError();
 
-  const allowed = Array.isArray(sample.allowed_hrefs) ? sample.allowed_hrefs : [];
-  if (!allowed.includes(href)) throw new ReaderAccessDeniedError();
+  if (!sampleAllows(sample.allowed_hrefs, href)) throw new ReaderAccessDeniedError();
+  const wholeBook = isWholeBookSample(sample.allowed_hrefs);
 
   const { data: resource, error: resourceError } = await admin
     .from("ebook_resources")
@@ -288,7 +305,7 @@ export async function resolveSampleResource(publicationId: string, href: string)
     .eq("href", href)
     .maybeSingle();
 
-  if (resourceError || !resource || resource.access_class !== "sample") {
+  if (resourceError || !resource || (!wholeBook && resource.access_class !== "sample")) {
     throw new ReaderAccessDeniedError();
   }
 
@@ -346,6 +363,30 @@ async function loadServablePublication(
   return { manifestKey: data.manifest_key, positionsJson: data.positions_json };
 }
 
+// Sample paths only: the publication must be the active one of an edition that
+// edition_is_sellable accepts (book and edition published, not editorially blocked), the same
+// predicate sample_chunk_locator applies in the database. Without it a ["*"] allowlist kept a
+// blocked edition's whole book anonymously readable to anyone holding the publication id.
+// Query faults are 502 (Ruling CF); "no such edition" and "not sellable" stay one 404.
+async function requireSellableEdition(
+  admin: ReturnType<typeof createAdminClient>,
+  publicationId: string,
+): Promise<void> {
+  const { data: edition, error } = await admin
+    .from("editions")
+    .select("id")
+    .eq("active_publication_id", publicationId)
+    .maybeSingle();
+  if (error) throw new ReaderUnavailableError();
+  if (!edition) throw new ReaderAccessDeniedError();
+
+  const { data: sellable, error: sellableError } = await admin.rpc("edition_is_sellable", {
+    p_edition_id: edition.id,
+  });
+  if (sellableError) throw new ReaderUnavailableError();
+  if (sellable !== true) throw new ReaderAccessDeniedError();
+}
+
 function entitledHref(publicationId: string, href: string): string {
   return toReaderResourceHref(publicationId, href);
 }
@@ -378,11 +419,6 @@ function projectPositions(
   } catch {
     return null;
   }
-}
-
-function sampleHref(publicationId: string, href: string): string {
-  const encoded = href.split("/").map(encodeURIComponent).join("/");
-  return `/api/samples/${publicationId}/resources/${encoded}`;
 }
 
 // TOC hrefs routinely carry a fragment (`chapter1.xhtml#sec1`) pointing at a location *within* a
@@ -436,7 +472,7 @@ function filterTocToServable(
     const children = filterTocToServable(node.children, servable, publicationId);
     const { path, fragment } = splitTocFragment(node.href);
     if (!servable.has(path)) return children;
-    return [{ title: node.title, href: sampleHref(publicationId, path) + fragment, children }];
+    return [{ title: node.title, href: toSampleResourceHref(publicationId, path) + fragment, children }];
   });
 }
 
@@ -496,10 +532,12 @@ export async function resolveEntitledManifest(publicationId: string): Promise<Re
 //    title is ever named - see filterTocToServable, where that reasoning lives in full.
 //
 // The servable set is the intersection of the allowlist with the resources whose own row says
-// access_class = 'sample', for the same reason resolveSampleResource checks both.
+// access_class = 'sample', for the same reason resolveSampleResource checks both. A whole-book
+// sample (["*"]) takes every resource row of this publication instead, with no access_class filter.
 export async function resolveSampleManifest(publicationId: string): Promise<ReaderManifest> {
   const admin = createAdminClient();
   const { manifestKey } = await loadServablePublication(admin, publicationId);
+  await requireSellableEdition(admin, publicationId);
 
   const { data: sample, error: sampleError } = await admin
     .from("book_samples")
@@ -509,14 +547,16 @@ export async function resolveSampleManifest(publicationId: string): Promise<Read
 
   if (sampleError || !sample) throw new ReaderAccessDeniedError();
 
-  const allowed = new Set(Array.isArray(sample.allowed_hrefs) ? (sample.allowed_hrefs as string[]) : []);
-  if (allowed.size === 0) throw new ReaderAccessDeniedError();
+  const allowed = sample.allowed_hrefs;
+  if (!Array.isArray(allowed) || allowed.length === 0) throw new ReaderAccessDeniedError();
 
-  const { data: sampleRows, error: sampleRowsError } = await admin
+  const resourceQuery = admin
     .from("ebook_resources")
     .select("href, media_type, access_class")
-    .eq("publication_id", publicationId)
-    .eq("access_class", "sample");
+    .eq("publication_id", publicationId);
+  const { data: sampleRows, error: sampleRowsError } = isWholeBookSample(allowed)
+    ? await resourceQuery
+    : await resourceQuery.eq("access_class", "sample");
 
   // Ruling CF, and this site failed *open* rather than closed: the error was not destructured at
   // all, so a failed query left `mediaTypeByHref` empty, drained both loops below, and returned a
@@ -527,7 +567,7 @@ export async function resolveSampleManifest(publicationId: string): Promise<Read
 
   const mediaTypeByHref = new Map<string, string>();
   for (const row of (sampleRows ?? []) as { href: string; media_type: string }[]) {
-    if (allowed.has(row.href)) mediaTypeByHref.set(row.href, row.media_type);
+    if (sampleAllows(allowed, row.href)) mediaTypeByHref.set(row.href, row.media_type);
   }
 
   const stored = await loadStoredManifest(admin, manifestKey);
@@ -537,7 +577,7 @@ export async function resolveSampleManifest(publicationId: string): Promise<Read
   for (const item of stored.readingOrder) {
     if (!mediaTypeByHref.has(item.href)) continue;
     readingOrderHrefs.add(item.href);
-    readingOrder.push({ href: sampleHref(publicationId, item.href), type: item.mediaType });
+    readingOrder.push({ href: toSampleResourceHref(publicationId, item.href), type: item.mediaType });
   }
 
   // The assets a sample document actually needs to render (its CSS, images, and fonts - Ruling
@@ -550,7 +590,7 @@ export async function resolveSampleManifest(publicationId: string): Promise<Read
   // only a test one. Reserve localeCompare for text shown to humans.
   for (const [href, mediaType] of [...mediaTypeByHref].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
     if (readingOrderHrefs.has(href)) continue;
-    resources.push({ href: sampleHref(publicationId, href), type: mediaType });
+    resources.push({ href: toSampleResourceHref(publicationId, href), type: mediaType });
   }
 
   return {
@@ -585,7 +625,9 @@ export async function resolveSampleManifest(publicationId: string): Promise<Read
 // The public catalog DTOs carry no publication ids by contract (lib/catalog/public-types.ts), and
 // this does not change that: the id reaches the browser only inside the sample manifest URL, exactly
 // as it already does for an entitled reader.
-export async function resolveSamplePublicationId(editionId: string): Promise<string | null> {
+export async function resolveSamplePublication(
+  editionId: string,
+): Promise<{ publicationId: string; sampleFull: boolean } | null> {
   const admin = createAdminClient();
 
   // The sample belongs to ONE edition: its own live publication, never another language's.
@@ -608,6 +650,12 @@ export async function resolveSamplePublicationId(editionId: string): Promise<str
 
   if (publicationError || !publication || publication.status !== "published") return null;
 
+  // editorial_state = 'blocked' is the one condition of edition_is_sellable not checked above.
+  const { data: sellable, error: sellableError } = await admin.rpc("edition_is_sellable", {
+    p_edition_id: editionId,
+  });
+  if (sellableError || sellable !== true) return null;
+
   // The same allowlist condition catalog_book_cards.has_sample reports, so the book page's sample
   // link and this page agree about which books have one.
   const { data: sample, error: sampleError } = await admin
@@ -617,6 +665,9 @@ export async function resolveSamplePublicationId(editionId: string): Promise<str
     .maybeSingle();
 
   if (sampleError || !sample) return null;
+  // ["*"] is non-empty, so a whole-book sample renders too. sampleAllows does not fit here: this
+  // asks whether any sample exists at all, not whether one href is in it.
   const allowed = Array.isArray(sample.allowed_hrefs) ? sample.allowed_hrefs : [];
-  return allowed.length > 0 ? publication.id : null;
+  if (allowed.length === 0) return null;
+  return { publicationId: publication.id, sampleFull: isWholeBookSample(allowed) };
 }

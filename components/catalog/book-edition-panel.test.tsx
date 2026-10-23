@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BookEditionPanel } from "@/components/catalog/book-edition-panel";
 import type { CatalogEditionOption } from "@/lib/catalog/public-types";
 import en from "@/lib/i18n/dictionaries/en.json";
+import viDictionary from "@/lib/i18n/dictionaries/vi.json";
 
 const search = vi.hoisted(() => ({ value: new URLSearchParams() }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => search.value }));
@@ -23,6 +24,7 @@ const english: CatalogEditionOption = {
   isDefault: true,
   offer: { offerId: "o-en", priceMinor: 129000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
   hasSample: false,
+  record: null,
 };
 const japanese: CatalogEditionOption = {
   editionId: "e-ja",
@@ -31,6 +33,7 @@ const japanese: CatalogEditionOption = {
   isDefault: false,
   offer: { offerId: "o-ja", priceMinor: 150000, currency: "VND", listPriceMinor: null, saleEndsAt: null },
   hasSample: false,
+  record: null,
 };
 const unpriced: CatalogEditionOption = { ...japanese, offer: null };
 
@@ -57,6 +60,21 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("BookEditionPanel", () => {
+  it("shows the edition record, listing only the fields that have a value", () => {
+    const record = { textSourceNote: "1912 edition", translationSource: null, rightsNote: null, territoryNote: null, textKind: "literal" as const, reviewScope: "full" as const, reviewedAt: null, versionNote: "Fixed chapter 3." };
+    render(<BookEditionPanel {...props} copy={viDictionary.catalog} editions={[{ ...english, record }]} locale="vi" />);
+    expect(screen.getByText("Về bản này")).toBeInTheDocument();
+    expect(screen.getByText("Phạm vi review:").parentElement).toHaveTextContent("Phạm vi review: Toàn bộ");
+    expect(screen.getByText("Loại văn bản:").parentElement).toHaveTextContent("Loại văn bản: Dịch sát");
+    expect(screen.getByText("Ghi chú phiên bản:").parentElement).toHaveTextContent("Fixed chapter 3.");
+    expect(screen.queryByText("Nguồn bản dịch:")).toBeNull();
+  });
+
+  it("has no edition record block when the edition states nothing", () => {
+    render(<BookEditionPanel {...props} editions={[english]} />);
+    expect(screen.queryByText("About this edition")).toBeNull();
+  });
+
   it("shows the default edition, its price and its language", () => {
     render(<BookEditionPanel {...props} editions={[english, japanese]} />);
     expect(screen.getByTestId("viewer-action")).toHaveTextContent("e-en:buy");

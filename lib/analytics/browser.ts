@@ -14,15 +14,15 @@ export type Retailer = (typeof retailers)[number];
 
 // The only events a browser may send, each with only the identifiers it needs. The route enforces
 // the same shape with a strict schema; this type keeps callers from building anything else. The route
-// also refuses open_reader, change_reader_setting, and view_library without a signed-in session, so
+// also refuses open_reader, change_reader_setting, compare_opened, and view_library without a signed-in session, so
 // only signed-in surfaces send those.
 export type BrowserEventInput =
   | { eventName: "view_book" | "open_sample"; bookId: string; locale: Locale }
   | { eventName: "click_external_store"; bookId: string; retailer: Retailer; locale: Locale }
-  | { eventName: "open_reader"; bookId: string; publicationId: string; locale: Locale }
+  | { eventName: "open_reader" | "compare_opened"; bookId: string; publicationId: string; locale: Locale }
   | { eventName: "change_reader_setting"; bookId: string; publicationId?: string; locale: Locale }
   | { eventName: "view_library"; locale: Locale }
-  | { eventName: "view_quote"; sharedQuoteId: string; bookId: string; locale: Locale };
+  | { eventName: "view_quote" | "passage_opened"; sharedQuoteId: string; bookId: string; locale: Locale };
 
 // Tailwind's `sm` and `lg` breakpoints, the same ones every page layout here switches on: below 640px
 // is a phone layout, 640-1023px a tablet layout, 1024px and up the desktop layout. Only this coarse

@@ -15,8 +15,10 @@ import { homeShelves } from "@/lib/catalog/browse";
 import { deferPrerenderWithoutServerEnv } from "@/lib/config/build-environment";
 import { BRAND_NAME } from "@/lib/config/brand";
 import { getServerEnv } from "@/lib/config/server-env";
+import { editionLanguageLabel } from "@/lib/commerce/checkout-view";
 import { isLoopbackUrl } from "@/lib/config/url";
-import { getBookCards, getHomeHero, getHomeTopics } from "@/lib/data/catalog";
+import { getBookCards, getHomeHero, getHomePassage, getHomeTopics } from "@/lib/data/catalog";
+import { getPublishedJourneysForBook } from "@/lib/data/journeys";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { getCatalogRoutes, getLocaleRoutes } from "@/lib/i18n/routes";
@@ -68,6 +70,12 @@ export default async function Home({ params }: Props) {
     getHomeTopics(locale),
   ]);
   const { featured, shelf, journey } = homeShelves(cards);
+  // The featured book's bilingual passage and its first published reading journey (not the series
+  // band named `journey` above). Same cookie-less public reads, so the page stays prerendered.
+  const [passage, readingJourneys] = featured
+    ? await Promise.all([getHomePassage(featured.bookId), getPublishedJourneysForBook(locale, featured.bookId)])
+    : [null, []];
+  const readingJourney = readingJourneys[0] ?? null;
   const catalogRoutes = getCatalogRoutes(locale);
   const copy = dictionary.home;
   const routes = getLocaleRoutes(locale);
@@ -83,15 +91,26 @@ export default async function Home({ params }: Props) {
           <div>
             <p className="mb-5 text-xs font-medium tracking-[0.1em] text-sage-text uppercase">{copy.eyebrow}</p>
             <h1 className="mb-7 font-serif text-[2.75rem] leading-[1.04] font-normal tracking-[-0.02em] sm:text-6xl lg:text-[4.75rem] lg:leading-[1.02]">
-              {copy.title}
+              {copy.heroTitle}
             </h1>
             <p className="mb-9 max-w-[32.5rem] font-serif text-lg leading-normal text-ink-soft sm:text-[1.3125rem]">
-              {copy.description}
+              {copy.heroBody}
             </p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-              <Button render={<Link href={routes.signIn} />} size="lg">
-                {copy.getStarted}
-              </Button>
+              {featured?.hasSample ? (
+                <Button render={<Link href={catalogRoutes.sample(featured.slug)} />} size="lg">
+                  {copy.ctaSample}
+                </Button>
+              ) : (
+                <Button render={<Link href={routes.signIn} />} size="lg">
+                  {copy.getStarted}
+                </Button>
+              )}
+              {readingJourney ? (
+                <Button render={<Link href={catalogRoutes.journey(readingJourney.slug)} />} size="lg" variant="outline">
+                  {copy.ctaJourney}
+                </Button>
+              ) : null}
               <Link
                 className="inline-flex min-h-12 items-center px-2 text-[0.9375rem] font-medium text-forest underline decoration-sand underline-offset-[5px] hover:text-ink hover:decoration-ink"
                 href={routes.library}
@@ -184,6 +203,38 @@ export default async function Home({ params }: Props) {
                     </Button>
                   ) : null}
                 </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* The featured book's passage in two languages, each side opening the sample reader there.
+            Only when catalog_home_passage finds an exact pair inside both samples. */}
+        {featured && passage ? (
+          <section aria-labelledby="home-passage-title" className="border-t border-hairline">
+            <div className="mx-auto max-w-[90rem] px-4 py-16 sm:px-8 lg:px-16 lg:py-20">
+              <h2 className="mb-8 text-xs font-medium tracking-[0.1em] text-sage-text uppercase" id="home-passage-title">
+                {copy.passageEyebrow}
+              </h2>
+              <div className="grid gap-10 md:grid-cols-2 md:gap-16">
+                {[
+                  { lang: passage.sourceLang, text: passage.sourceText, editionId: passage.sourceEditionId, ordinal: passage.ordinal },
+                  { lang: passage.targetLang, text: passage.targetText, editionId: passage.targetEditionId, ordinal: passage.targetOrdinal },
+                ].map((side) => (
+                  <figure key={side.editionId} lang={side.lang}>
+                    <blockquote className="font-serif text-lg leading-relaxed text-ink">{side.text}</blockquote>
+                    <figcaption className="mt-4">
+                      <Link
+                        aria-label={`${dictionary.catalog.quoteCard.readIn} ${editionLanguageLabel(side.lang)}`}
+                        className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline underline-offset-4"
+                        href={`${catalogRoutes.sample(featured.slug)}?${new URLSearchParams({ edition: side.editionId, anchor: String(side.ordinal) })}`}
+                        hrefLang={side.lang}
+                      >
+                        {editionLanguageLabel(side.lang)}
+                      </Link>
+                    </figcaption>
+                  </figure>
+                ))}
               </div>
             </div>
           </section>

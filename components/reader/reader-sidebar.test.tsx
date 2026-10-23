@@ -13,7 +13,7 @@ const copy = {
   highlights: "Highlights", locationUnavailable: "Location unavailable", retry: "Retry", delete: "Delete",
   editBookmark: "Edit bookmark", editNote: "Edit note", yellow: "Yellow", green: "Green", rose: "Rose",
   emptyBookmarks: "No bookmarks", emptyNotes: "No notes", annotationsFailed: "Saved items are unavailable",
-  loadingSavedItems: "Loading saved items…",
+  loadingSavedItems: "Loading saved items…", reportHere: "Report an error at this passage",
 };
 const toc: ReaderTocEntry[] = [{ title: "Chapter one", href: "c1.xhtml", children: [] }];
 const highlight: ReaderAnnotation = {
@@ -29,6 +29,21 @@ function renderSidebar() {
 }
 
 describe("ReaderSidebar", () => {
+  it("links the report form with the place being read", () => {
+    const href = "/api/reader/publications/c0000000-0000-4000-8000-000000000001/resources/c1.xhtml#one";
+    render(<ReaderSidebar copy={copy} currentHref={href} currentProgression={0.42} entries={toc} items={[]} loadState="ready" onDelete={vi.fn()} onEditBookmark={vi.fn()} onEditNote={vi.fn()} onNavigate={vi.fn()} onNavigateToc={vi.fn()} onRecolor={vi.fn()} onRetry={vi.fn()} onRetryLoad={vi.fn()} reportHref="/vi/library/report/edition-1" />);
+    const link = screen.getByRole("link", { name: "Report an error at this passage" });
+    const url = new URL(link.getAttribute("href") ?? "", "https://books.example");
+    expect(url.pathname).toBe("/vi/library/report/edition-1");
+    expect(url.searchParams.get("href")).toBe(href);
+    expect(url.searchParams.get("progression")).toBe("0.42");
+  });
+
+  it("offers no report link without a report form (the sample reader)", () => {
+    renderSidebar();
+    expect(screen.queryByRole("link", { name: "Report an error at this passage" })).toBeNull();
+  });
+
   it("keeps bookmark and highlight counts distinct while exposing highlights without notes", async () => {
     const user = userEvent.setup();
     renderSidebar();

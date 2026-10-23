@@ -300,3 +300,20 @@ function SaleFields({ offer, fieldErrors }: { offer: AdminOfferDTO; fieldErrors:
     </fieldset>
   );
 }
+
+// The whole-book sample switch. Always enabled: admin_set_sample_full decides whether the edition
+// is free, and its refusal comes back as the form error.
+export function SampleFullForm({ action, sampleFull }: { action: FormAction; sampleFull: boolean }) {
+  const [state, formAction] = useActionState(action, initialAdminFormState);
+  return (
+    <form action={formAction} className="space-y-2">
+      <FormStatus state={state} />
+      <label className="flex min-h-11 items-center gap-3 text-sm" htmlFor="sample-full">
+        <input className="size-4 shrink-0 accent-forest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest" aria-describedby="sample-full-help" defaultChecked={sampleFull} id="sample-full" name="full" type="checkbox" />
+        Open the whole book as a sample
+      </label>
+      <p className="text-sm text-ink-soft" id="sample-full-help">Only free editions can be opened in full; the database refuses otherwise.</p>
+      <SubmitButton pendingLabel="Saving…">Save sample</SubmitButton>
+    </form>
+  );
+}
