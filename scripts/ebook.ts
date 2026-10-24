@@ -7,6 +7,8 @@
 // Commands:
 //   ebook validate <file.epub>              Run the pure processor locally; touches no
 //                                            database or storage. Useful before uploading.
+//   ebook strip-links <in.epub> <out.epub>  Write a copy with outbound <a> links unwrapped to
+//                                            their text. Local only; run validate on the copy.
 //   ebook process --asset <uuid>            Claim and run the specific job whose target is
 //                                            <uuid> (must currently be queued, or processing
 //                                            with an expired lease).
@@ -21,7 +23,7 @@
 // Every command prints a small JSON summary to stdout on success. Every failure prints the
 // job's correlation id and the stable ProcessingFailureCode to stderr and exits non-zero -
 // never EPUB text, never the service-role credential.
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
 import { parseArgs } from "node:util";
 
@@ -30,6 +32,7 @@ import { processingFailure, type ProcessingFailure } from "@/lib/epub/errors";
 import { createJobStoreClient, SupabaseJobStore, type ProcessingJob } from "@/lib/epub/job-store";
 import { processEpub } from "@/lib/epub/process";
 import { SearchBackfillError, indexPublicationSearch } from "@/lib/epub/search-backfill";
+import { stripExternalLinks } from "@/lib/epub/strip-links";
 import { claimNextJob, processJob } from "@/lib/epub/worker";
 
 // Loads .env.local the same way `next dev` does, for a bare `npm run ebook` invocation. Not
@@ -124,6 +127,18 @@ async function runValidate(filePath: string): Promise<void> {
     process.stderr.write(`${JSON.stringify({ valid: false, code: failure.code, message: failure.message })}\n`);
     process.exit(1);
   }
+}
+
+async function runStripLinks(inPath: string, outPath: string): Promise<void> {
+  let bytes: Uint8Array;
+  try {
+    bytes = await readFile(inPath);
+  } catch (error) {
+    fail(`strip-links: could not read ${inPath}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const result = stripExternalLinks(bytes);
+  await writeFile(outPath, result.bytes);
+  reportSuccess({ output: outPath, unwrapped: result.unwrapped });
 }
 
 // Shared tail end for process/process-next/retry: run the already-claimed job and report.
@@ -222,6 +237,12 @@ async function main(): Promise<void> {
       await runValidate(filePath);
       return;
     }
+    case "strip-links": {
+      const [inPath, outPath] = rest;
+      if (!inPath || !outPath) fail("strip-links: usage: ebook strip-links <in.epub> <out.epub>");
+      await runStripLinks(inPath, outPath);
+      return;
+    }
     case "process": {
       if (!values.asset) fail("process: usage: ebook process --asset <uuid>");
       await runProcessAsset(values.asset, workerId, leaseSeconds);
@@ -252,7 +273,7 @@ async function main(): Promise<void> {
     }
     default: {
       fail(
-        "usage: ebook <validate <file.epub> | process --asset <uuid> | process-next | retry --job <uuid> | index-search --publication <uuid> | align <bookId>> [--worker <id>] [--lease <seconds>]",
+        "usage: ebook <validate <file.epub> | strip-links <in.epub> <out.epub> | process --asset <uuid> | process-next | retry --job <uuid> | index-search --publication <uuid> | align <bookId>> [--worker <id>] [--lease <seconds>]",
       );
     }
   }

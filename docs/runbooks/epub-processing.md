@@ -50,6 +50,7 @@ that chain.
 
 ```bash
 npm run ebook -- validate <file.epub>       # pure local check, no database/storage calls
+npm run ebook -- strip-links <in.epub> <out.epub> # local copy with outbound <a> links unwrapped to text
 npm run ebook -- process --asset <uuid>     # claim and run the job for one specific asset
 npm run ebook -- process-next               # claim and run whichever job is next in queue
 npm run ebook -- retry --job <uuid>         # reclaim a failed job and run it again
@@ -94,6 +95,14 @@ line up a single EPUB's web request, database row, and CLI run.
 Runs `processEpub()` locally against a file on disk. Touches no database or storage - use it
 before uploading to catch `INVALID_EPUB`/`UNSAFE_SCRIPT`/`UNSAFE_EXTERNAL_URL`/
 `UNSUPPORTED_MEDIA`/`ASSET_TOO_LARGE` failures without spending an upload/processing cycle.
+
+### `strip-links <in.epub> <out.epub>`
+
+Writes a copy of the EPUB with every outbound `<a href="http(s):…|mailto:…">` unwrapped to
+its text. Use it when `validate` reports `UNSAFE_EXTERNAL_URL` for a link (Standard Ebooks
+colophons, publisher community pages). It touches nothing else, so an external image or CSS
+URL still fails; run `validate` on the output before uploading. Readers see the link text
+without the link, so prefer a printed short URL or QR image in the source EPUB.
 
 ### `process --asset <uuid>`
 
