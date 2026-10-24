@@ -316,6 +316,15 @@ export function epubWithEntityExpansion(): Uint8Array {
   return assembleEpub(validEpubEntries({ opf }));
 }
 
+// A bilingual publication with repeated <dc:title> and <dc:language> (both legal in OPF);
+// the parser reads repeats as an array, and the first one is the primary value.
+export function epubWithRepeatedTitleAndLanguage(): Uint8Array {
+  const opf = opfDocument({
+    titleElement: "<dc:title>Primary Title</dc:title>\n    <dc:title>Subtitle</dc:title>\n    <dc:language>vi</dc:language>",
+  });
+  return assembleEpub(validEpubEntries({ opf }));
+}
+
 // An EPUB2-style publication with no EPUB3 nav document, navigated via an NCX instead -
 // exercises parse.ts's NCX fallback path for the table of contents.
 export function validEpubWithNcx(): Uint8Array {

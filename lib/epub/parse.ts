@@ -67,7 +67,10 @@ function readEntry(archive: SafeArchive, path: string, describeFor: string): Uin
 // fast-xml-parser renders element text as a plain string when the element has no
 // attributes/children, but as `{ "#text": "...", "@_...": ... }` when it also carries
 // attributes (e.g. `<dc:identifier id="pub-id">...`). Both shapes need to read the same.
+// A repeated element (OPF allows several `<dc:title>`/`<dc:language>`) parses as an
+// array; the first one is the primary value.
 function textOf(value: unknown): string {
+  if (Array.isArray(value)) return textOf(value[0]);
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   if (value && typeof value === "object" && "#text" in (value as Record<string, unknown>)) {

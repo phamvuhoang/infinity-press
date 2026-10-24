@@ -4,6 +4,7 @@ import {
   epubWithEmptySpine,
   epubWithEntityExpansion,
   epubWithMultipleRootfiles,
+  epubWithRepeatedTitleAndLanguage,
   validEpub,
   validEpubWithNcx,
   validEpubWithTocFragments,
@@ -96,5 +97,12 @@ describe("parseEpub", () => {
 
     expect(parsed.metadata.title).toBe("&injected;");
     expect(parsed.metadata.title).not.toContain("EXPANDED-BY-PARSER");
+  });
+
+  it("reads the first of repeated <dc:title> and <dc:language> elements", () => {
+    const parsed = parseEpub(openEpubArchive(epubWithRepeatedTitleAndLanguage()));
+
+    expect(parsed.metadata.title).toBe("Primary Title");
+    expect(parsed.metadata.language).toBe("vi");
   });
 });
