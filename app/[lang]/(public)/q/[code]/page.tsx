@@ -15,7 +15,7 @@ import { getServerEnv } from "@/lib/config/server-env";
 import { getBookCardById } from "@/lib/data/catalog";
 import { getBookEditions } from "@/lib/data/editions";
 import { getSharedQuote } from "@/lib/data/shared-quotes";
-import { isLocale } from "@/lib/i18n/config";
+import { isLocale, localeRegistry } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { getCatalogRoutes } from "@/lib/i18n/routes";
 import { splitGraphemes } from "@/lib/reader/quote";
@@ -29,6 +29,7 @@ export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ lang: string; code: string }> };
 
 const TITLE_GRAPHEMES = 60;
+const DESCRIPTION_GRAPHEMES = 160;
 const textLink = "underline decoration-sand underline-offset-4 hover:text-ink hover:decoration-ink";
 
 async function load(code: string) {
@@ -39,10 +40,15 @@ async function load(code: string) {
   return book ? { card, book } : null;
 }
 
+// The quote keeps the EPUB's line breaks and indentation; a title or description is one line.
+function cutQuote(quote: string, max: number): string {
+  const flat = quote.replace(/\s+/g, " ").trim();
+  const units = splitGraphemes(flat);
+  return units.length > max ? `${units.slice(0, max).join("")}…` : flat;
+}
+
 function titleFor(quote: string, bookTitle: string): string {
-  const units = splitGraphemes(quote);
-  const cut = units.length > TITLE_GRAPHEMES ? `${units.slice(0, TITLE_GRAPHEMES).join("")}…` : quote;
-  return `“${cut}” - ${bookTitle}`;
+  return `“${cutQuote(quote, TITLE_GRAPHEMES)}” - ${bookTitle}`;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -54,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { siteUrl } = getServerEnv();
   const routes = getCatalogRoutes(card.locale);
   const title = titleFor(card.quote, book.title);
-  const description = `${book.title}, ${book.author.name}`;
+  const description = `“${cutQuote(card.quote, DESCRIPTION_GRAPHEMES)}” ${book.title}, ${book.author.name}`;
   return {
     title,
     description,
@@ -63,6 +69,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       type: "website",
       siteName: SITE_NAME,
+      locale: localeRegistry[card.locale].openGraph,
       title,
       description,
       url: absoluteUrl(siteUrl, routes.quoteCard(card.code)),

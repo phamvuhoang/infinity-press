@@ -107,6 +107,8 @@ describe("quote card page", () => {
     expect(metadata.alternates?.canonical).toBe("https://books.example/vi/books/sach-s16");
     expect(metadata.title).toBe("“Một câu đáng nhớ.” - Sách S16");
     expect(metadata.openGraph?.url).toBe("https://books.example/vi/q/AbCdEfGh12");
+    expect(metadata.description).toBe("“Một câu đáng nhớ.” Sách S16, Tác giả");
+    expect(metadata.openGraph).toMatchObject({ locale: "vi_VN", description: metadata.description });
     // The sibling image is injected by the file convention at a hashed path; a hand-built
     // `/opengraph-image` URL would 404 and would override nothing.
     expect(metadata.openGraph).not.toHaveProperty("images");
@@ -118,6 +120,17 @@ describe("quote card page", () => {
     vi.mocked(getSharedQuote).mockResolvedValue({ ...card, quote: e.repeat(80) });
     const metadata = await generateMetadata({ params: Promise.resolve({ lang: "vi", code: "AbCdEfGh12" }) });
     expect(metadata.title).toBe(`“${e.repeat(60)}…” - Sách S16`);
+  });
+});
+
+describe("quote card metadata whitespace", () => {
+  it("flattens the EPUB's line breaks and indentation in title and description", async () => {
+    vi.mocked(getSharedQuote).mockResolvedValue(card);
+    vi.mocked(getBookCardById).mockResolvedValue(book);
+    vi.mocked(getSharedQuote).mockResolvedValue({ ...card, quote: "Tặng Kenny.\n      Các con lớn." });
+    const metadata = await generateMetadata({ params: Promise.resolve({ lang: "vi", code: "AbCdEfGh12" }) });
+    expect(metadata.title).toBe("“Tặng Kenny. Các con lớn.” - Sách S16");
+    expect(metadata.description).toBe("“Tặng Kenny. Các con lớn.” Sách S16, Tác giả");
   });
 });
 
